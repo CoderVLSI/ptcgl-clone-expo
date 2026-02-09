@@ -339,6 +339,7 @@ export function applyAIAction(
                 ...gameState,
                 turn: gameState.turn + 1,
                 currentPlayer: 'player',
+                timeRemaining: 60,
                 player: {
                     ...gameState.player,
                     activePokemon: playerActive,
@@ -374,6 +375,7 @@ export function applyAIAction(
                 ...gameState,
                 turn: gameState.turn + 1,
                 currentPlayer: 'player',
+                timeRemaining: 60,
                 player: {
                     ...gameState.player,
                     deck: playerDeck,

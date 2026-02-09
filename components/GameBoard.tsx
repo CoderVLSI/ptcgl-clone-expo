@@ -173,13 +173,30 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         }
     }, [gameState?.currentPlayer, endTurn]);
 
+    // Track the turn when AI started to prevent re-running
+    const aiTurnRef = useRef<number>(-1);
+
+    // Reset aiActing when turn changes to player
+    useEffect(() => {
+        if (gameState?.currentPlayer === 'player' && aiActing) {
+            setAiActing(false);
+        }
+    }, [gameState?.currentPlayer]);
+
     // AI Opponent's Turn
     useEffect(() => {
-        if (!gameState || gameState.currentPlayer !== 'opponent' || aiActing) {
+        if (!gameState || gameState.currentPlayer !== 'opponent') {
+            aiTurnRef.current = -1;
             return;
         }
 
-        // Start AI turn
+        // Prevent AI from running twice on the same turn
+        if (aiActing || aiTurnRef.current === gameState.turn) {
+            return;
+        }
+
+        // Mark this turn as processed
+        aiTurnRef.current = gameState.turn;
         setAiActing(true);
 
         // Get all AI actions
@@ -213,10 +230,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 clearTimeout(aiTimeoutRef.current);
             }
         };
-    }, [gameState?.currentPlayer, gameState?.turn]);
+    }, [gameState?.currentPlayer, gameState?.turn, gameState?.opponent.hand.length]);
 
     const handleCardPress = useCallback((cardId: string) => {
         if (!gameState) return;
+
+        if (logicState.actionMode === 'distribute_energy_from_discard') {
+            distributeEnergyToTarget(cardId);
+            return;
+        }
 
         // If we have a pending energy attachment, attach to this card
         if (pendingEnergyCard) {
@@ -248,7 +270,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             setMenuCard(gameState.player.activePokemon || null);
             setShowAttackMenu(true);
         }
-    }, [gameState, pendingEnergyCard, pendingEvolveCard, selectedCardId, attachEnergy, evolvePokemon]);
+    }, [gameState, logicState.actionMode, pendingEnergyCard, pendingEvolveCard, selectedCardId, attachEnergy, evolvePokemon, distributeEnergyToTarget]);
 
     const handleHandCardPress = useCallback((card: CardType) => {
         if (!gameState || gameState.currentPlayer !== 'player') return;
@@ -257,8 +279,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         setShowActionMenu(true);
     }, [gameState]);
 
-    const handleBenchCardPress = useCallback((card: CardType) => {
+    const handleBenchCardPress = useCallback((cardId: string) => {
         if (!gameState) return;
+
+        const card = gameState.player.bench.find(c => c.id === cardId);
+        if (!card) return;
 
         if (logicState.actionMode === 'select_target') {
             confirmBossOrdersSelection(card.id);
@@ -305,30 +330,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         );
     }, [gameState, logicState, pendingEnergyCard, pendingEvolveCard, attachEnergy, evolvePokemon, setActivePokemon, distributeEnergyToTarget]);
 
-    const handleActiveCardPress = useCallback(() => {
-        if (!gameState || !gameState.player.activePokemon) return;
 
-        if (logicState.actionMode === 'distribute_energy_from_discard') {
-            distributeEnergyToTarget(gameState.player.activePokemon.id);
-            return;
-        }
-
-        // Existing logic for active card press
-        if (pendingEnergyCard) {
-            attachEnergy(pendingEnergyCard.id, gameState.player.activePokemon.id);
-            setPendingEnergyCard(null);
-            return;
-        }
-
-        if (pendingEvolveCard) {
-            evolvePokemon(pendingEvolveCard.id, gameState.player.activePokemon.id);
-            setPendingEvolveCard(null);
-            return;
-        }
-
-        setMenuCard(gameState.player.activePokemon);
-        setShowAttackMenu(true);
-    }, [gameState, logicState, pendingEnergyCard, pendingEvolveCard, attachEnergy, evolvePokemon, distributeEnergyToTarget]);
 
     const handlePlayToBench = useCallback(() => {
         if (!selectedHandCard) return;
@@ -651,8 +653,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             {/* Attack Menu */}
             <AttackMenu
                 visible={showAttackMenu}
-                card={gameState.player.activePokemon || null}
-                onClose={() => setShowAttackMenu(false)}
+                card={menuCard}
+                onClose={() => {
+                    setShowAttackMenu(false);
+                    setMenuCard(null);
+                }}
                 onAttack={handleAttack}
             />
 

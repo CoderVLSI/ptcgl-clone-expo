@@ -3,7 +3,8 @@
     "allow": [
       "Bash(ls:*)",
       "WebSearch",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(git add:*)"
     ]
   }
 }
