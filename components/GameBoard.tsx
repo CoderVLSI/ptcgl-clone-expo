@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Dimensions, Alert } from 'react-native';
+import { View, StyleSheet, SafeAreaView, StatusBar, Dimensions } from 'react-native';
 import { GameState, Card as CardType, EnergyType } from '../types/game';
 import Colors from '../constants/colors';
 import useGameLogic from '../hooks/useGameLogic';
@@ -246,6 +246,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             if (success) {
                 setPendingEnergyCard(null);
                 setShowDialog(true);
+                setShowActionMenu(false); // Close action menu
+                setSelectedHandCard(null);
             }
             return;
         }
@@ -256,6 +258,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             if (success) {
                 setPendingEvolveCard(null);
                 setShowDialog(true);
+                setShowActionMenu(false); // Close action menu
+                setSelectedHandCard(null);
             }
             return;
         }
@@ -341,28 +345,29 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const handleAttachEnergy = useCallback(() => {
         if (!selectedHandCard) return;
         setPendingEnergyCard(selectedHandCard);
-        setShowActionMenu(false);
-        setSelectedHandCard(null);
+        // Don't close menu - keep it visible for cancel option
+        // setShowActionMenu(false);
 
-        // Show instruction
-        Alert.alert(
-            'Select Target',
-            'Tap a Pokémon to attach energy to',
-            [{ text: 'OK' }]
-        );
+        // Set action mode for targeting
+        setLogicState(prev => ({
+            ...prev,
+            actionMode: 'attach_energy',
+            message: 'Tap a Pokémon to attach energy to',
+        }));
     }, [selectedHandCard]);
 
     const handleEvolve = useCallback(() => {
         if (!selectedHandCard) return;
         setPendingEvolveCard(selectedHandCard);
-        setShowActionMenu(false);
-        setSelectedHandCard(null);
+        // Don't close menu - keep it visible for cancel option
+        // setShowActionMenu(false);
 
-        Alert.alert(
-            'Select Target',
-            'Tap a Pokémon to evolve',
-            [{ text: 'OK' }]
-        );
+        // Set action mode for targeting
+        setLogicState(prev => ({
+            ...prev,
+            actionMode: 'evolve',
+            message: 'Tap a Pokémon to evolve',
+        }));
     }, [selectedHandCard]);
 
     const handlePlayTrainer = useCallback(() => {
@@ -613,10 +618,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             {/* Action Menu Modal */}
             <ActionMenu
                 card={selectedHandCard}
-                visible={showActionMenu}
+                visible={showActionMenu || logicState.actionMode === 'attach_energy' || logicState.actionMode === 'evolve'}
+                selectionMode={logicState.actionMode === 'attach_energy' || logicState.actionMode === 'evolve'}
                 onClose={() => {
                     setShowActionMenu(false);
                     setSelectedHandCard(null);
+                    setPendingEnergyCard(null);
+                    setPendingEvolveCard(null);
+                    setLogicState(prev => ({
+                        ...prev,
+                        actionMode: 'none',
+                        message: '',
+                    }));
                 }}
                 onPlayToBench={handlePlayToBench}
                 onAttachEnergy={handleAttachEnergy}
@@ -637,9 +650,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 }
                 canPlayTrainer={
                     selectedHandCard?.type === 'trainer' &&
-                    (!selectedHandCard?.subtypes?.includes('Supporter') || !logicState.hasPlayedSupporter)
+                    (!selectedHandCard?.subtypes?.includes('Supporter') ||
+                        (gameState.turn > 1 && !logicState.hasPlayedSupporter))
                 }
-                message={!selectedCardCheck.canPlay ? selectedCardCheck.reason : undefined}
+                message={
+                    logicState.actionMode === 'attach_energy' ? 'Tap a Pokémon to attach energy' :
+                    logicState.actionMode === 'evolve' ? 'Tap a Pokémon to evolve' :
+                    !selectedCardCheck.canPlay ? selectedCardCheck.reason : undefined
+                }
             />
 
             {/* Coin Flip Modal */}

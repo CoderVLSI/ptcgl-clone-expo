@@ -322,7 +322,14 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         const isSupporter = card.subtypes?.includes('Supporter');
         const isStadium = card.subtypes?.includes('Stadium');
 
-        if (isSupporter && logicState.hasPlayedSupporter) return false;
+        if (isSupporter) {
+            if (logicState.hasPlayedSupporter) return false;
+            // First Turn Restriction
+            if (gameState.turn === 1) {
+                setLogicState(prev => ({ ...prev, message: 'Cannot play Supporters on the first turn!' }));
+                return false;
+            }
+        }
 
         // Stadium cards
         if (isStadium) {
