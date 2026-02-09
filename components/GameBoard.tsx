@@ -14,10 +14,19 @@ import CoinFlip from './CoinFlip';
 import GameControls from './GameControls';
 import EndTurnButton from './EndTurnButton';
 import CardSelectorModal from './CardSelectorModal';
+import CardPreviewModal from './CardPreviewModal';
 import AttackMenu from './AttackMenu';
+import {
+    ShuffleAnimation,
+    DrawAnimation,
+    AttackAnimation,
+    DamageNumberAnimation,
+    EnergyAttachmentAnimation,
+    EvolutionAnimation,
+} from './Animations';
 import { TouchableOpacity, Text } from 'react-native';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface GameBoardProps {
     gameState?: GameState;
@@ -41,20 +50,40 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         confirmDiscard,
         confirmDeckSelection,
         confirmNestBallSelection,
+        confirmBossOrdersSelection,
+        confirmFightingGongSelection,
+        confirmDiscardEnergySelection,
+        distributeEnergyToTarget,
         attack,
+        useAbility,
     } = useGameLogic(externalGameState || null);
 
     const [selectedCardId, setSelectedCardId] = useState<string | undefined>();
     const [showDialog, setShowDialog] = useState(true);
     const [showActionMenu, setShowActionMenu] = useState(false);
     const [showCoinFlip, setShowCoinFlip] = useState(false);
+    const [showAttackMenu, setShowAttackMenu] = useState(false);
+    const [menuCard, setMenuCard] = useState<CardType | null>(null);
+    const [previewCard, setPreviewCard] = useState<CardType | null>(null);
     const [selectedHandCard, setSelectedHandCard] = useState<CardType | null>(null);
     const [hasDrawnThisTurn, setHasDrawnThisTurn] = useState(false);
     const [pendingEnergyCard, setPendingEnergyCard] = useState<CardType | null>(null);
     const [pendingEvolveCard, setPendingEvolveCard] = useState<CardType | null>(null);
     const [aiActing, setAiActing] = useState(false);
     const aiTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const [showAttackMenu, setShowAttackMenu] = useState(false);
+
+    // Animation states
+    const [showShuffle, setShowShuffle] = useState(false);
+    const [showDraw, setShowDraw] = useState(false);
+    const [showAttack, setShowAttack] = useState(false);
+    const [attackType, setAttackType] = useState<'physical' | 'special' | 'fire' | 'water' | 'electric' | 'psychic'>('physical');
+    const [damageNum, setDamageNum] = useState(0);
+    const [showDamage, setShowDamage] = useState(false);
+    const [showEnergyAttach, setShowEnergyAttach] = useState(false);
+    const [attachEnergyType, setAttachEnergyType] = useState<string>('colorless');
+    const [showEvolution, setShowEvolution] = useState(false);
+    const [isMegaEvolution, setIsMegaEvolution] = useState(false);
+    const [evolutionName, setEvolutionName] = useState<string>('');
 
     // Update game state when external state changes
     useEffect(() => {
@@ -69,6 +98,68 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             setHasDrawnThisTurn(false);
         }
     }, [gameState?.turn]);
+
+    // Trigger animations based on game state messages
+    useEffect(() => {
+        if (!gameState?.message) return;
+
+        const msg = gameState.message.toLowerCase();
+
+        // Shuffle animation
+        if (msg.includes('shuffled') || msg.includes('shuffle')) {
+            setShowShuffle(true);
+        }
+
+        // Draw animation
+        if (msg.includes('drew') || msg.includes('draw')) {
+            setShowDraw(true);
+        }
+
+        // Attack animation
+        if (msg.includes('used') && msg.includes('attack')) {
+            // Determine attack type based on attacker's energy type
+            const attacker = gameState.player.activePokemon;
+            if (attacker?.energyType) {
+                const typeMap: Record<string, typeof attackType> = {
+                    fire: 'fire',
+                    water: 'water',
+                    lightning: 'electric',
+                    psychic: 'psychic',
+                };
+                setAttackType(typeMap[attacker.energyType] || 'physical');
+            }
+            setShowAttack(true);
+        }
+
+        // Damage number animation
+        if (msg.includes('dealt') && msg.includes('damage')) {
+            const damageMatch = gameState.message.match(/(\d+)\s+damage/);
+            if (damageMatch) {
+                setDamageNum(parseInt(damageMatch[1]));
+                setTimeout(() => setShowDamage(true), 500);
+            }
+        }
+
+        // Evolution animation
+        if (msg.includes('evolved')) {
+            // Check if it's a mega evolution
+            const isMega = msg.includes('mega') || gameState.message.includes('Mega');
+            // Extract the evolved Pokemon name
+            const evoMatch = gameState.message.match(/evolved into (.+?)!/);
+            const evoName = evoMatch ? evoMatch[1] : '';
+            setIsMegaEvolution(isMega);
+            setEvolutionName(evoName);
+            setTimeout(() => setShowEvolution(true), 200);
+        }
+    }, [gameState?.message, gameState?.player.activePokemon]);
+
+    // Energy attachment animation
+    useEffect(() => {
+        if (logicState.message.includes('attached') && pendingEnergyCard) {
+            setAttachEnergyType(pendingEnergyCard.energyType || 'colorless');
+            setShowEnergyAttach(true);
+        }
+    }, [logicState.message, pendingEnergyCard]);
 
     // Auto-pass timer for Opponent
     useEffect(() => {
@@ -150,6 +241,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         // Toggle selection
         setSelectedCardId(selectedCardId === cardId ? undefined : cardId);
         setShowDialog(false);
+
+        // Direct Attack Menu Access
+        // If player clicks their own active pokemon during their turn, open attack menu
+        if (gameState?.currentPlayer === 'player' && gameState.player.activePokemon?.id === cardId) {
+            setMenuCard(gameState.player.activePokemon || null);
+            setShowAttackMenu(true);
+        }
     }, [gameState, pendingEnergyCard, pendingEvolveCard, selectedCardId, attachEnergy, evolvePokemon]);
 
     const handleHandCardPress = useCallback((card: CardType) => {
@@ -159,39 +257,78 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         setShowActionMenu(true);
     }, [gameState]);
 
-    const handleBenchCardPress = useCallback((cardId: string) => {
+    const handleBenchCardPress = useCallback((card: CardType) => {
         if (!gameState) return;
+
+        if (logicState.actionMode === 'select_target') {
+            confirmBossOrdersSelection(card.id);
+            return;
+        }
+
+        if (logicState.actionMode === 'distribute_energy_from_discard') {
+            distributeEnergyToTarget(card.id);
+            return;
+        }
 
         // If pending energy, attach to this bench card
         if (pendingEnergyCard) {
-            attachEnergy(pendingEnergyCard.id, cardId);
+            attachEnergy(pendingEnergyCard.id, card.id);
             setPendingEnergyCard(null);
             return;
         }
 
         // If pending evolve, evolve this bench card
         if (pendingEvolveCard) {
-            evolvePokemon(pendingEvolveCard.id, cardId);
+            evolvePokemon(pendingEvolveCard.id, card.id);
             setPendingEvolveCard(null);
             return;
         }
 
-        // Otherwise, offer to set as active
-        const benchCard = gameState.player.bench.find(c => c.id === cardId);
-        if (benchCard) {
-            Alert.alert(
-                'Set Active?',
-                `Make ${benchCard.name} your active Pokémon?`,
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                        text: 'Set Active',
-                        onPress: () => setActivePokemon(cardId),
-                    },
-                ]
-            );
+        // Options: Set Active or Ability
+        Alert.alert(
+            'Options',
+            `What to do with ${card.name}?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Set Active',
+                    onPress: () => setActivePokemon(card.id)
+                },
+                {
+                    text: 'View/Abilities',
+                    onPress: () => {
+                        setMenuCard(card);
+                        setShowAttackMenu(true);
+                    }
+                }
+            ]
+        );
+    }, [gameState, logicState, pendingEnergyCard, pendingEvolveCard, attachEnergy, evolvePokemon, setActivePokemon, distributeEnergyToTarget]);
+
+    const handleActiveCardPress = useCallback(() => {
+        if (!gameState || !gameState.player.activePokemon) return;
+
+        if (logicState.actionMode === 'distribute_energy_from_discard') {
+            distributeEnergyToTarget(gameState.player.activePokemon.id);
+            return;
         }
-    }, [gameState, pendingEnergyCard, pendingEvolveCard, attachEnergy, evolvePokemon, setActivePokemon]);
+
+        // Existing logic for active card press
+        if (pendingEnergyCard) {
+            attachEnergy(pendingEnergyCard.id, gameState.player.activePokemon.id);
+            setPendingEnergyCard(null);
+            return;
+        }
+
+        if (pendingEvolveCard) {
+            evolvePokemon(pendingEvolveCard.id, gameState.player.activePokemon.id);
+            setPendingEvolveCard(null);
+            return;
+        }
+
+        setMenuCard(gameState.player.activePokemon);
+        setShowAttackMenu(true);
+    }, [gameState, logicState, pendingEnergyCard, pendingEvolveCard, attachEnergy, evolvePokemon, distributeEnergyToTarget]);
 
     const handlePlayToBench = useCallback(() => {
         if (!selectedHandCard) return;
@@ -348,6 +485,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             <PlayerArea
                 player={gameState.player}
                 onCardPress={handleHandCardPress}
+                onCardLongPress={(card) => setPreviewCard(card)}
                 selectedCardId={selectedCardId}
             />
 
@@ -363,11 +501,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             {/* Card Selector Modals (Ultra Ball, etc) */}
             <CardSelectorModal
                 visible={logicState.actionMode === 'discard_from_hand'}
-                title="Discard 2 Cards"
-                subtitle="Select cards to discard to play Ultra Ball"
+                title={`Discard ${logicState.discardCount || 1} Cards`}
+                subtitle={logicState.message || "Select cards to discard"}
                 cards={gameState.player.hand.filter(c => c.id !== logicState.activeCardId)}
-                minSelection={2}
-                maxSelection={2}
+                minSelection={logicState.discardCount || 1}
+                maxSelection={logicState.discardCount || 1}
                 onConfirm={confirmDiscard}
                 onCancel={() => selectCard(null, 'none')}
                 confirmText="Discard Selected"
@@ -414,6 +552,62 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 confirmText="Put on Bench"
             />
 
+            {/* Boss's Orders Modal */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'switch_opponent_active'}
+                title="Boss's Orders"
+                subtitle="Select a Pokémon from opponent's bench to switch with Active"
+                cards={gameState.opponent.bench}
+                minSelection={1}
+                maxSelection={1}
+                onConfirm={(ids) => confirmBossOrdersSelection(ids[0])}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Switch"
+            />
+
+            {/* Fighting Gong Modal */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'search_deck_fighting'}
+                title="Fighting Gong"
+                subtitle="Select Basic Fighting Pokémon or Basic Fighting Energy"
+                cards={[
+                    // Eligible cards first (Basic Fighting Pokemon, Basic Fighting Energy)
+                    ...gameState.player.deck.filter(c =>
+                        (c.type === 'pokemon' && c.subtypes?.includes('Basic') && c.energyType === 'fighting') ||
+                        (c.type === 'energy' && c.energyType === 'fighting')
+                    ),
+                    // Then other cards (ineligible, greyed out)
+                    ...gameState.player.deck.filter(c =>
+                        !((c.type === 'pokemon' && c.subtypes?.includes('Basic') && c.energyType === 'fighting') ||
+                            (c.type === 'energy' && c.energyType === 'fighting'))
+                    ),
+                ]}
+                eligibleCardIds={gameState.player.deck
+                    .filter(c =>
+                        (c.type === 'pokemon' && c.subtypes?.includes('Basic') && c.energyType === 'fighting') ||
+                        (c.type === 'energy' && c.energyType === 'fighting')
+                    )
+                    .map(c => c.id)}
+                minSelection={1}
+                maxSelection={1}
+                onConfirm={confirmFightingGongSelection}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Add to Hand"
+            />
+
+            {/* Energy Selection from Discard (Mega Lucario) */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'attach_energy_from_discard'}
+                title="Select Energy from Discard"
+                subtitle={logicState.message || "Select up to 3 Fighting Energy to attach."}
+                cards={gameState.player.discardPile.filter(c => c.type === 'energy' && (c.name.includes('Fighting') || c.energyType === 'fighting'))}
+                minSelection={1}
+                maxSelection={3}
+                onConfirm={confirmDiscardEnergySelection}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Attach to Bench"
+            />
+
             {/* Action Menu Modal */}
             <ActionMenu
                 card={selectedHandCard}
@@ -457,9 +651,65 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             {/* Attack Menu */}
             <AttackMenu
                 visible={showAttackMenu}
-                card={gameState.player.activePokemon}
+                card={gameState.player.activePokemon || null}
                 onClose={() => setShowAttackMenu(false)}
                 onAttack={handleAttack}
+            />
+
+            {/* Card Preview Modal (Long Press) */}
+            <CardPreviewModal
+                visible={!!previewCard}
+                card={previewCard || null}
+                onClose={() => setPreviewCard(null)}
+            />
+
+            {/* Animations */}
+            <ShuffleAnimation
+                visible={showShuffle}
+                onComplete={() => setShowShuffle(false)}
+                x={SCREEN_WIDTH * 0.15}
+                y={SCREEN_HEIGHT * 0.5}
+            />
+
+            <DrawAnimation
+                visible={showDraw}
+                onComplete={() => setShowDraw(false)}
+                x={SCREEN_WIDTH * 0.15}
+                y={SCREEN_HEIGHT * 0.5}
+            />
+
+            <AttackAnimation
+                visible={showAttack}
+                type={attackType}
+                onComplete={() => setShowAttack(false)}
+                x={SCREEN_WIDTH * 0.5}
+                y={SCREEN_HEIGHT * 0.4}
+            />
+
+            <DamageNumberAnimation
+                visible={showDamage}
+                damage={damageNum}
+                type="damage"
+                x={SCREEN_WIDTH * 0.5}
+                y={SCREEN_HEIGHT * 0.35}
+                onComplete={() => setShowDamage(false)}
+            />
+
+            <EnergyAttachmentAnimation
+                visible={showEnergyAttach}
+                energyType={attachEnergyType}
+                onComplete={() => setShowEnergyAttach(false)}
+                x={SCREEN_WIDTH * 0.3}
+                y={SCREEN_HEIGHT * 0.6}
+            />
+
+            <EvolutionAnimation
+                visible={showEvolution}
+                isMega={isMegaEvolution}
+                evolutionName={evolutionName}
+                onComplete={() => setShowEvolution(false)}
+                x={SCREEN_WIDTH * 0.5}
+                y={SCREEN_HEIGHT * 0.5}
             />
         </SafeAreaView>
     );

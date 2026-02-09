@@ -12,12 +12,14 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface PlayerAreaProps {
     player: Player;
     onCardPress?: (card: CardType) => void;
+    onCardLongPress?: (card: CardType) => void;
     selectedCardId?: string;
 }
 
 export const PlayerArea: React.FC<PlayerAreaProps> = ({
     player,
     onCardPress,
+    onCardLongPress,
     selectedCardId,
 }) => {
     return (
@@ -70,6 +72,7 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
                                     card={card}
                                     isHighlighted={selectedCardId === card.id}
                                     onPress={() => onCardPress?.(card)}
+                                    onLongPress={() => onCardLongPress?.(card)}
                                 />
                             </View>
                         ))

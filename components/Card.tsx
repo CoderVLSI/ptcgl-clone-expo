@@ -18,6 +18,7 @@ interface CardProps {
     isHighlighted?: boolean;
     isSmall?: boolean;
     onPress?: () => void;
+    onLongPress?: () => void;
     showEnergy?: boolean;
     showFullImage?: boolean; // Shows full card image from API
 }
@@ -31,6 +32,7 @@ export const Card: React.FC<CardProps> = ({
     isHighlighted = false,
     isSmall = false,
     onPress,
+    onLongPress,
     showEnergy = true,
     showFullImage = true,
 }) => {
@@ -145,6 +147,7 @@ export const Card: React.FC<CardProps> = ({
                 { width: cardWidth, height: cardHeight },
             ]}
             onPress={onPress}
+            onLongPress={onLongPress}
             activeOpacity={0.8}
             disabled={!onPress}
         >

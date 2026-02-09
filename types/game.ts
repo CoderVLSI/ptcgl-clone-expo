@@ -39,8 +39,10 @@ export interface Card {
     imageUrlLarge?: string;
     energyType?: EnergyType;
     hp?: number;
+    abilities?: Ability[];
     attacks?: Attack[];
     attachedEnergy?: EnergyType[];
+    attachedTool?: Card; // Pokemon Tool attached to this card
     isActive?: boolean;
     // Additional fields from API
     subtypes?: string[];
@@ -50,6 +52,14 @@ export interface Card {
     retreatCost?: number;
     weaknesses?: { type: EnergyType; value: string }[];
     resistances?: { type: EnergyType; value: string }[];
+    playedTurn?: number; // Turn number when this card was put into play
+    previousEvolutions?: Card[]; // Store pre-evolutions
+}
+
+export interface Ability {
+    name: string;
+    type: string; // 'Ability' or 'Poke-Power' etc.
+    text: string;
 }
 
 export interface Attack {
@@ -87,6 +97,22 @@ export interface GameState {
 export interface Position {
     x: number;
     y: number;
+}
+
+export interface GameLogicState {
+    hasAttachedEnergy: boolean;
+    hasPlayedSupporter: boolean;
+    hasPlayedStadium: boolean;
+    hasTakenAction: boolean;
+    premiumPowerProCount: number; // Premium Power Pro stacks
+    abilitiesUsed: string[]; // Track card IDs that used abilities this turn
+    coinFlipResult: 'heads' | 'tails' | null;
+    selectedCard: Card | null;
+    actionMode: 'none' | 'attach_energy' | 'evolve' | 'select_target' | 'discard_from_hand' | 'search_deck' | 'search_deck_basic' | 'switch_opponent_active' | 'search_deck_fighting' | 'attach_energy_from_discard' | 'distribute_energy_from_discard';
+    message: string;
+    activeCardId?: string;
+    discardCount: number;
+    selectedCardIds?: string[];
 }
 
 // Helper to convert API card data to our Card type

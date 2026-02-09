@@ -18,7 +18,13 @@ export interface GameLogicReturn {
     confirmDiscard: (cardIds: string[]) => void;
     confirmDeckSelection: (cardIds: string[]) => void;
     confirmNestBallSelection: (cardIds: string[]) => void;
+    confirmBossOrdersSelection: (benchCardId: string) => void;
+    confirmFightingGongSelection: (cardIds: string[]) => void;
     attack: (attackIndex: number) => boolean;
+    currentPhase?: 'setup' | 'draw' | 'action' | 'attack'; // Optional phase tracking if needed
+    confirmDiscardEnergySelection: (cardIds: string[]) => void;
+    distributeEnergyToTarget: (targetId: string) => void;
+    useAbility: (cardId: string, abilityIndex: number) => boolean;
 }
 
 const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
@@ -30,10 +36,14 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         hasPlayedSupporter: false,
         hasPlayedStadium: false,
         hasTakenAction: false,
+        premiumPowerProCount: 0,
+        abilitiesUsed: [],
         coinFlipResult: null,
         selectedCard: null,
         actionMode: 'none',
         message: 'Welcome to PVCGL!',
+        discardCount: 0,
+        selectedCardIds: [],
     });
 
     // Initialize Game handled by useGameData
@@ -45,13 +55,44 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         }
     }, [externalGameState]);
 
+    // Turn Timer Logic
+    useEffect(() => {
+        if (!gameState || gameState.currentPlayer !== 'player' || gameState.timeRemaining <= 0) return;
+
+        const timer = setInterval(() => {
+            setGameState(prev => {
+                if (!prev || prev.currentPlayer !== 'player') return prev;
+
+                const newTime = prev.timeRemaining - 1;
+                if (newTime <= 0) {
+                    // Auto-end turn will be handled by the effect dependency on timeRemaining or separate check
+                    // But we can't call endTurn() directly inside setState.
+                    // We'll let the effect cleaning up or a separate effect handle the 0 trigger if needed,
+                    // but usually strictly handling state here is safer. 
+                    // However, we need to trigger endTurn. 
+                    // Let's just update time here.
+                    return { ...prev, timeRemaining: newTime };
+                }
+                return { ...prev, timeRemaining: newTime };
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [gameState?.currentPlayer, gameState?.turn]); // Re-run when turn changes
+
+
+
     const updateGameState = useCallback((newState: GameState) => {
         setGameState(newState);
     }, []);
 
     const flipCoin = useCallback(() => {
         const result = Math.random() < 0.5;
-        setLogicState(prev => ({ ...prev, coinFlipResult: result, message: result ? 'Heads!' : 'Tails!' }));
+        setLogicState(prev => ({
+            ...prev,
+            coinFlipResult: result ? 'heads' : 'tails',
+            message: result ? 'Heads!' : 'Tails!'
+        }));
         return result;
     }, []);
 
@@ -113,7 +154,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 player: {
                     ...prev.player,
                     hand: prev.player.hand.filter(c => c.id !== cardId),
-                    bench: [...prev.player.bench, card],
+                    bench: [...prev.player.bench, { ...card, playedTurn: prev.turn }],
                 },
                 message: `${card.name} was placed on the bench!`,
             };
@@ -202,10 +243,22 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
 
         if (!targetCard) return false;
 
-        // Transfer attached energy to evolution
+        // Evolution Rule: Cannot evolve on the turn played (unless Rare Candy etc, which we don't have yet)
+        // playedTurn is 0 for initial setup
+        if (targetCard.playedTurn !== undefined && targetCard.playedTurn >= gameState.turn) {
+            setLogicState(prev => ({
+                ...prev,
+                message: 'Cannot evolve a Pokemon the turn it is played!',
+            }));
+            return false;
+        }
+
+        // Transfer attached energy to evolution and store pre-evolution
         const evolvedCard: Card = {
             ...evolutionCard,
             attachedEnergy: targetCard.attachedEnergy || [],
+            previousEvolutions: [...(targetCard.previousEvolutions || []), targetCard], // Stack evolutions
+            playedTurn: gameState.turn, // Evolving counts as entering play for the new stage
         };
 
         setGameState(prev => {
@@ -220,7 +273,8 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                     bench: isActive
                         ? prev.player.bench
                         : prev.player.bench.map(c => c.id === targetCardId ? evolvedCard : c),
-                    discardPile: [...prev.player.discardPile, targetCard!],
+                    // Do NOT discard the pre-evolution (it's under the new card)
+                    discardPile: prev.player.discardPile,
                 },
                 message: `${targetCard!.name} evolved into ${evolutionCard.name}!`,
             };
@@ -322,7 +376,105 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 ...prev,
                 actionMode: 'discard_from_hand',
                 activeCardId: cardId,
+                discardCount: 2,
                 message: `Select 2 cards to discard for ${card.name}.`,
+            }));
+            return true;
+        }
+
+        if (cardNameLower.includes('boss') || (cardNameLower.includes('gust') && cardNameLower.includes('orders'))) {
+            if (gameState.opponent.bench.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'Opponent has no benched Pokemon!' }));
+                return false;
+            }
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'switch_opponent_active',
+                activeCardId: cardId,
+                message: 'Select a Pokemon from opponent bench to switch with Active.',
+            }));
+            return true;
+        }
+
+        if (cardNameLower.includes('lillie') || (cardNameLower.includes('determination'))) {
+            // Lillie's Determination: Shuffle hand into deck, draw 6 cards (8 if exactly 6 prizes)
+            const prizesRemaining = gameState.player.prizeCards.length;
+            const cardsToDraw = prizesRemaining === 6 ? 8 : 6;
+
+            setGameState(prev => {
+                if (!prev) return prev;
+
+                // Shuffle hand into deck
+                const shuffledDeck = [...prev.player.deck, ...prev.player.hand];
+                for (let i = shuffledDeck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffledDeck[i], shuffledDeck[j]] = [shuffledDeck[j], shuffledDeck[i]];
+                }
+
+                // Draw new cards
+                const drawnCards = shuffledDeck.slice(0, cardsToDraw);
+                const remainingDeck = shuffledDeck.slice(cardsToDraw);
+
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: drawnCards,
+                        deck: remainingDeck,
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                    message: `Lillie's Determination: Shuffled hand, drew ${cardsToDraw} cards!`,
+                };
+            });
+
+            setLogicState(prev => ({
+                ...prev,
+                hasPlayedSupporter: true,
+                message: `Drew ${cardsToDraw} cards!`,
+            }));
+            return true;
+        }
+
+        if (cardNameLower.includes('premium') && cardNameLower.includes('power')) {
+            // Premium Power Pro: Your Pokemon attacks do +30 damage this turn (stacks)
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                    message: `Premium Power Pro: Attacks +${(logicState.premiumPowerProCount + 1) * 30} damage this turn!`,
+                };
+            });
+
+            setLogicState(prev => ({
+                ...prev,
+                premiumPowerProCount: prev.premiumPowerProCount + 1,
+                message: `Your Pokemon attacks do +${(logicState.premiumPowerProCount + 1) * 30} damage this turn!`,
+            }));
+            return true;
+        }
+
+        if (cardNameLower.includes('fighting') && cardNameLower.includes('gong')) {
+            // Fighting Gong: Search for Basic Fighting Energy OR Basic Fighting Pokemon
+            const basicFightingInDeck = gameState.player.deck.filter(c =>
+                (c.type === 'pokemon' && c.subtypes?.includes('Basic') && c.energyType === 'fighting') ||
+                (c.type === 'energy' && c.energyType === 'fighting')
+            );
+
+            if (basicFightingInDeck.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Basic Fighting Pokemon or Energy in deck!' }));
+                return false;
+            }
+
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck_fighting',
+                activeCardId: cardId,
+                message: 'Select Basic Fighting Pokemon or Energy from your deck.',
             }));
             return true;
         }
@@ -462,7 +614,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                     ...prev.player,
                     hand: newHand,
                     deck: newDeck,
-                    bench: [...prev.player.bench, selectedCard],
+                    bench: [...prev.player.bench, { ...selectedCard, playedTurn: prev.turn }],
                     discardPile: [...prev.player.discardPile, nestBallCard],
                 },
                 message: `Put ${selectedCard.name} on bench! Shuffled deck.`,
@@ -519,6 +671,87 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         return true;
     }, [gameState]);
 
+    const confirmBossOrdersSelection = useCallback((benchCardId: string) => {
+        if (!gameState || !logicState.activeCardId) return;
+
+        const bossOrdersCard = gameState.player.hand.find(c => c.id === logicState.activeCardId);
+        if (!bossOrdersCard) return;
+
+        const benchPokemon = gameState.opponent.bench.find(c => c.id === benchCardId);
+        if (!benchPokemon) return;
+
+        const opponentActive = gameState.opponent.activePokemon;
+        if (!opponentActive) return;
+
+        setGameState(prev => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                player: {
+                    ...prev.player,
+                    hand: prev.player.hand.filter(c => c.id !== logicState.activeCardId),
+                    discardPile: [...prev.player.discardPile, bossOrdersCard],
+                },
+                opponent: {
+                    ...prev.opponent,
+                    activePokemon: benchPokemon,
+                    bench: [opponentActive, ...prev.opponent.bench.filter(c => c.id !== benchCardId)],
+                },
+                message: `Switched ${benchPokemon.name} with Active!`,
+            };
+        });
+
+        setLogicState(prev => ({
+            ...prev,
+            hasPlayedSupporter: true,
+            actionMode: 'none',
+            activeCardId: undefined,
+            message: `Boss's Orders switched ${benchPokemon.name} to Active!`,
+        }));
+    }, [gameState, logicState.activeCardId]);
+
+    const confirmFightingGongSelection = useCallback((selectedCardIds: string[]) => {
+        if (!gameState || !logicState.activeCardId || selectedCardIds.length === 0) return;
+
+        const fightingGongCard = gameState.player.hand.find(c => c.id === logicState.activeCardId);
+        if (!fightingGongCard) return;
+
+        const selectedCard = gameState.player.deck.find(c => c.id === selectedCardIds[0]);
+        if (!selectedCard) return;
+
+        setGameState(prev => {
+            if (!prev) return prev;
+
+            const newDeck = prev.player.deck.filter(c => c.id !== selectedCardIds[0]);
+
+            // Shuffle deck
+            for (let i = newDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+            }
+
+            const newHand = prev.player.hand.filter(c => c.id !== logicState.activeCardId);
+
+            return {
+                ...prev,
+                player: {
+                    ...prev.player,
+                    hand: [...newHand, selectedCard],
+                    deck: newDeck,
+                    discardPile: [...prev.player.discardPile, fightingGongCard],
+                },
+                message: `Found ${selectedCard.name}! Shuffled deck.`,
+            };
+        });
+
+        setLogicState(prev => ({
+            ...prev,
+            actionMode: 'none',
+            activeCardId: undefined,
+            message: `Fighting Gong found ${selectedCard.name}!`,
+        }));
+    }, [gameState, logicState.activeCardId]);
+
     const endTurn = useCallback(() => {
         if (!gameState) return;
         setGameState(prev => {
@@ -534,6 +767,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                     deck: opponentRemainingDeck,
                 } : prev.opponent,
                 message: prev.currentPlayer === 'player' ? "Opponent's turn" : 'Your turn! Draw a card.',
+                timeRemaining: 60,
             };
         });
 
@@ -542,15 +776,209 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             hasPlayedSupporter: false,
             hasPlayedStadium: false,
             hasTakenAction: false,
+            premiumPowerProCount: 0,
+            abilitiesUsed: [],
             coinFlipResult: null,
             selectedCard: null,
             actionMode: 'none',
             message: '',
+            discardCount: 0,
         });
     }, [gameState]);
 
+    const useAbility = useCallback((cardId: string, abilityIndex: number) => {
+        if (!gameState || gameState.currentPlayer !== 'player') return false;
+
+        // Find card (Active or Bench)
+        let card = gameState.player.activePokemon?.id === cardId ? gameState.player.activePokemon : gameState.player.bench.find(c => c.id === cardId);
+        if (!card || !card.abilities || !card.abilities[abilityIndex]) return false;
+
+        const ability = card.abilities[abilityIndex];
+
+        // Check if already used
+        if (logicState.abilitiesUsed.includes(cardId)) {
+            setLogicState(prev => ({ ...prev, message: `You already used ${ability.name} this turn!` }));
+            return false;
+        }
+
+        // --- Ability Logic Implementations ---
+
+        // 1. Instant Charge (Rotom V) - Draw 3, End Turn
+        if (ability.name === 'Instant Charge') {
+            setGameState(prev => {
+                if (!prev) return prev;
+                const cardsToDraw = 3;
+                const newHand = [...prev.player.hand];
+                const newDeck = [...prev.player.deck];
+
+                for (let i = 0; i < cardsToDraw; i++) {
+                    if (newDeck.length > 0) newHand.push(newDeck.shift()!);
+                }
+
+                return {
+                    ...prev,
+                    player: { ...prev.player, hand: newHand, deck: newDeck },
+                    message: `Used Instant Charge. Drew 3 cards.`
+                };
+            });
+            // Mark as used and End Turn
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId],
+                message: 'Used Instant Charge. Ending turn...'
+            }));
+
+            // End turn after small delay or immediately
+            setTimeout(endTurn, 1000);
+            return true;
+        }
+
+        // 2. Conniealed Cards (Radiant Greninja) - Discard Energy, Draw 2
+        if (ability.name === 'Concealed Cards') {
+            // Check for Energy in hand
+            const hasEnergy = gameState.player.hand.some(c => c.type === 'energy');
+            if (!hasEnergy) {
+                setLogicState(prev => ({ ...prev, message: 'You need an Energy card in hand to use this!' }));
+                return false;
+            }
+
+            // Trigger Discard Mode
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'discard_from_hand',
+                activeCardId: cardId, // Store who is using the ability
+                discardCount: 1,
+                message: 'Select an Energy card to discard for Concealed Cards.'
+            }));
+            return true;
+        }
+
+        // 3. Lunar Cycle (Lunatone) - Discard Fighting Energy, Draw 3 (If Solrock in play)
+        if (ability.name === 'Lunar Cycle') {
+            // Check for Solrock
+            const hasSolrock = gameState.player.activePokemon?.name.includes('Solrock') || gameState.player.bench.some(c => c.name.includes('Solrock'));
+            if (!hasSolrock) {
+                setLogicState(prev => ({ ...prev, message: 'You need Solrock in play to use this!' }));
+                return false;
+            }
+
+            // Check for Fighting Energy in hand
+            // Note: Simplification - checking for ANY energy if strict checking difficult, but usually name check works
+            const hasFightingEnergy = gameState.player.hand.some(c => c.name.includes('Fighting Energy'));
+            if (!hasFightingEnergy) {
+                setLogicState(prev => ({ ...prev, message: 'You need a Fighting Energy in hand to use this!' }));
+                return false;
+            }
+
+            // Trigger Discard Mode
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'discard_from_hand',
+                activeCardId: cardId, // Store who using
+                discardCount: 1,
+                message: 'Select a Fighting Energy to discard for Lunar Cycle.'
+            }));
+            return true;
+        }
+
+        // 4. Wave Veil (Passive) - No activation needed
+        if (ability.name === 'Wave Veil') {
+            setLogicState(prev => ({ ...prev, message: 'This ability is always active (Passive).' }));
+            return false;
+        }
+
+
+        return false;
+    }, [gameState, logicState, endTurn]);
+
+    const confirmDiscardEnergySelection = useCallback((cardIds: string[]) => {
+        setLogicState(prev => ({
+            ...prev,
+            selectedCardIds: cardIds,
+            actionMode: 'distribute_energy_from_discard',
+            message: `Select a Pokemon to attach Fighting Energy (${cardIds.length} remaining).`,
+        }));
+    }, []);
+
+    const distributeEnergyToTarget = useCallback((targetId: string) => {
+        if (logicState.actionMode === 'distribute_energy_from_discard' && logicState.selectedCardIds?.length) {
+            setGameState(prev => {
+                if (!prev) return prev;
+
+                // Get the first energy from the selection
+                const energyIdToAttach = logicState.selectedCardIds![0];
+                const energyCard = prev.player.discardPile.find(c => c.id === energyIdToAttach);
+
+                if (!energyCard) return prev;
+
+                const remainingDiscard = prev.player.discardPile.filter(c => c.id !== energyIdToAttach);
+
+                // Find target (Active or Bench)
+                let newActive = prev.player.activePokemon;
+                let newBench = [...prev.player.bench];
+                let targetName = '';
+
+                if (newActive?.id === targetId) {
+                    newActive = {
+                        ...newActive,
+                        attachedEnergy: [...(newActive.attachedEnergy || []), energyCard.energyType || 'fighting'],
+                    };
+                    targetName = newActive.name;
+                } else {
+                    const benchIndex = newBench.findIndex(c => c.id === targetId);
+                    if (benchIndex !== -1) {
+                        const targetPokemon = newBench[benchIndex];
+                        newBench[benchIndex] = {
+                            ...targetPokemon,
+                            attachedEnergy: [...(targetPokemon.attachedEnergy || []), energyCard.energyType || 'fighting'],
+                        };
+                        targetName = targetPokemon.name;
+                    } else {
+                        return prev; // Invalid target
+                    }
+                }
+
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        discardPile: remainingDiscard,
+                        activePokemon: newActive,
+                        bench: newBench,
+                    },
+                    message: `Attached Energy to ${targetName}.`,
+                };
+            });
+
+            // Allow state to update, then check remaining
+            setLogicState(prev => {
+                const remainingIds = prev.selectedCardIds!.slice(1);
+                if (remainingIds.length === 0) {
+                    // All connected
+                    setTimeout(() => endTurn(), 1000);
+                    return { ...prev, actionMode: 'none', selectedCardIds: [], message: 'Energy distribution complete.' };
+                } else {
+                    return {
+                        ...prev,
+                        selectedCardIds: remainingIds,
+                        message: `Select a Pokemon to attach Fighting Energy (${remainingIds.length} remaining).`,
+                    };
+                }
+            });
+        }
+    }, [logicState, gameState, endTurn]);
+
     const attack = useCallback((attackIndex: number) => {
         if (!gameState || gameState.currentPlayer !== 'player') return false;
+
+        // First Turn Attack Ban: Player going first cannot attack on Turn 1
+        if (gameState.turn === 1) {
+            setLogicState(prev => ({
+                ...prev,
+                message: 'Cannot attack on the first turn!',
+            }));
+            return false;
+        }
 
         const attacker = gameState.player.activePokemon;
         const defender = gameState.opponent.activePokemon;
@@ -594,7 +1022,33 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return false;
         }
 
+        // Ora Jab Logic (Mega Lucario)
+        if (selectedAttack.name === 'Ora Jab') {
+            const fightingEnergyInDiscard = gameState.player.discardPile.filter(c =>
+                c.type === 'energy' && (c.name.includes('Fighting') || c.energyType === 'fighting')
+            );
+
+            if (fightingEnergyInDiscard.length > 0) {
+                setLogicState(prev => ({
+                    ...prev,
+                    actionMode: 'attach_energy_from_discard',
+                    message: 'Select up to 3 Fighting Energy from Discard to attach to your Pokemon.',
+                    discardCount: 3, // Repurposing discardCount as "max selection count"
+                }));
+            } else {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'No Fighting Energy in discard pile to attach.',
+                }));
+            }
+        }
+
         let damage = selectedAttack.damage;
+
+        // Premium Power Pro: Your Pokemon attacks do +30 damage per copy played this turn
+        if (logicState.premiumPowerProCount > 0) {
+            damage += logicState.premiumPowerProCount * 30;
+        }
 
         setGameState(prev => {
             if (!prev) return prev;
@@ -638,12 +1092,22 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             };
         });
 
-        setTimeout(() => {
-            endTurn();
-        }, 1500);
+        // ONLY end turn if we are NOT in a selection mode
+        if (selectedAttack.name !== 'Ora Jab') {
+            setTimeout(() => {
+                endTurn();
+            }, 1500);
+        }
 
         return true;
     }, [gameState, endTurn]);
+
+    // Check for timer expiry
+    useEffect(() => {
+        if (gameState?.currentPlayer === 'player' && gameState.timeRemaining <= 0) {
+            endTurn();
+        }
+    }, [gameState?.timeRemaining, gameState?.currentPlayer, endTurn]);
 
     const selectCard = useCallback((card: Card | null, mode: GameLogicState['actionMode'] = 'none') => {
         setLogicState(prev => ({
@@ -669,8 +1133,13 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         selectCard,
         confirmDiscard,
         confirmDeckSelection,
+        confirmDiscardEnergySelection,
         confirmNestBallSelection,
+        confirmBossOrdersSelection,
+        confirmFightingGongSelection,
         attack,
+        useAbility,
+        distributeEnergyToTarget,
     };
 }
 

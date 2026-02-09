@@ -9,6 +9,7 @@ import {
     Easing,
 } from 'react-native';
 import Colors from '../constants/colors';
+import { PikachuCoin, PokemonTcgCoin } from './CoinGraphics';
 
 interface CoinFlipProps {
     visible: boolean;
@@ -114,14 +115,16 @@ export const CoinFlip: React.FC<CoinFlipProps> = ({
                             ]}
                         >
                             {result === null ? (
-                                <Text style={styles.coinText}>?</Text>
+                                <View style={styles.coinNeutral}>
+                                    <Text style={styles.coinText}>?</Text>
+                                </View>
                             ) : result === 'heads' ? (
-                                <View style={styles.coinHeads}>
-                                    <Text style={styles.coinEmoji}>⭐</Text>
+                                <View style={styles.coinFace}>
+                                    <PikachuCoin size={120} />
                                 </View>
                             ) : (
-                                <View style={styles.coinTails}>
-                                    <Text style={styles.coinEmoji}>🌙</Text>
+                                <View style={styles.coinFace}>
+                                    <PokemonTcgCoin size={120} />
                                 </View>
                             )}
                         </Animated.View>
@@ -147,6 +150,22 @@ export const CoinFlip: React.FC<CoinFlipProps> = ({
                                 ? 'Tap to flip again'
                                 : 'Tap the coin to flip'}
                     </Text>
+
+                    {/* Legend */}
+                    <View style={styles.legendRow}>
+                        <View style={styles.legendItem}>
+                            <View style={styles.legendIcon}>
+                                <PikachuCoin size={30} />
+                            </View>
+                            <Text style={styles.legendText}>Heads</Text>
+                        </View>
+                        <View style={styles.legendItem}>
+                            <View style={styles.legendIcon}>
+                                <PokemonTcgCoin size={30} />
+                            </View>
+                            <Text style={styles.legendText}>Tails</Text>
+                        </View>
+                    </View>
 
                     {/* Done Button */}
                     <TouchableOpacity
@@ -195,29 +214,43 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
         elevation: 10,
     },
-    coinHeads: {
+    coinNeutral: {
         width: '100%',
         height: '100%',
         borderRadius: 60,
-        backgroundColor: '#FFD700',
+        backgroundColor: '#B8860B',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    coinTails: {
+    coinFace: {
         width: '100%',
         height: '100%',
-        borderRadius: 60,
-        backgroundColor: '#C0C0C0',
         justifyContent: 'center',
         alignItems: 'center',
     },
     coinText: {
         fontSize: 48,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#FFF',
     },
-    coinEmoji: {
-        fontSize: 48,
+    legendRow: {
+        flexDirection: 'row',
+        gap: 30,
+        marginTop: 15,
+    },
+    legendItem: {
+        alignItems: 'center',
+    },
+    legendIcon: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    legendText: {
+        fontSize: 12,
+        color: '#888',
+        marginTop: 4,
     },
     resultBadge: {
         marginTop: 20,

@@ -9,6 +9,7 @@ import {
     Easing,
 } from 'react-native';
 import Colors from '../constants/colors';
+import { PikachuCoin, PokemonTcgCoin } from './CoinGraphics';
 
 interface GameStartCoinFlipProps {
     visible: boolean;
@@ -104,14 +105,16 @@ export const GameStartCoinFlip: React.FC<GameStartCoinFlipProps> = ({
                         ]}
                     >
                         {result === null ? (
-                            <Text style={styles.coinText}>?</Text>
+                            <View style={styles.coinNeutral}>
+                                <Text style={styles.coinText}>?</Text>
+                            </View>
                         ) : result === 'heads' ? (
-                            <View style={styles.coinHeads}>
-                                <Text style={styles.coinEmoji}>⭐</Text>
+                            <View style={styles.coinFace}>
+                                <PikachuCoin size={140} />
                             </View>
                         ) : (
-                            <View style={styles.coinTails}>
-                                <Text style={styles.coinEmoji}>🌙</Text>
+                            <View style={styles.coinFace}>
+                                <PokemonTcgCoin size={140} />
                             </View>
                         )}
                     </Animated.View>
@@ -123,7 +126,9 @@ export const GameStartCoinFlip: React.FC<GameStartCoinFlipProps> = ({
                                 style={[styles.choiceButton, styles.headsButton]}
                                 onPress={() => handleChoose('heads')}
                             >
-                                <Text style={styles.choiceEmoji}>⭐</Text>
+                                <View style={styles.choiceIcon}>
+                                    <PikachuCoin size={50} />
+                                </View>
                                 <Text style={styles.choiceText}>Heads</Text>
                             </TouchableOpacity>
 
@@ -131,7 +136,9 @@ export const GameStartCoinFlip: React.FC<GameStartCoinFlipProps> = ({
                                 style={[styles.choiceButton, styles.tailsButton]}
                                 onPress={() => handleChoose('tails')}
                             >
-                                <Text style={styles.choiceEmoji}>🌙</Text>
+                                <View style={styles.choiceIcon}>
+                                    <PokemonTcgCoin size={50} />
+                                </View>
                                 <Text style={styles.choiceText}>Tails</Text>
                             </TouchableOpacity>
                         </View>
@@ -198,29 +205,24 @@ const styles = StyleSheet.create({
         elevation: 20,
         marginBottom: 30,
     },
-    coinHeads: {
+    coinNeutral: {
         width: '100%',
         height: '100%',
         borderRadius: 70,
-        backgroundColor: '#FFD700',
+        backgroundColor: '#B8860B',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    coinTails: {
+    coinFace: {
         width: '100%',
         height: '100%',
-        borderRadius: 70,
-        backgroundColor: '#C0C0C0',
         justifyContent: 'center',
         alignItems: 'center',
     },
     coinText: {
         fontSize: 60,
         fontWeight: 'bold',
-        color: '#333',
-    },
-    coinEmoji: {
-        fontSize: 60,
+        color: '#FFF',
     },
     choiceRow: {
         flexDirection: 'row',
@@ -238,9 +240,11 @@ const styles = StyleSheet.create({
     tailsButton: {
         backgroundColor: '#C0C0C0',
     },
-    choiceEmoji: {
-        fontSize: 32,
-        marginBottom: 4,
+    choiceIcon: {
+        width: 60,
+        height: 60,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     choiceText: {
         fontSize: 16,

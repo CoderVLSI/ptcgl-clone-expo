@@ -56,6 +56,10 @@ export interface TypeValue {
 
 // Available sets from the Pokemon TCG Data repo
 export const AVAILABLE_SETS = {
+    // Mega Evolution Era (2025-2026)
+    asc: 'Ascended Heroes', // Keeping 'asc' key for backward compat but mapping to real set if needed or just use me2pt5
+    me2pt5: 'Ascended Heroes',
+    me1: 'Mega Evolution',
     // Scarlet & Violet Era
     sv1: 'Scarlet & Violet',
     sv2: 'Paldea Evolved',

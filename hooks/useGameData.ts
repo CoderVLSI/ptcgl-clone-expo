@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, GameState, Player } from '../types/game';
-import { createCharizardExDeck, createDragapultExDeck } from '../data/standardDecks';
+import { createMegaLucarioExDeck, createDragapultExDeck } from '../data/standardDecks';
 
 export interface GameSetupData {
     playerDeck: Card[];
@@ -49,18 +49,18 @@ export function useGameData() {
             setSetupPhase('loading');
 
             // Use 2026 Standard Format top decks (async - fetches from API)
-            // Player: Charizard ex deck (60 cards)
+            // Player: Mega Lucario ex deck (60 cards)
             // Opponent: Dragapult ex deck (60 cards)
-            const [charizardDeck, dragapultDeck] = await Promise.all([
-                createCharizardExDeck(),
+            const [megaLucarioDeck, dragapultDeck] = await Promise.all([
+                createMegaLucarioExDeck(),
                 createDragapultExDeck(),
             ]);
 
-            console.log(`Player deck size: ${charizardDeck.length}`);
+            console.log(`Player deck size: ${megaLucarioDeck.length}`);
             console.log(`Opponent deck size: ${dragapultDeck.length}`);
 
             // Set decks (already shuffled in builders)
-            setPlayerDeck(charizardDeck);
+            setPlayerDeck(megaLucarioDeck);
             setOpponentDeck(dragapultDeck);
             setDecksReady(true);
             setSetupPhase('coin_flip');
@@ -101,17 +101,65 @@ export function useGameData() {
         setSetupPhase('coin_flip');
     }
 
+    // Helper to draw initial hand with mulligans
+    function drawInitialHand(deck: Card[]): { hand: Card[], remainingDeck: Card[], mulligans: number } {
+        let currentDeck = [...deck];
+        let mulligans = 0;
+
+        while (true) {
+            // Shuffle
+            currentDeck = shuffle(currentDeck);
+
+            // Draw 7
+            const hand = currentDeck.slice(0, 7);
+            const remaining = currentDeck.slice(7);
+
+            // Check for Basic Pokemon
+            const hasBasic = hand.some(c => c.type === 'pokemon' && c.subtypes?.includes('Basic'));
+
+            if (hasBasic) {
+                return { hand, remainingDeck: remaining, mulligans };
+            }
+
+            // Mulligan
+            mulligans++;
+            console.log('Mulligan! No Basic Pokemon found.');
+            // Shuffle hand back into deck (which is just the full deck again)
+            currentDeck = [...hand, ...remaining];
+        }
+    }
+
     // Called after coin flip - prepares hands for active selection
     function onCoinFlipComplete(playerFirst: boolean) {
         setPlayerGoesFirst(playerFirst);
 
-        // Shuffle decks one more time
-        let pDeck = shuffle([...playerDeck]);
-        let oDeck = shuffle([...opponentDeck]);
+        // Draw hands with Mulligan logic
+        const playerResult = drawInitialHand([...playerDeck]);
+        const opponentResult = drawInitialHand([...opponentDeck]);
 
-        // Draw 7 cards each
-        const pHand = pDeck.splice(0, 7);
-        const oHand = oDeck.splice(0, 7);
+        let pHand = playerResult.hand;
+        let oHand = opponentResult.hand;
+        let pDeck = playerResult.remainingDeck;
+        let oDeck = opponentResult.remainingDeck;
+
+        // Apply Mulligan Penalties (Extra Cards)
+        // If Player mulliganed, Opponent draws extra
+        if (playerResult.mulligans > 0) {
+            const extra = playerResult.mulligans;
+            const extraCards = oDeck.slice(0, extra);
+            oHand = [...oHand, ...extraCards];
+            oDeck = oDeck.slice(extra);
+            console.log(`Opponent drew ${extra} extra cards due to Player mulligans.`);
+        }
+
+        // If Opponent mulliganed, Player draws extra
+        if (opponentResult.mulligans > 0) {
+            const extra = opponentResult.mulligans;
+            const extraCards = pDeck.slice(0, extra);
+            pHand = [...pHand, ...extraCards];
+            pDeck = pDeck.slice(extra);
+            console.log(`Player drew ${extra} extra cards due to Opponent mulligans.`);
+        }
 
         setPlayerHand(pHand);
         setOpponentHand(oHand);
@@ -126,8 +174,8 @@ export function useGameData() {
             // Player needs to choose
             setSetupPhase('select_active');
         } else {
-            // Auto-select if only one basic (or none - fallback)
-            const selectedActive = basics[0] || pHand[0];
+            // Auto-select the only basic (guaranteed to exist now due to mulligan)
+            const selectedActive = basics[0];
             finishSetup(selectedActive, pHand, oHand, pDeck, oDeck, playerFirst);
         }
     }
@@ -164,7 +212,7 @@ export function useGameData() {
             name: 'You',
             deck: pDeck,
             hand: playerHandFiltered,
-            activePokemon: playerActive,
+            activePokemon: { ...playerActive, playedTurn: 0 },
             bench: [],
             prizeCards: playerPrizes,
             discardPile: [],
@@ -175,7 +223,7 @@ export function useGameData() {
             name: 'Trainer Red',
             deck: oDeck,
             hand: opponentHandFiltered,
-            activePokemon: opponentActive,
+            activePokemon: opponentActive ? { ...opponentActive, playedTurn: 0 } : undefined,
             bench: [],
             prizeCards: opponentPrizes,
             discardPile: [],
@@ -188,7 +236,7 @@ export function useGameData() {
             phase: 'main',
             player,
             opponent,
-            timeRemaining: 180,
+            timeRemaining: 60,
             message: goesFirst ? 'Your turn! Play a card.' : "Opponent's turn...",
         });
 
@@ -226,6 +274,7 @@ export function useGameData() {
                     deck: newDeck,
                     hand: newHand,
                 },
+                timeRemaining: 60,
                 message: nextPlayer === 'player'
                     ? `Your turn! Drew ${drawnCard?.name || 'nothing'}.`
                     : "Opponent's turn...",
