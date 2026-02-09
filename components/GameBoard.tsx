@@ -353,7 +353,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 }
             ]
         );
-    }, [gameState, logicState, pendingEnergyCard, pendingEvolveCard, attachEnergy, evolvePokemon, setActivePokemon, distributeEnergyToTarget]);
+    }, [gameState, logicState, pendingEnergyCard, pendingEvolveCard, attachEnergy, evolvePokemon, setActivePokemon, distributeEnergyToTarget, setLogicState]);
 
 
 
@@ -375,7 +375,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             actionMode: 'attach_energy',
             message: 'Tap a Pokémon to attach energy to',
         }));
-    }, [selectedHandCard]);
+    }, [selectedHandCard, setLogicState]);
 
     const handleEvolve = useCallback(() => {
         if (!selectedHandCard) return;
@@ -389,7 +389,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             actionMode: 'evolve',
             message: 'Tap a Pokémon to evolve',
         }));
-    }, [selectedHandCard]);
+    }, [selectedHandCard, setLogicState]);
 
     const handlePlayTrainer = useCallback(() => {
         if (!selectedHandCard) return;

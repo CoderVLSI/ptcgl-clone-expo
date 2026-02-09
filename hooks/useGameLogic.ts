@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Player, GameState, EnergyType, GameLogicState, Attack } from '../types/game';
 
 export interface GameLogicReturn {
