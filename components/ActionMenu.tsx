@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
+    PanResponder,
+    Dimensions,
 } from 'react-native';
 import { Card } from '../types/game';
 import Colors from '../constants/colors';
@@ -23,8 +25,10 @@ interface ActionMenuProps {
     canPlayTrainer?: boolean;
     canSetActive?: boolean;
     message?: string;
-    selectionMode?: boolean; // If true, hide action buttons and only show cancel
+    selectionMode?: boolean;
 }
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export const ActionMenu: React.FC<ActionMenuProps> = ({
     card,
@@ -43,6 +47,25 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
     message,
     selectionMode = false,
 }) => {
+    // Position state - default below end turn button
+    const [position, setPosition] = useState({ x: SCREEN_WIDTH - 170, y: 100 });
+
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: () => true,
+            onPanResponderMove: (_, gesture) => {
+                setPosition({
+                    x: Math.max(0, Math.min(SCREEN_WIDTH - 160, position.x + gesture.dx)),
+                    y: Math.max(0, Math.min(SCREEN_HEIGHT - 200, position.y + gesture.dy)),
+                });
+            },
+            onPanResponderRelease: () => {
+                // Position is already updated
+            },
+        })
+    ).current;
+
     if (!visible || !card) return null;
 
     const actions: { label: string; onPress: () => void; enabled: boolean; color: string }[] = [];
@@ -93,7 +116,18 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
     }
 
     return (
-        <View style={styles.container}>
+        <View
+            style={[
+                styles.container,
+                { left: position.x, top: position.y },
+            ]}
+            {...panResponder.panHandlers}
+        >
+            {/* Drag Handle */}
+            <View style={styles.dragHandle}>
+                <View style={styles.dragHandleBar} />
+            </View>
+
             {/* Card Info Header */}
             <View style={styles.header}>
                 <View style={styles.cardInfo}>
@@ -145,13 +179,12 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        right: 10,
-        top: 70, // Below end turn button
         backgroundColor: '#1A1A2E',
         borderRadius: 12,
         borderWidth: 2,
         borderColor: Colors.card.highlight,
         minWidth: 160,
+        maxWidth: 180,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.5,
@@ -159,15 +192,25 @@ const styles = StyleSheet.create({
         elevation: 10,
         zIndex: 100,
     },
+    dragHandle: {
+        alignItems: 'center',
+        paddingVertical: 6,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+    },
+    dragHandleBar: {
+        width: 40,
+        height: 4,
+        backgroundColor: '#555',
+        borderRadius: 2,
+    },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 12,
-        paddingTop: 10,
+        paddingTop: 8,
         paddingBottom: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
     },
     cardInfo: {
         flex: 1,
