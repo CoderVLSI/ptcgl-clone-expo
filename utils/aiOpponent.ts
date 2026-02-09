@@ -194,6 +194,7 @@ export function applyAIAction(
                     bench: [...opponent.bench, card],
                 },
                 message: `Opponent played ${card.name} to bench!`,
+                timeRemaining: gameState.timeRemaining, // Preserve timer
             };
         }
 
@@ -212,7 +213,7 @@ export function applyAIAction(
                     ...evoCard,
                     attachedEnergy: oldPokemon.attachedEnergy,
                     damageCounters: oldPokemon.damageCounters,
-                    id: oldPokemon.id, // Keep ID for state continuity? Or use new one?
+                    id: oldPokemon.id,
                 };
             } else {
                 newBench = newBench.map(p => {
@@ -238,6 +239,7 @@ export function applyAIAction(
                     bench: newBench,
                 },
                 message: `Opponent evolved ${oldPokemon?.name} into ${evoCard.name}!`,
+                timeRemaining: gameState.timeRemaining, // Preserve timer
             };
         }
 
@@ -275,6 +277,7 @@ export function applyAIAction(
                     bench: newBench,
                 },
                 message: `Opponent attached energy to ${newActive?.id === action.targetId ? newActive.name : 'Bench'}!`,
+                timeRemaining: gameState.timeRemaining, // Preserve timer
             };
         }
 
@@ -299,6 +302,7 @@ export function applyAIAction(
                     discardPile: [...opponent.discardPile, card],
                 },
                 message: `Opponent played ${card.name}!`,
+                timeRemaining: gameState.timeRemaining, // Preserve timer
             };
         }
 

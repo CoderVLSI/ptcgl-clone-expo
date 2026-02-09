@@ -227,7 +227,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 // Apply action
                 const nextState = applyAIAction(currentState, action);
                 currentState = nextState;
-                updateGameState(currentState);
+                updateGameState(nextState);
 
                 // If it was an attack, turn ends automatically in applyAIAction
                 if (action.type === 'ATTACK') break;

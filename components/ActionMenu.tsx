@@ -121,57 +121,64 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                 styles.container,
                 { left: position.x, top: position.y },
             ]}
-            {...panResponder.panHandlers}
         >
-            {/* Drag Handle */}
-            <View style={styles.dragHandle}>
-                <View style={styles.dragHandleBar} />
+            {/* Drag Handle - Only this area is draggable */}
+            <View
+                {...panResponder.panHandlers}
+                style={styles.dragHandleContainer}
+            >
+                <View style={styles.dragHandle}>
+                    <View style={styles.dragHandleBar} />
+                </View>
             </View>
 
-            {/* Card Info Header */}
-            <View style={styles.header}>
-                <View style={styles.cardInfo}>
-                    <Text style={styles.cardName} numberOfLines={1}>{card.name}</Text>
-                    {card.hp && <Text style={styles.cardHP}>{card.hp} HP</Text>}
+            {/* Rest of the menu - not draggable, buttons work */}
+            <View style={styles.menuContent}>
+                {/* Card Info Header */}
+                <View style={styles.header}>
+                    <View style={styles.cardInfo}>
+                        <Text style={styles.cardName} numberOfLines={1}>{card.name}</Text>
+                        {card.hp && <Text style={styles.cardHP}>{card.hp} HP</Text>}
+                    </View>
+                    <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                        <Text style={styles.closeText}>✕</Text>
+                    </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                    <Text style={styles.closeText}>✕</Text>
+
+                {/* Message */}
+                {message && (
+                    <Text style={styles.message}>{message}</Text>
+                )}
+
+                {/* Action Buttons - hide during selection mode */}
+                {!selectionMode && (
+                    <View style={styles.actionsRow}>
+                        {actions.map((action, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                style={[
+                                    styles.actionButton,
+                                    { backgroundColor: action.enabled ? action.color : '#444' },
+                                ]}
+                                onPress={action.onPress}
+                                disabled={!action.enabled}
+                            >
+                                <Text style={[
+                                    styles.actionText,
+                                    !action.enabled && styles.disabledText,
+                                ]}>
+                                    {action.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
+
+                {/* Cancel Button */}
+                <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+                    <Text style={styles.cancelText}>{selectionMode ? 'Cancel Action' : 'Cancel'}</Text>
                 </TouchableOpacity>
             </View>
-
-            {/* Message */}
-            {message && (
-                <Text style={styles.message}>{message}</Text>
-            )}
-
-            {/* Action Buttons - hide during selection mode */}
-            {!selectionMode && (
-                <View style={styles.actionsRow}>
-                    {actions.map((action, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            style={[
-                                styles.actionButton,
-                                { backgroundColor: action.enabled ? action.color : '#444' },
-                            ]}
-                            onPress={action.onPress}
-                            disabled={!action.enabled}
-                        >
-                            <Text style={[
-                                styles.actionText,
-                                !action.enabled && styles.disabledText,
-                            ]}>
-                                {action.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            )}
-
-            {/* Cancel Button */}
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-                <Text style={styles.cancelText}>{selectionMode ? 'Cancel Action' : 'Cancel'}</Text>
-            </TouchableOpacity>
         </View>
     );
 };
@@ -192,7 +199,11 @@ const styles = StyleSheet.create({
         elevation: 10,
         zIndex: 100,
     },
+    dragHandleContainer: {
+        alignItems: 'center',
+    },
     dragHandle: {
+        width: '100%',
         alignItems: 'center',
         paddingVertical: 6,
         borderBottomWidth: 1,
@@ -203,6 +214,9 @@ const styles = StyleSheet.create({
         height: 4,
         backgroundColor: '#555',
         borderRadius: 2,
+    },
+    menuContent: {
+        // No special styles needed, just a container
     },
     header: {
         flexDirection: 'row',

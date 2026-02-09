@@ -192,16 +192,22 @@ const FUTURE_CARDS: Record<string, Partial<Card>> = {
     'Hariyama': {
         name: 'Hariyama',
         type: 'pokemon',
-        hp: 140,
+        hp: 150,
         energyType: 'fighting',
         subtypes: ['Stage 1'],
+        evolvesFrom: 'Makuhita',
+        abilities: [{
+            name: 'Heave-Ho Catcher',
+            type: 'Ability',
+            text: 'Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, you may use this Ability. Switch in 1 of your opponent\'s Benched Pokémon to the Active Spot.'
+        }],
         attacks: [
-            { name: 'Slap Push', damage: 50, energyCost: ['fighting', 'colorless'] },
-            { name: 'Mega Slap', damage: 120, energyCost: ['fighting', 'fighting', 'colorless'] }
+            { name: 'Wild Press', damage: 210, energyCost: ['fighting', 'fighting', 'fighting'], description: 'This Pokémon also does 70 damage to itself.' }
         ],
-        // Using Hariyama (Scarlet & Violet Base)
-        imageUrl: 'https://images.pokemontcg.io/sv1/117.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv1/117_hires.png'
+        weaknesses: [{ type: 'psychic', value: '×2' }],
+        retreatCost: 3,
+        imageUrl: 'https://images.pokemontcg.io/me1/73.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/73_hires.png'
     },
     // 'Makuhita' is in me1/me2pt5
     'Makuhita': {
@@ -210,10 +216,12 @@ const FUTURE_CARDS: Record<string, Partial<Card>> = {
         hp: 80,
         energyType: 'fighting',
         subtypes: ['Basic'],
-        attacks: [{ name: 'Slap', damage: 20, energyCost: ['fighting'] }],
-        // Using Makuhita (Scarlet & Violet Base)
-        imageUrl: 'https://images.pokemontcg.io/sv1/116.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv1/116_hires.png'
+        attacks: [
+            { name: 'Corkscrew Punch', damage: 10, energyCost: ['fighting'] },
+            { name: 'Confront', damage: 30, energyCost: ['fighting', 'fighting'] }
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me1/72.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/72_hires.png'
     },
     // 'Fighting Gong' is in me1 (Trainer)
     'Fighting Gong': {
