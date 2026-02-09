@@ -1,7 +1,7 @@
 import { GameState, Card, Player, EnergyType, Attack } from '../types/game';
 
 export interface AIAction {
-    type: 'PLAY_BASIC' | 'ATTACH_ENERGY' | 'PLAY_TRAINER' | 'END_TURN' | 'ATTACK';
+    type: 'PLAY_BASIC' | 'PLAY_EVOLUTION' | 'ATTACH_ENERGY' | 'PLAY_TRAINER' | 'END_TURN' | 'ATTACK';
     cardId?: string;
     targetId?: string;
     attackIndex?: number;
@@ -38,128 +38,142 @@ function checkEnergy(pokemon: Card, attack: Attack): boolean {
     return remainingEnergy >= cost.length;
 }
 
-// Simple AI that makes decisions for the opponent
-export function getAIActions(gameState: GameState): AIAction[] {
+// Iterative AI that makes one decision at a time
+export function getNextAIAction(gameState: GameState, usedSupporter: boolean = false, attachedEnergy: boolean = false): AIAction | null {
     const opponent = gameState.opponent;
-    const actions: AIAction[] = [];
+    const player = gameState.player;
 
-    // 1. Try to play Basic Pokémon to bench (up to 5 bench slots)
+    // 1. If we can attack and it's meaningful, consider it later but prioritize setup
+    // Actually, in TCG, you typically do all actions THEN attack because attack ends turn.
+
+    // 2. Play Basic Pokemon to bench
     const basicPokemon = opponent.hand.filter(
         c => c.type === 'pokemon' && c.subtypes?.includes('Basic')
     );
-
-    const benchSlotsAvailable = 5 - opponent.bench.length;
-    const basicsToPlay = basicPokemon.slice(0, Math.min(2, benchSlotsAvailable)); // Play up to 2 basics
-
-    for (const card of basicsToPlay) {
-        actions.push({
+    if (opponent.bench.length < 5 && basicPokemon.length > 0) {
+        return {
             type: 'PLAY_BASIC',
-            cardId: card.id,
-            description: `Playing ${card.name} to bench`,
-        });
+            cardId: basicPokemon[0].id,
+            description: `Playing ${basicPokemon[0].name} to bench`,
+        };
     }
 
-    // 2. Try to attach energy (one per turn)
-    const energyCards = opponent.hand.filter(c => c.type === 'energy');
-    if (energyCards.length > 0) {
-        // Prioritize Active Pokemon if it needs energy for an attack
-        let targetId = opponent.activePokemon?.id;
-        let bestEnergy = energyCards[0];
-
-        // Specific logic could be improved here (match energy type)
-        // For now, just attach the first energy to active, or bench if active full?
-        // Let's stick to simple: Active -> Bench[0]
-
-        if (!targetId && opponent.bench.length > 0) {
-            targetId = opponent.bench[0].id; // Fallback
+    // 3. Evolve Pokemon
+    const evolutions = opponent.hand.filter(c => c.type === 'pokemon' && (c.subtypes?.includes('Stage 1') || c.subtypes?.includes('Stage 2') || c.subtypes?.includes('MEGA')));
+    for (const evo of evolutions) {
+        // Find target in active
+        if (opponent.activePokemon && evo.evolvesFrom === opponent.activePokemon.name) {
+            return {
+                type: 'PLAY_EVOLUTION',
+                cardId: evo.id,
+                targetId: opponent.activePokemon.id,
+                description: `Evolving ${opponent.activePokemon.name} into ${evo.name}`,
+            };
         }
-
-        if (targetId) {
-            // Find name for description
-            const targetName = opponent.activePokemon?.id === targetId
-                ? opponent.activePokemon?.name
-                : opponent.bench.find(c => c.id === targetId)?.name;
-
-            actions.push({
-                type: 'ATTACH_ENERGY',
-                cardId: bestEnergy.id,
-                targetId: targetId,
-                description: `Attaching ${bestEnergy.name} to ${targetName}`,
-            });
+        // Find target on bench
+        const benchTarget = opponent.bench.find(p => p.evolvesFrom === evo.name);
+        if (benchTarget) {
+            return {
+                type: 'PLAY_EVOLUTION',
+                cardId: evo.id,
+                targetId: benchTarget.id,
+                description: `Evolving ${benchTarget.name} into ${evo.name}`,
+            };
         }
     }
 
-    // 3. Try to play Stadium cards
-    const stadiumCards = opponent.hand.filter(
-        c => c.type === 'trainer' && c.subtypes?.includes('Stadium')
-    );
-
-    if (stadiumCards.length > 0) {
-        // Find a stadium that's different from the current one
-        const playableStadium = stadiumCards.find(s => s.name !== gameState.stadium?.name);
-        if (playableStadium) {
-            actions.push({
-                type: 'PLAY_TRAINER',
-                cardId: playableStadium.id,
-                description: `Playing ${playableStadium.name}`,
-            });
+    // 4. Attach Energy (once per turn)
+    if (!attachedEnergy) {
+        const energyCards = opponent.hand.filter(c => c.type === 'energy');
+        if (energyCards.length > 0) {
+            const active = opponent.activePokemon;
+            // Attach to active if it needs energy for its best attack
+            if (active) {
+                const needsEnergy = active.attacks?.some(a => !checkEnergy(active, a));
+                if (needsEnergy) {
+                    return {
+                        type: 'ATTACH_ENERGY',
+                        cardId: energyCards[0].id,
+                        targetId: active.id,
+                        description: `Attaching ${energyCards[0].name} to ${active.name}`,
+                    };
+                }
+            }
+            // Otherwise attach to first benched
+            if (opponent.bench.length > 0) {
+                return {
+                    type: 'ATTACH_ENERGY',
+                    cardId: energyCards[0].id,
+                    targetId: opponent.bench[0].id,
+                    description: `Attaching ${energyCards[0].name} to ${opponent.bench[0].name}`,
+                };
+            }
         }
     }
 
-    // 4. Try to play Item trainers (not Supporters for simplicity)
-    const itemCards = opponent.hand.filter(
-        c => c.type === 'trainer' && c.subtypes?.includes('Item')
-    );
+    // 5. Play Trainers
+    const trainers = opponent.hand.filter(c => c.type === 'trainer');
+    for (const trainer of trainers) {
+        const isSupporter = trainer.subtypes?.includes('Supporter');
+        if (isSupporter && usedSupporter) continue;
 
-    if (itemCards.length > 0 && Math.random() > 0.5) { // 50% chance to play an item
-        actions.push({
+        // Skip complex trainers AI doesn't handle yet (like Ultra Ball)
+        if (['Ultra Ball', 'Nest Ball', "Boss's Orders"].includes(trainer.name)) continue;
+
+        return {
             type: 'PLAY_TRAINER',
-            cardId: itemCards[0].id,
-            description: `Playing ${itemCards[0].name}`,
-        });
+            cardId: trainer.id,
+            description: `Playing ${trainer.name}`,
+        };
     }
 
-    // 5. ATTACK or END TURN
-    let attacked = false;
+    // 6. Attack if possible
     const active = opponent.activePokemon;
-
-    // Check if we can attack
     if (active && active.attacks && active.attacks.length > 0) {
-        // Find best attack (highest damage) that we have energy for
         let bestAttackIndex = -1;
         let maxDamage = -1;
 
         active.attacks.forEach((attack, index) => {
             if (checkEnergy(active, attack)) {
-                if (attack.damage > maxDamage) {
-                    maxDamage = attack.damage;
+                // Calculate real damage considering W/R for AI's choice
+                let damage = attack.damage;
+                const defender = player.activePokemon;
+                if (defender) {
+                    const attackerType = active.energyType;
+                    const weakness = defender.weaknesses?.find(w => w.type === attackerType);
+                    if (weakness) {
+                        if (weakness.value.includes('x2') || weakness.value.includes('×2')) damage *= 2;
+                        else if (weakness.value.startsWith('+')) damage += parseInt(weakness.value.slice(1)) || 0;
+                    }
+                    const resistance = defender.resistances?.find(r => r.type === attackerType);
+                    if (resistance) {
+                        damage = Math.max(0, damage - 30);
+                    }
+                }
+
+                if (damage >= maxDamage) {
+                    maxDamage = damage;
                     bestAttackIndex = index;
                 }
             }
         });
 
         if (bestAttackIndex !== -1) {
-            const attack = active.attacks[bestAttackIndex];
-            actions.push({
+            return {
                 type: 'ATTACK',
                 attackIndex: bestAttackIndex,
-                description: `Using ${attack.name}!`,
-            });
-            attacked = true;
+                description: `Using ${active.attacks[bestAttackIndex].name}`,
+            };
         }
     }
 
-    if (!attacked) {
-        actions.push({
-            type: 'END_TURN',
-            description: 'Ending turn',
-        });
-    }
-
-    return actions;
+    // 7. Nothing left to do
+    return {
+        type: 'END_TURN',
+        description: 'Ending turn',
+    };
 }
 
-// Apply a single AI action to the game state
 export function applyAIAction(
     gameState: GameState,
     action: AIAction
@@ -169,9 +183,8 @@ export function applyAIAction(
     switch (action.type) {
         case 'PLAY_BASIC': {
             if (!action.cardId) return gameState;
-
             const card = opponent.hand.find(c => c.id === action.cardId);
-            if (!card || opponent.bench.length >= 5) return gameState;
+            if (!card) return gameState;
 
             return {
                 ...gameState,
@@ -184,17 +197,59 @@ export function applyAIAction(
             };
         }
 
-        case 'ATTACH_ENERGY': {
+        case 'PLAY_EVOLUTION': {
             if (!action.cardId || !action.targetId) return gameState;
+            const evoCard = opponent.hand.find(c => c.id === action.cardId);
+            if (!evoCard) return gameState;
 
-            const energyCard = opponent.hand.find(c => c.id === action.cardId);
-            if (!energyCard) return gameState;
-
-            // Find target (active or bench)
+            let oldPokemon: Card | null = null;
             let newActive = opponent.activePokemon;
             let newBench = [...opponent.bench];
 
-            if (newActive && newActive.id === action.targetId) {
+            if (newActive?.id === action.targetId) {
+                oldPokemon = newActive;
+                newActive = {
+                    ...evoCard,
+                    attachedEnergy: oldPokemon.attachedEnergy,
+                    damageCounters: oldPokemon.damageCounters,
+                    id: oldPokemon.id, // Keep ID for state continuity? Or use new one?
+                };
+            } else {
+                newBench = newBench.map(p => {
+                    if (p.id === action.targetId) {
+                        oldPokemon = p;
+                        return {
+                            ...evoCard,
+                            attachedEnergy: p.attachedEnergy,
+                            damageCounters: p.damageCounters,
+                            id: p.id,
+                        };
+                    }
+                    return p;
+                });
+            }
+
+            return {
+                ...gameState,
+                opponent: {
+                    ...opponent,
+                    hand: opponent.hand.filter(c => c.id !== action.cardId),
+                    activePokemon: newActive,
+                    bench: newBench,
+                },
+                message: `Opponent evolved ${oldPokemon?.name} into ${evoCard.name}!`,
+            };
+        }
+
+        case 'ATTACH_ENERGY': {
+            if (!action.cardId || !action.targetId) return gameState;
+            const energyCard = opponent.hand.find(c => c.id === action.cardId);
+            if (!energyCard) return gameState;
+
+            let newActive = opponent.activePokemon;
+            let newBench = [...opponent.bench];
+
+            if (newActive?.id === action.targetId) {
                 newActive = {
                     ...newActive,
                     attachedEnergy: [...(newActive.attachedEnergy || []), energyCard.energyType || 'colorless'],
@@ -211,10 +266,6 @@ export function applyAIAction(
                 });
             }
 
-            const targetName = newActive?.id === action.targetId
-                ? newActive.name
-                : newBench.find(p => p.id === action.targetId)?.name || 'Pokémon';
-
             return {
                 ...gameState,
                 opponent: {
@@ -223,53 +274,20 @@ export function applyAIAction(
                     activePokemon: newActive,
                     bench: newBench,
                 },
-                message: `Opponent attached energy to ${targetName}!`,
+                message: `Opponent attached energy to ${newActive?.id === action.targetId ? newActive.name : 'Bench'}!`,
             };
         }
 
         case 'PLAY_TRAINER': {
             if (!action.cardId) return gameState;
-
             const card = opponent.hand.find(c => c.id === action.cardId);
             if (!card) return gameState;
 
-            const isStadium = card.subtypes?.includes('Stadium');
-
-            // Stadium cards: stay in play instead of going to discard
-            if (isStadium) {
-                // Can't play same stadium that's already in play
-                if (gameState.stadium?.name === card.name) {
-                    return gameState;
-                }
-
-                // Discard old stadium if exists
-                const oldStadium = gameState.stadium;
-                const opponentDiscardPile = oldStadium
-                    ? [...opponent.discardPile, oldStadium]
-                    : opponent.discardPile;
-
-                return {
-                    ...gameState,
-                    opponent: {
-                        ...opponent,
-                        hand: opponent.hand.filter(c => c.id !== action.cardId),
-                        discardPile: opponentDiscardPile,
-                    },
-                    stadium: card,
-                    stadiumOwner: 'opponent',
-                    message: `Opponent played Stadium: ${card.name}!`,
-                };
-            }
-
-            // Simple trainer effect: draw a card
-            let newDeck = [...opponent.deck];
+            // Simplified: Most trainers just draw 2 cards for AI
             let newHand = opponent.hand.filter(c => c.id !== action.cardId);
-
-            if (newDeck.length > 0) {
-                const drawnCard = newDeck.shift();
-                if (drawnCard) {
-                    newHand.push(drawnCard);
-                }
+            let newDeck = [...opponent.deck];
+            for (let i = 0; i < 2; i++) {
+                if (newDeck.length > 0) newHand.push(newDeck.shift()!);
             }
 
             return {
@@ -286,54 +304,32 @@ export function applyAIAction(
 
         case 'ATTACK': {
             if (action.attackIndex === undefined || !opponent.activePokemon) return gameState;
-
             const attack = opponent.activePokemon.attacks?.[action.attackIndex];
             if (!attack) return gameState;
 
-            const damage = attack.damage;
+            let damage = attack.damage;
             const defender = gameState.player.activePokemon;
+            if (!defender) return gameState;
 
-            if (!defender) {
-                // Attack but no defender? Should not happen in normal flow but possible if player has no active
-                return gameState;
+            // Engine logic mirror (W/R)
+            const attackerType = opponent.activePokemon.energyType;
+            if (attackerType) {
+                const weakness = defender.weaknesses?.find(w => w.type === attackerType);
+                if (weakness) {
+                    if (weakness.value.includes('x2') || weakness.value.includes('×2')) damage *= 2;
+                    else if (weakness.value.startsWith('+')) damage += parseInt(weakness.value.slice(1)) || 0;
+                }
+                const resistance = defender.resistances?.find(r => r.type === attackerType);
+                if (resistance) damage = Math.max(0, damage - 30);
             }
 
             let newDefender = { ...defender };
-            let currentHp = newDefender.hp || 0;
-            currentHp -= damage;
-            newDefender.hp = currentHp;
+            newDefender.hp = (newDefender.hp || 0) - damage;
 
-            const knockout = currentHp <= 0;
-            let drawnPrizes: Card[] = [];
-            let remainingPrizes = [...opponent.prizeCards];
-
-            if (knockout) {
-                const prizeCount = 1;
-                drawnPrizes = remainingPrizes.splice(0, prizeCount);
-            }
-
-            // Handle Knockout (Player must switch - Simplified: Auto-promote first bench)
+            const knockout = newDefender.hp <= 0;
             let playerBench = gameState.player.bench;
-            let playerActive = knockout ? undefined : newDefender;
-
-            if (knockout && playerBench.length > 0) {
-                playerActive = playerBench[0];
-                playerBench = playerBench.slice(1);
-            }
-
-            // AI Turn ends after attack
-            // Prepare for Player Turn
-            let playerDeck = [...gameState.player.deck];
-            let playerHand = [...gameState.player.hand];
-            let drawnCardName = 'nothing';
-
-            if (playerDeck.length > 0) {
-                const drawnCard = playerDeck.shift();
-                if (drawnCard) {
-                    playerHand.push(drawnCard);
-                    drawnCardName = drawnCard.name;
-                }
-            }
+            let playerActive = knockout ? (playerBench.length > 0 ? playerBench[0] : undefined) : newDefender;
+            if (knockout && playerBench.length > 0) playerBench = playerBench.slice(1);
 
             return {
                 ...gameState,
@@ -344,44 +340,24 @@ export function applyAIAction(
                     ...gameState.player,
                     activePokemon: playerActive,
                     bench: playerBench,
-                    deck: playerDeck,
-                    hand: playerHand,
                     discardPile: knockout ? [...gameState.player.discardPile, defender] : gameState.player.discardPile,
+                    prizeCards: gameState.player.prizeCards, // AI doesn't take player prizes
                 },
                 opponent: {
                     ...opponent,
-                    prizeCards: remainingPrizes,
-                    hand: [...opponent.hand, ...drawnPrizes],
+                    prizeCards: knockout ? opponent.prizeCards.slice(1) : opponent.prizeCards,
                 },
-                message: `Opponent used ${attack.name}! Dealt ${damage} damage.${knockout ? ' KNOCKOUT!' : ''}. Your turn!`,
+                message: `Opponent used ${attack.name}! Dealt ${damage} damage.${knockout ? ' KNOCKOUT!' : ''} Your turn!`,
             };
         }
 
         case 'END_TURN': {
-            // Draw card for player at start of their turn
-            let playerDeck = [...gameState.player.deck];
-            let playerHand = [...gameState.player.hand];
-            let drawnCardName = 'nothing';
-
-            if (playerDeck.length > 0) {
-                const drawnCard = playerDeck.shift();
-                if (drawnCard) {
-                    playerHand.push(drawnCard);
-                    drawnCardName = drawnCard.name;
-                }
-            }
-
             return {
                 ...gameState,
                 turn: gameState.turn + 1,
                 currentPlayer: 'player',
                 timeRemaining: 60,
-                player: {
-                    ...gameState.player,
-                    deck: playerDeck,
-                    hand: playerHand,
-                },
-                message: `Opponent ended turn. Your turn! Drew ${drawnCardName}.`,
+                message: `Opponent ended turn. Your turn!`,
             };
         }
 

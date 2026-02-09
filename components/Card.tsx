@@ -91,6 +91,20 @@ export const Card: React.FC<CardProps> = ({
                             <ActivityIndicator size="small" color={Colors.card.highlight} />
                         </View>
                     )}
+                    {/* Energy overlay - show on top of full card image */}
+                    {showEnergy && card.attachedEnergy && card.attachedEnergy.length > 0 && (
+                        <View style={styles.energyOverlay}>
+                            {card.attachedEnergy.map((energy, index) => (
+                                <View key={index} style={styles.energyIndicator}>
+                                    <View style={[
+                                        styles.energyCircle,
+                                        isSmall && styles.energyCircleSmall,
+                                        { backgroundColor: Colors.energy[energy] || Colors.energy.colorless }
+                                    ]} />
+                                </View>
+                            ))}
+                        </View>
+                    )}
                 </View>
             );
         }
@@ -290,6 +304,33 @@ const styles = StyleSheet.create({
         left: 4,
         flexDirection: 'row',
         alignItems: 'center',
+    },
+    energyOverlay: {
+        position: 'absolute',
+        bottom: 4,
+        left: 4,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    energyIndicator: {
+        marginRight: -4,
+    },
+    energyCircle: {
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        borderWidth: 1.5,
+        borderColor: '#FFF',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.5,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    energyCircleSmall: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
     },
     energyWrapper: {
         marginRight: -4,

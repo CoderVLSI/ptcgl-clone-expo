@@ -54,6 +54,8 @@ export interface Card {
     resistances?: { type: EnergyType; value: string }[];
     playedTurn?: number; // Turn number when this card was put into play
     previousEvolutions?: Card[]; // Store pre-evolutions
+    evolvesFrom?: string; // Set name of Pokémon this evolves from
+    damageCounters?: number; // Damage currently on this card
 }
 
 export interface Ability {
@@ -147,5 +149,6 @@ export function convertApiCard(apiCard: any): Card {
             type: ENERGY_TYPE_MAP[r.type] || 'colorless',
             value: r.value,
         })),
+        evolvesFrom: apiCard.evolvesFrom,
     };
 }

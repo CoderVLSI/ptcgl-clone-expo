@@ -25,6 +25,7 @@ export interface GameLogicReturn {
     confirmDiscardEnergySelection: (cardIds: string[]) => void;
     distributeEnergyToTarget: (targetId: string) => void;
     useAbility: (cardId: string, abilityIndex: number) => boolean;
+    setLogicState: React.Dispatch<React.SetStateAction<GameLogicState>>;
 }
 
 const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
@@ -1247,6 +1248,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         attack,
         useAbility,
         distributeEnergyToTarget,
+        setLogicState,
     };
 }
 

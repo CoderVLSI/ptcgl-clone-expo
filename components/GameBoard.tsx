@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Dimensions } from 'react-native';
+import { View, StyleSheet, SafeAreaView, StatusBar, Dimensions, Alert } from 'react-native';
 import { GameState, Card as CardType, EnergyType } from '../types/game';
 import Colors from '../constants/colors';
 import useGameLogic from '../hooks/useGameLogic';
-import { getAIActions, applyAIAction, AIAction } from '../utils/aiOpponent';
+import { getNextAIAction, applyAIAction, AIAction } from '../utils/aiOpponent';
 import OpponentArea from './OpponentArea';
 import PlayMat from './PlayMat';
 import PlayerArea from './PlayerArea';
@@ -56,6 +56,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         distributeEnergyToTarget,
         attack,
         useAbility,
+        setLogicState,
     } = useGameLogic(externalGameState || null);
 
     const [selectedCardId, setSelectedCardId] = useState<string | undefined>();
@@ -183,54 +184,63 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         }
     }, [gameState?.currentPlayer]);
 
-    // AI Opponent's Turn
+    // AI Opponent's Turn (Iterative)
     useEffect(() => {
         if (!gameState || gameState.currentPlayer !== 'opponent') {
             aiTurnRef.current = -1;
             return;
         }
 
-        // Prevent AI from running twice on the same turn
+        // Only start the AI loop if not already acting
         if (aiActing || aiTurnRef.current === gameState.turn) {
             return;
         }
 
-        // Mark this turn as processed
         aiTurnRef.current = gameState.turn;
         setAiActing(true);
 
-        // Get all AI actions
-        const actions = getAIActions(gameState);
-        let actionIndex = 0;
-        let currentState = gameState;
+        let hasAttachedEnergy = false;
+        let hasPlayedSupporter = false;
 
-        // Execute actions with delays
-        const executeNextAction = () => {
-            if (actionIndex >= actions.length) {
-                setAiActing(false);
-                return;
+        const executeAI = async () => {
+            // Give a small initial delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            let currentState = gameState;
+            if (!currentState) return;
+
+            while (true) {
+                // Fetch next action
+                const action = getNextAIAction(currentState, hasPlayedSupporter, hasAttachedEnergy);
+                if (!action || action.type === 'END_TURN') {
+                    const finalState = applyAIAction(currentState, { type: 'END_TURN', description: 'AI Ending turn' });
+                    updateGameState(finalState);
+                    break;
+                }
+
+                if (action.type === 'ATTACH_ENERGY') hasAttachedEnergy = true;
+                if (action.type === 'PLAY_TRAINER') {
+                    const card = currentState.opponent.hand.find(c => c.id === action.cardId);
+                    if (card?.subtypes?.includes('Supporter')) hasPlayedSupporter = true;
+                }
+
+                // Apply action
+                const nextState = applyAIAction(currentState, action);
+                currentState = nextState;
+                updateGameState(currentState);
+
+                // If it was an attack, turn ends automatically in applyAIAction
+                if (action.type === 'ATTACK') break;
+
+                // Wait before next action
+                await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 800));
             }
 
-            const action = actions[actionIndex];
-            currentState = applyAIAction(currentState, action);
-            updateGameState(currentState);
-            actionIndex++;
-
-            // Delay before next action (500-1500ms random)
-            const delay = action.type === 'END_TURN' ? 500 : Math.random() * 1000 + 500;
-            aiTimeoutRef.current = setTimeout(executeNextAction, delay);
+            setAiActing(false);
         };
 
-        // Start with initial delay
-        aiTimeoutRef.current = setTimeout(executeNextAction, 1000);
-
-        // Cleanup
-        return () => {
-            if (aiTimeoutRef.current) {
-                clearTimeout(aiTimeoutRef.current);
-            }
-        };
-    }, [gameState?.currentPlayer, gameState?.turn, gameState?.opponent.hand.length]);
+        executeAI();
+    }, [gameState?.currentPlayer, gameState?.turn]);
 
     const handleCardPress = useCallback((cardId: string) => {
         if (!gameState) return;
@@ -286,7 +296,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const handleBenchCardPress = useCallback((cardId: string) => {
         if (!gameState) return;
 
-        const card = gameState.player.bench.find(c => c.id === cardId);
+        // Check if card is in bench OR is active Pokemon (for energy/evolve targeting)
+        const card = gameState.player.bench.find(c => c.id === cardId) || gameState.player.activePokemon?.id === cardId ? gameState.player.activePokemon : null;
         if (!card) return;
 
         if (logicState.actionMode === 'select_target') {
@@ -299,17 +310,27 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             return;
         }
 
-        // If pending energy, attach to this bench card
+        // If pending energy, attach to this card (active or bench)
         if (pendingEnergyCard) {
-            attachEnergy(pendingEnergyCard.id, card.id);
-            setPendingEnergyCard(null);
+            const success = attachEnergy(pendingEnergyCard.id, cardId);
+            if (success) {
+                setPendingEnergyCard(null);
+                setShowDialog(true);
+                setShowActionMenu(false);
+                setSelectedHandCard(null);
+            }
             return;
         }
 
-        // If pending evolve, evolve this bench card
+        // If pending evolve, evolve this card (active or bench)
         if (pendingEvolveCard) {
-            evolvePokemon(pendingEvolveCard.id, card.id);
-            setPendingEvolveCard(null);
+            const success = evolvePokemon(pendingEvolveCard.id, cardId);
+            if (success) {
+                setPendingEvolveCard(null);
+                setShowDialog(true);
+                setShowActionMenu(false);
+                setSelectedHandCard(null);
+            }
             return;
         }
 
@@ -655,8 +676,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 }
                 message={
                     logicState.actionMode === 'attach_energy' ? 'Tap a Pokémon to attach energy' :
-                    logicState.actionMode === 'evolve' ? 'Tap a Pokémon to evolve' :
-                    !selectedCardCheck.canPlay ? selectedCardCheck.reason : undefined
+                        logicState.actionMode === 'evolve' ? 'Tap a Pokémon to evolve' :
+                            !selectedCardCheck.canPlay ? selectedCardCheck.reason : undefined
                 }
             />
 

@@ -136,8 +136,8 @@ const FUTURE_CARDS: Record<string, Partial<Card>> = {
         ],
         weaknesses: [{ type: 'grass', value: '×2' }],
         retreatCost: 1,
-        imageUrl: 'https://limitlesstcg.com/images/cards/MEG/74.png',
-        imageUrlLarge: 'https://limitlesstcg.com/images/cards/MEG/74.png'
+        imageUrl: 'https://images.pokemontcg.io/me1/74.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/74_hires.png'
     },
     'Solrock': {
         name: 'Solrock',
@@ -155,8 +155,8 @@ const FUTURE_CARDS: Record<string, Partial<Card>> = {
         ],
         weaknesses: [{ type: 'grass', value: '×2' }],
         retreatCost: 1,
-        imageUrl: 'https://limitlesstcg.com/images/cards/MEG/75.png',
-        imageUrlLarge: 'https://limitlesstcg.com/images/cards/MEG/75.png'
+        imageUrl: 'https://images.pokemontcg.io/me1/75.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/75_hires.png'
     },
     'Radiant Greninja': {
         name: 'Radiant Greninja',
