@@ -303,11 +303,18 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             };
         });
 
+        const prevOppBenchSize = gameState.opponent.bench.length;
+
+        const isHariyamaAbility = evolvedCard.name === 'Hariyama' && (prevOppBenchSize > 0);
+
         setLogicState(prev => ({
             ...prev,
-            actionMode: 'none',
+            actionMode: isHariyamaAbility ? 'switch_opponent_active' : 'none',
+            activeCardId: isHariyamaAbility ? evolvedCard.id : undefined,
             selectedCard: null,
-            message: `${targetCard!.name} evolved into ${evolutionCard.name}!`,
+            message: isHariyamaAbility
+                ? `${targetCard!.name} evolved into ${evolutionCard.name}! Select a Pokémon from opponent bench to switch.`
+                : `${targetCard!.name} evolved into ${evolutionCard.name}!`,
         }));
 
         return true;
@@ -745,8 +752,14 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
     const confirmBossOrdersSelection = useCallback((benchCardId: string) => {
         if (!gameState || !logicState.activeCardId) return;
 
-        const bossOrdersCard = gameState.player.hand.find(c => c.id === logicState.activeCardId);
-        if (!bossOrdersCard) return;
+        // Find the source card (could be Boss's Orders in hand or Hariyama on board)
+        const handSource = gameState.player.hand.find(c => c.id === logicState.activeCardId);
+        const boardSource = (gameState.player.activePokemon?.id === logicState.activeCardId)
+            ? gameState.player.activePokemon
+            : gameState.player.bench.find(c => c.id === logicState.activeCardId);
+
+        const sourceCard = handSource || boardSource;
+        if (!sourceCard) return;
 
         const benchPokemon = gameState.opponent.bench.find(c => c.id === benchCardId);
         if (!benchPokemon) return;
@@ -756,12 +769,16 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
 
         setGameState(prev => {
             if (!prev) return prev;
+
+            // If it's a trainer, it gets discarded. If it's Hariyama, it stays on board.
+            const isTrainer = sourceCard.type === 'trainer';
+
             return {
                 ...prev,
                 player: {
                     ...prev.player,
-                    hand: prev.player.hand.filter(c => c.id !== logicState.activeCardId),
-                    discardPile: [...prev.player.discardPile, bossOrdersCard],
+                    hand: isTrainer ? prev.player.hand.filter(c => c.id !== logicState.activeCardId) : prev.player.hand,
+                    discardPile: isTrainer ? [...prev.player.discardPile, sourceCard] : prev.player.discardPile,
                 },
                 opponent: {
                     ...prev.opponent,
@@ -774,10 +791,10 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
 
         setLogicState(prev => ({
             ...prev,
-            hasPlayedSupporter: true,
+            hasPlayedSupporter: sourceCard.subtypes?.includes('Supporter') ? true : prev.hasPlayedSupporter,
             actionMode: 'none',
             activeCardId: undefined,
-            message: `Boss's Orders switched ${benchPokemon.name} to Active!`,
+            message: `${sourceCard.name} switched ${benchPokemon.name} to Active!`,
         }));
     }, [gameState, logicState.activeCardId]);
 
