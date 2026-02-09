@@ -134,6 +134,8 @@ const FUTURE_CARDS: Record<string, Partial<Card>> = {
         attacks: [
             { name: 'Power Gem', damage: 50, energyCost: ['fighting', 'fighting'] }
         ],
+        weaknesses: [{ type: 'grass', value: '×2' }],
+        retreatCost: 1,
         imageUrl: 'https://limitlesstcg.com/images/cards/MEG/74.png',
         imageUrlLarge: 'https://limitlesstcg.com/images/cards/MEG/74.png'
     },

@@ -56,7 +56,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         }
     }, [externalGameState]);
 
-    // Turn Timer Logic
+    // Turn Timer Logic - runs for both player and opponent
     useEffect(() => {
         // Clear any existing timer
         if (timerRef.current) {
@@ -64,14 +64,31 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             timerRef.current = null;
         }
 
-        // Only run timer during player's turn with time remaining
-        if (!gameState || gameState.currentPlayer !== 'player' || gameState.timeRemaining <= 0) return;
+        // Only run timer when there's a game state and time remaining
+        if (!gameState || gameState.timeRemaining <= 0) return;
 
         timerRef.current = setInterval(() => {
             setGameState(prev => {
-                if (!prev || prev.currentPlayer !== 'player') return prev;
+                if (!prev) return prev;
 
                 const newTime = prev.timeRemaining - 1;
+
+                // Auto switch turn when timer hits 0
+                if (newTime <= 0) {
+                    // If it's opponent's turn, auto-end to player
+                    // If it's player's turn, let the timer expiry effect handle it
+                    if (prev.currentPlayer === 'opponent') {
+                        return {
+                            ...prev,
+                            turn: prev.turn + 1,
+                            currentPlayer: 'player',
+                            timeRemaining: 60,
+                            message: "Opponent timed out! Your turn!",
+                        };
+                    }
+                    return { ...prev, timeRemaining: 0 };
+                }
+
                 return { ...prev, timeRemaining: newTime };
             });
         }, 1000);
@@ -83,7 +100,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 timerRef.current = null;
             }
         };
-    }, [gameState?.currentPlayer]); // Only re-run when current player changes
+    }, [gameState?.currentPlayer]); // Re-run when current player changes
 
 
 
@@ -529,34 +546,75 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
     const confirmDiscard = useCallback((discardedCardIds: string[]) => {
         if (!gameState || !logicState.activeCardId) return;
 
+        // Find the source card (Trainer in hand or Pokemon on board)
+        const handSource = gameState.player.hand.find(c => c.id === logicState.activeCardId);
+        const boardSource = gameState.player.activePokemon?.id === logicState.activeCardId
+            ? gameState.player.activePokemon
+            : gameState.player.bench.find(c => c.id === logicState.activeCardId);
+
+        const sourceCard = handSource || boardSource;
+        if (!sourceCard) return;
+
         setGameState(prev => {
             if (!prev) return prev;
 
             const cardsToDiscard = prev.player.hand.filter(c => discardedCardIds.includes(c.id));
-            const playedCard = prev.player.hand.find(c => c.id === logicState.activeCardId);
-            const newHand = prev.player.hand.filter(c =>
-                !discardedCardIds.includes(c.id) && c.id !== logicState.activeCardId
-            );
+            const newHand = prev.player.hand.filter(c => !discardedCardIds.includes(c.id));
 
+            // If it's a trainer, it also gets discarded
+            const updatedHand = handSource ? newHand.filter(c => c.id !== logicState.activeCardId) : newHand;
             const newDiscardPile = [...prev.player.discardPile, ...cardsToDiscard];
-            if (playedCard) newDiscardPile.push(playedCard);
+            if (handSource) newDiscardPile.push(handSource);
+
+            // Handle Draw effects for specific abilities
+            let drawnCards: Card[] = [];
+            let remainingDeck = [...prev.player.deck];
+            let drawCount = 0;
+
+            if (boardSource) {
+                const activeAbility = boardSource.abilities?.find(a =>
+                    (a.name === 'Lunar Cycle' || a.name === 'Concealed Cards')
+                );
+                if (activeAbility?.name === 'Lunar Cycle') drawCount = 3;
+                else if (activeAbility?.name === 'Concealed Cards') drawCount = 2;
+            }
+
+            if (drawCount > 0) {
+                drawnCards = remainingDeck.slice(0, drawCount);
+                remainingDeck = remainingDeck.slice(drawCount);
+            }
 
             return {
                 ...prev,
                 player: {
                     ...prev.player,
-                    hand: newHand,
+                    hand: [...updatedHand, ...drawnCards],
                     discardPile: newDiscardPile,
+                    deck: remainingDeck,
                 },
-                message: `Discarded ${cardsToDiscard.length} cards. Searching deck...`,
+                message: drawCount > 0
+                    ? `Discarded ${cardsToDiscard.length} cards and drew ${drawCount} cards with ${sourceCard.name}!`
+                    : `Discarded ${cardsToDiscard.length} cards for ${sourceCard.name}.`,
             };
         });
 
-        setLogicState(prev => ({
-            ...prev,
-            actionMode: 'search_deck',
-            message: 'Select a Pokemon from your deck.',
-        }));
+        // Transition logic
+        if (handSource?.name.toLowerCase().includes('ultra ball')) {
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck',
+                message: 'Select a Pokemon from your deck.',
+            }));
+        } else {
+            // Ability complete or other trainer
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'none',
+                activeCardId: undefined,
+                abilitiesUsed: boardSource ? [...prev.abilitiesUsed, boardSource.id, boardSource.abilities?.find(a => a.name === 'Lunar Cycle' || a.name === 'Concealed Cards')?.name].filter(Boolean) as string[] : prev.abilitiesUsed,
+                message: 'Action complete.',
+            }));
+        }
     }, [gameState, logicState.activeCardId]);
 
     const confirmDeckSelection = useCallback((selectedCardIds: string[]) => {
@@ -801,7 +859,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         const ability = card.abilities[abilityIndex];
 
         // Check if already used
-        if (logicState.abilitiesUsed.includes(cardId)) {
+        if (logicState.abilitiesUsed.includes(cardId) || logicState.abilitiesUsed.includes(ability.name)) {
             setLogicState(prev => ({ ...prev, message: `You already used ${ability.name} this turn!` }));
             return false;
         }
@@ -829,7 +887,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             // Mark as used and End Turn
             setLogicState(prev => ({
                 ...prev,
-                abilitiesUsed: [...prev.abilitiesUsed, cardId],
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
                 message: 'Used Instant Charge. Ending turn...'
             }));
 
@@ -868,8 +926,9 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             }
 
             // Check for Fighting Energy in hand
-            // Note: Simplification - checking for ANY energy if strict checking difficult, but usually name check works
-            const hasFightingEnergy = gameState.player.hand.some(c => c.name.includes('Fighting Energy'));
+            const hasFightingEnergy = gameState.player.hand.some(c =>
+                c.type === 'energy' && (c.energyType === 'fighting' || c.name.toLowerCase().includes('fighting'))
+            );
             if (!hasFightingEnergy) {
                 setLogicState(prev => ({ ...prev, message: 'You need a Fighting Energy in hand to use this!' }));
                 return false;
