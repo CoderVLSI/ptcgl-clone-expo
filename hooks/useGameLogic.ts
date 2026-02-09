@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Player, GameState, EnergyType, GameLogicState, Attack } from '../types/game';
 
 export interface GameLogicReturn {
@@ -29,6 +29,7 @@ export interface GameLogicReturn {
 
 const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
     const [gameState, setGameState] = useState<GameState | null>(externalGameState);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Logic state for turn-based restrictions and UI interactions
     const [logicState, setLogicState] = useState<GameLogicState>({
@@ -57,28 +58,32 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
 
     // Turn Timer Logic
     useEffect(() => {
+        // Clear any existing timer
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+
+        // Only run timer during player's turn with time remaining
         if (!gameState || gameState.currentPlayer !== 'player' || gameState.timeRemaining <= 0) return;
 
-        const timer = setInterval(() => {
+        timerRef.current = setInterval(() => {
             setGameState(prev => {
                 if (!prev || prev.currentPlayer !== 'player') return prev;
 
                 const newTime = prev.timeRemaining - 1;
-                if (newTime <= 0) {
-                    // Auto-end turn will be handled by the effect dependency on timeRemaining or separate check
-                    // But we can't call endTurn() directly inside setState.
-                    // We'll let the effect cleaning up or a separate effect handle the 0 trigger if needed,
-                    // but usually strictly handling state here is safer. 
-                    // However, we need to trigger endTurn. 
-                    // Let's just update time here.
-                    return { ...prev, timeRemaining: newTime };
-                }
                 return { ...prev, timeRemaining: newTime };
             });
         }, 1000);
 
-        return () => clearInterval(timer);
-    }, [gameState?.currentPlayer, gameState?.turn]); // Re-run when turn changes
+        // Cleanup on unmount or when currentPlayer changes
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        };
+    }, [gameState?.currentPlayer]); // Only re-run when current player changes
 
 
 
@@ -1045,9 +1050,45 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
 
         let damage = selectedAttack.damage;
 
+        // Solrock: Cosmic Beam Logic
+        if (selectedAttack.name === 'Cosmic Beam') {
+            const hasLunatone = gameState.player.bench.some(c =>
+                c.name.toLowerCase().includes('lunatone')
+            );
+            if (!hasLunatone) {
+                damage = 0;
+                setLogicState(prev => ({
+                    ...prev,
+                    message: `Cosmic Beam does nothing because Lunatone is not on the Bench.`
+                }));
+            }
+        }
+
         // Premium Power Pro: Your Pokemon attacks do +30 damage per copy played this turn
         if (logicState.premiumPowerProCount > 0) {
             damage += logicState.premiumPowerProCount * 30;
+        }
+
+        // Apply Weakness and Resistance (Skip for Cosmic Beam as per card text)
+        if (selectedAttack.name !== 'Cosmic Beam' && damage > 0) {
+            const attackerType = attacker?.energyType;
+            if (attackerType && defender?.weaknesses) {
+                const weakness = defender.weaknesses.find(w => w.type === attackerType);
+                if (weakness) {
+                    if (weakness.value.includes('x2') || weakness.value.includes('×2')) {
+                        damage *= 2;
+                    } else if (weakness.value.startsWith('+')) {
+                        damage += parseInt(weakness.value.slice(1)) || 0;
+                    }
+                }
+            }
+            if (attackerType && defender?.resistances) {
+                const resistance = defender.resistances.find(r => r.type === attackerType);
+                if (resistance) {
+                    const resAmount = parseInt(resistance.value) || -30; // Default to -30 if parse fails
+                    damage = Math.max(0, damage + resAmount);
+                }
+            }
         }
 
         setGameState(prev => {

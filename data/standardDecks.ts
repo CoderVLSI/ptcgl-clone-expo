@@ -148,9 +148,11 @@ const FUTURE_CARDS: Record<string, Partial<Card>> = {
                 name: 'Cosmic Beam',
                 damage: 70,
                 energyCost: ['fighting'],
-                description: 'If you don\'t have Lunatone on your Bench, this attack does nothing.'
+                description: 'If you don\'t have Lunatone on your Bench, this attack does nothing. This attack\'s damage isn\'t affected by Weakness or Resistance.'
             }
         ],
+        weaknesses: [{ type: 'grass', value: '×2' }],
+        retreatCost: 1,
         imageUrl: 'https://limitlesstcg.com/images/cards/MEG/75.png',
         imageUrlLarge: 'https://limitlesstcg.com/images/cards/MEG/75.png'
     },
