@@ -284,8 +284,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const handleBenchCardPress = useCallback((cardId: string) => {
         if (!gameState) return;
 
-        // Check if card is in bench OR is active Pokemon (for energy/evolve targeting)
-        const card = gameState.player.bench.find(c => c.id === cardId) || gameState.player.activePokemon?.id === cardId ? gameState.player.activePokemon : null;
+        // Find card in bench, or check if it's the active Pokemon
+        let card = gameState.player.bench.find(c => c.id === cardId);
+        if (!card && gameState.player.activePokemon?.id === cardId) {
+            card = gameState.player.activePokemon;
+        }
         if (!card) return;
 
         if (logicState.actionMode === 'select_target') {
