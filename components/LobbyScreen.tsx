@@ -82,6 +82,39 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress }) => {
                             <Text style={styles.playButtonText}>PLAY</Text>
                         </LinearGradient>
                     </TouchableOpacity>
+
+                    {/* Active Deck Display */}
+                    {/* Active Deck Display - Visual Box */}
+                    <View style={styles.activeDeckContainer}>
+                        <View style={styles.deckBoxVisual}>
+                            {/* Back Layer (Box depth) */}
+                            <View style={styles.deckBoxDepth} />
+                            {/* Front Layer (Card/Cover) */}
+                            <Image
+                                source={{ uri: 'https://images.pokemontcg.io/xy3/55.png' }} // Mega Lucario
+                                style={styles.deckBoxCover}
+                                resizeMode="cover"
+                            />
+                            {/* Type Badge */}
+                            <View style={styles.deckTypeBadge}>
+                                <View style={[styles.typeIcon, { backgroundColor: '#C03028' }]} />
+                            </View>
+                        </View>
+
+                        <View style={styles.deckInfo}>
+                            <Text style={styles.activeDeckLabel}>ACTIVE DECK</Text>
+                            <Text style={styles.activeDeckName}>Mega Lucario ex</Text>
+                            <View style={styles.deckStats}>
+                                <Text style={styles.deckStatText}>Standard</Text>
+                                <View style={styles.separator} />
+                                <Text style={styles.deckStatText}>60 Cards</Text>
+                            </View>
+                        </View>
+
+                        <TouchableOpacity style={styles.changeDeckButton}>
+                            <Text style={styles.changeDeckText}>↻</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Bottom Navigation */}
@@ -387,7 +420,7 @@ const styles = StyleSheet.create({
         textShadowRadius: 2,
     },
     bpLabel: {
-        color: '#FFF',
+
         fontSize: 8,
         fontWeight: 'bold',
         backgroundColor: '#FFF',
@@ -403,6 +436,111 @@ const styles = StyleSheet.create({
     shopLogo: {
         width: 60,
         height: 30,
+    },
+    activeDeckContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        padding: 12,
+        borderRadius: 16,
+        marginTop: 24,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        gap: 16,
+        minWidth: 260,
+        height: 100,
+    },
+    deckBoxVisual: {
+        width: 60,
+        height: 84,
+        position: 'relative',
+        transform: [{ rotate: '-5deg' }],
+        shadowColor: '#000',
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    deckBoxDepth: {
+        position: 'absolute',
+        top: 4,
+        left: 4,
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#8B0000', // Deep red for box side
+        borderRadius: 6,
+    },
+    deckBoxCover: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#FFF',
+    },
+    deckTypeBadge: {
+        position: 'absolute',
+        bottom: -6,
+        right: -6,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#1A1A2E',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#FFF',
+    },
+    typeIcon: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+    },
+    deckInfo: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    activeDeckLabel: {
+        color: '#888',
+        fontSize: 10,
+        fontWeight: 'bold',
+        letterSpacing: 1,
+        marginBottom: 4,
+    },
+    activeDeckName: {
+        color: '#FFF',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    deckStats: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    deckStatText: {
+        color: '#AAA',
+        fontSize: 12,
+    },
+    separator: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: '#555',
+        marginHorizontal: 6,
+    },
+    changeDeckButton: {
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    changeDeckText: {
+        color: '#FFF',
+        fontSize: 20,
+        fontWeight: 'bold',
     },
 });
 

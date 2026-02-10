@@ -294,6 +294,7 @@ export function useGameData() {
         selectActiveCard,
         endTurn,
         reloadGame: loadDecks,
+        activeDeckName: "Mega Lucario ex Battle Deck", // Hardcoded for now as it's the only player deck
     };
 }
 

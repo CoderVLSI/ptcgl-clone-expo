@@ -68,9 +68,13 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         // Only run timer when there's a game state and time remaining
         if (!gameState || gameState.timeRemaining <= 0) return;
 
+        // Only start/restart timer when we have a valid state with time remaining
+        const startTime = gameState.timeRemaining;
+        let lastTime = startTime;
+
         timerRef.current = setInterval(() => {
             setGameState(prev => {
-                if (!prev) return prev;
+                if (!prev || prev.timeRemaining <= 0) return prev;
 
                 const newTime = prev.timeRemaining - 1;
 
@@ -101,7 +105,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 timerRef.current = null;
             }
         };
-    }, [gameState?.currentPlayer]); // Re-run when current player changes
+    }, [gameState?.currentPlayer]); // Re-run only when current player changes
 
 
 

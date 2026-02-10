@@ -162,18 +162,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         }
     }, [logicState.message, pendingEnergyCard]);
 
-    // Auto-pass timer for Opponent
-    useEffect(() => {
-        if (gameState?.currentPlayer === 'opponent') {
-            const timer = setTimeout(() => {
-                console.log("Opponent 1-minute timeout reached. Auto-passing.");
-                endTurn();
-            }, 60000); // 1 minute
-
-            return () => clearTimeout(timer);
-        }
-    }, [gameState?.currentPlayer, endTurn]);
-
     // Track the turn when AI started to prevent re-running
     const aiTurnRef = useRef<number>(-1);
 
