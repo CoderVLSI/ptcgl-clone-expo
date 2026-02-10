@@ -11,9 +11,10 @@ interface DeckManagerProps {
     onClose: () => void;
     deck: Card[];
     deckName: string;
+    onEditDeck: () => void;
 }
 
-export const DeckManager: React.FC<DeckManagerProps> = ({ visible, onClose, deck, deckName }) => {
+export const DeckManager: React.FC<DeckManagerProps> = ({ visible, onClose, deck, deckName, onEditDeck }) => {
     // Group cards for the grid view
     const cardCounts: { [key: string]: { card: Card, count: number } } = {};
     deck.forEach(card => {
@@ -93,7 +94,7 @@ export const DeckManager: React.FC<DeckManagerProps> = ({ visible, onClose, deck
                                     </LinearGradient>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity style={styles.editDeckButton}>
+                                <TouchableOpacity style={styles.editDeckButton} onPress={onEditDeck}>
                                     <Text style={styles.editButtonText}>✎ EDIT DECK</Text>
                                 </TouchableOpacity>
                             </View>

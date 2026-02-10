@@ -1183,11 +1183,11 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             if (!prev) return prev;
 
             let newDefender = { ...defender };
-            let currentHp = newDefender.hp || 0;
-            currentHp -= damage;
-            newDefender.hp = currentHp;
+            // Use damage counters instead of reducing HP
+            const currentDamage = (newDefender.damageCounters || 0) + damage;
+            newDefender.damageCounters = currentDamage;
 
-            const knockout = currentHp <= 0;
+            const knockout = currentDamage >= (newDefender.hp || 0);
             let drawnPrizes: Card[] = [];
             let remainingPrizes = [...prev.player.prizeCards];
 

@@ -2,18 +2,34 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, SafeAreaView, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/colors';
+import { Card } from '../types/game';
+import DeckManager from './DeckManager';
 
 const { width, height } = Dimensions.get('window');
 
 interface LobbyScreenProps {
     onPlayPress: () => void;
+    activeDeck?: Card[];
+    activeDeckName?: string;
+    onEditDeck: () => void;
 }
 
-export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress }) => {
+export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDeck = [], activeDeckName = "Deck", onEditDeck }) => {
     const [mode, setMode] = useState<'Ranked' | 'Casual'>('Ranked');
+    const [showDeckManager, setShowDeckManager] = useState(false);
 
     return (
         <View style={styles.container}>
+            <DeckManager
+                visible={showDeckManager}
+                onClose={() => setShowDeckManager(false)}
+                deck={activeDeck}
+                deckName={activeDeckName}
+                onEditDeck={() => {
+                    setShowDeckManager(false);
+                    onEditDeck();
+                }}
+            />
             <StatusBar barStyle="light-content" />
 
             {/* Background */}
@@ -85,7 +101,11 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress }) => {
 
                     {/* Active Deck Display */}
                     {/* Active Deck Display - Visual Box */}
-                    <View style={styles.activeDeckContainer}>
+                    <TouchableOpacity
+                        style={styles.activeDeckContainer}
+                        onPress={() => setShowDeckManager(true)}
+                        activeOpacity={0.8}
+                    >
                         <View style={styles.deckBoxVisual}>
                             {/* Back Layer (Box depth) */}
                             <View style={styles.deckBoxDepth} />
@@ -103,18 +123,18 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress }) => {
 
                         <View style={styles.deckInfo}>
                             <Text style={styles.activeDeckLabel}>ACTIVE DECK</Text>
-                            <Text style={styles.activeDeckName}>Mega Lucario ex</Text>
+                            <Text style={styles.activeDeckName}>{activeDeckName}</Text>
                             <View style={styles.deckStats}>
                                 <Text style={styles.deckStatText}>Standard</Text>
                                 <View style={styles.separator} />
-                                <Text style={styles.deckStatText}>60 Cards</Text>
+                                <Text style={styles.deckStatText}>{activeDeck.length} Cards</Text>
                             </View>
                         </View>
 
-                        <TouchableOpacity style={styles.changeDeckButton}>
-                            <Text style={styles.changeDeckText}>↻</Text>
-                        </TouchableOpacity>
-                    </View>
+                        <View style={styles.changeDeckButton}>
+                            <Text style={styles.changeDeckText}>✎</Text>
+                        </View>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Bottom Navigation */}

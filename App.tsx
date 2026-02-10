@@ -7,6 +7,7 @@ import GameStartCoinFlip from './components/GameStartCoinFlip';
 import SelectActiveModal from './components/SelectActiveModal';
 import { useGameData } from './hooks/useGameData';
 import Colors from './constants/colors';
+import EditDeckScreen from './components/EditDeckScreen';
 
 export default function App() {
   const {
@@ -19,9 +20,11 @@ export default function App() {
     onCoinFlipComplete,
     selectActiveCard,
     reloadGame,
+    playerDeck,
+    activeDeckName,
   } = useGameData();
 
-  const [currentScreen, setCurrentScreen] = useState<'lobby' | 'game'>('lobby');
+  const [currentScreen, setCurrentScreen] = useState<'lobby' | 'game' | 'edit_deck'>('lobby');
 
   // Loading state
   if (isLoading) {
@@ -50,7 +53,24 @@ export default function App() {
   // Lobby Screen
   if (currentScreen === 'lobby') {
     return (
-      <LobbyScreen onPlayPress={() => setCurrentScreen('game')} />
+      <LobbyScreen
+        onPlayPress={() => setCurrentScreen('game')}
+        activeDeck={playerDeck}
+        activeDeckName={activeDeckName}
+        onEditDeck={() => setCurrentScreen('edit_deck')}
+      />
+    );
+  }
+
+  // Edit Deck Screen
+  if (currentScreen === 'edit_deck') {
+    return (
+      <EditDeckScreen
+        deck={playerDeck}
+        deckName={activeDeckName}
+        onBack={() => setCurrentScreen('lobby')}
+        onHome={() => setCurrentScreen('lobby')}
+      />
     );
   }
 

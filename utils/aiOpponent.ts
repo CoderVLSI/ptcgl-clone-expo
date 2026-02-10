@@ -328,9 +328,11 @@ export function applyAIAction(
             }
 
             let newDefender = { ...defender };
-            newDefender.hp = (newDefender.hp || 0) - damage;
+            // Use damage counters instead of reducing HP
+            const currentDamage = (newDefender.damageCounters || 0) + damage;
+            newDefender.damageCounters = currentDamage;
 
-            const knockout = newDefender.hp <= 0;
+            const knockout = currentDamage >= (newDefender.hp || 0);
             let playerBench = gameState.player.bench;
             let playerActive = knockout ? (playerBench.length > 0 ? playerBench[0] : undefined) : newDefender;
             if (knockout && playerBench.length > 0) playerBench = playerBench.slice(1);

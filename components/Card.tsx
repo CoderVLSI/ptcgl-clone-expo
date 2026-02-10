@@ -91,6 +91,14 @@ export const Card: React.FC<CardProps> = ({
                             <ActivityIndicator size="small" color={Colors.card.highlight} />
                         </View>
                     )}
+                    {/* Damage counters overlay */}
+                    {(card.damageCounters && card.damageCounters > 0 || card.hp) && (
+                        <View style={styles.damageCounterBadge}>
+                            <Text style={styles.damageCounterText}>
+                                {card.hp ? `${card.hp - (card.damageCounters || 0)}/${card.hp}` : `${card.damageCounters || 0} dmg`}
+                            </Text>
+                        </View>
+                    )}
                     {/* Energy overlay - show on top of full card image */}
                     {showEnergy && card.attachedEnergy && card.attachedEnergy.length > 0 && (
                         <View style={styles.energyOverlay}>
@@ -133,8 +141,20 @@ export const Card: React.FC<CardProps> = ({
                     <Text style={styles.cardName} numberOfLines={1}>
                         {card.name}
                     </Text>
-                    {card.hp && <Text style={styles.cardHP}>{card.hp} HP</Text>}
+                    {/* Show HP with damage taken */}
+                    {card.hp && (
+                        <Text style={styles.cardHP}>
+                            {card.damageCounters ? `${card.hp - card.damageCounters}/${card.hp}` : `${card.hp} HP`}
+                        </Text>
+                    )}
                 </View>
+
+                {/* Damage Counter Badge */}
+                {card.damageCounters && card.damageCounters > 0 && (
+                    <View style={styles.damageBadge}>
+                        <Text style={styles.damageText}>{card.damageCounters} dmg</Text>
+                    </View>
+                )}
 
                 {/* Attached Energy */}
                 {showEnergy && card.attachedEnergy && card.attachedEnergy.length > 0 && (
@@ -343,6 +363,34 @@ const styles = StyleSheet.create({
         textShadowColor: Colors.ui.black,
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 2,
+    },
+    damageCounterBadge: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        backgroundColor: 'rgba(227, 27, 35, 0.9)',
+        borderRadius: 4,
+        paddingHorizontal: 4,
+        paddingVertical: 2,
+    },
+    damageCounterText: {
+        fontSize: 8,
+        fontWeight: 'bold',
+        color: Colors.ui.white,
+    },
+    damageBadge: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        backgroundColor: 'rgba(227, 27, 35, 0.9)',
+        borderRadius: 4,
+        paddingHorizontal: 4,
+        paddingVertical: 2,
+    },
+    damageText: {
+        fontSize: 8,
+        fontWeight: 'bold',
+        color: Colors.ui.white,
     },
 });
 
