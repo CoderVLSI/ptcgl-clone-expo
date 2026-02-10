@@ -393,8 +393,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
 
     const handlePlayTrainer = useCallback(() => {
         if (!selectedHandCard) return;
-        playTrainer(selectedHandCard.id);
+        const success = playTrainer(selectedHandCard.id);
         setSelectedHandCard(null);
+        // Close the menu after playing trainer (modal will show if needed)
+        if (success) {
+            setShowActionMenu(false);
+        }
     }, [selectedHandCard, playTrainer]);
 
     const handleDrawCard = useCallback(() => {

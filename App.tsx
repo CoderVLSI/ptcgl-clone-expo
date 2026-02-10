@@ -1,6 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 import { GameBoard } from './components';
+import LobbyScreen from './components/LobbyScreen';
 import GameStartCoinFlip from './components/GameStartCoinFlip';
 import SelectActiveModal from './components/SelectActiveModal';
 import { useGameData } from './hooks/useGameData';
@@ -18,6 +20,8 @@ export default function App() {
     selectActiveCard,
     reloadGame,
   } = useGameData();
+
+  const [currentScreen, setCurrentScreen] = useState<'lobby' | 'game'>('lobby');
 
   // Loading state
   if (isLoading) {
@@ -40,6 +44,13 @@ export default function App() {
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
+    );
+  }
+
+  // Lobby Screen
+  if (currentScreen === 'lobby') {
+    return (
+      <LobbyScreen onPlayPress={() => setCurrentScreen('game')} />
     );
   }
 

@@ -100,7 +100,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
     if (card.type === 'trainer') {
         actions.push({
             label: 'Play Trainer',
-            onPress: () => { onPlayTrainer?.(); onClose(); },
+            onPress: () => { onPlayTrainer?.(); },
             enabled: canPlayTrainer,
             color: Colors.energy.psychic,
         });
