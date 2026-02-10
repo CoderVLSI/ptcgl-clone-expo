@@ -12,9 +12,11 @@ interface LobbyScreenProps {
     activeDeck?: Card[];
     activeDeckName?: string;
     onEditDeck: () => void;
+    onDecksPress: () => void;
+    onUpdateDeck: (deck: Card[]) => void;
 }
 
-export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDeck = [], activeDeckName = "Deck", onEditDeck }) => {
+export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDeck = [], activeDeckName = "Deck", onEditDeck, onDecksPress, onUpdateDeck }) => {
     const [mode, setMode] = useState<'Ranked' | 'Casual'>('Ranked');
     const [showDeckManager, setShowDeckManager] = useState(false);
 
@@ -154,7 +156,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDec
                     </TouchableOpacity>
 
                     {/* Decks - Festival Box Style */}
-                    <TouchableOpacity style={styles.navItem}>
+                    <TouchableOpacity style={styles.navItem} onPress={onDecksPress}>
                         <View style={styles.deckBoxContainer}>
                             <View style={styles.deckBoxFront} />
                             <Text style={styles.deckLabel}>DECKS</Text>

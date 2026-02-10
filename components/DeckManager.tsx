@@ -12,9 +12,11 @@ interface DeckManagerProps {
     deck: Card[];
     deckName: string;
     onEditDeck: () => void;
+    onUpdateDeck?: (newDeck: Card[]) => void;
+    onSetActive?: () => void;
 }
 
-export const DeckManager: React.FC<DeckManagerProps> = ({ visible, onClose, deck, deckName, onEditDeck }) => {
+export const DeckManager: React.FC<DeckManagerProps> = ({ visible, onClose, deck, deckName, onEditDeck, onUpdateDeck, onSetActive }) => {
     // Group cards for the grid view
     const cardCounts: { [key: string]: { card: Card, count: number } } = {};
     deck.forEach(card => {
@@ -27,6 +29,25 @@ export const DeckManager: React.FC<DeckManagerProps> = ({ visible, onClose, deck
     });
 
     const groupedCards = Object.values(cardCounts);
+
+    const handleAddCard = (card: Card) => {
+        if (!onUpdateDeck) return;
+        // Limit to 4 copies logic can be added here, currently basic add
+        // For simplicity, we clone the card and add it
+        // Generate a unique ID if generic, or just reuse structure
+        const newCard = { ...card, id: `${card.id}-${Date.now()}` };
+        onUpdateDeck([...deck, newCard]);
+    };
+
+    const handleRemoveCard = (card: Card) => {
+        if (!onUpdateDeck) return;
+        const index = deck.findIndex(c => c.name === card.name);
+        if (index !== -1) {
+            const newDeck = [...deck];
+            newDeck.splice(index, 1);
+            onUpdateDeck(newDeck);
+        }
+    };
 
     return (
         <Modal
@@ -85,7 +106,7 @@ export const DeckManager: React.FC<DeckManagerProps> = ({ visible, onClose, deck
                             </View>
 
                             <View style={styles.primaryActions}>
-                                <TouchableOpacity style={styles.setActiveButton}>
+                                <TouchableOpacity style={styles.setActiveButton} onPress={onSetActive}>
                                     <LinearGradient
                                         colors={['#D00000', '#A00000']}
                                         style={styles.gradientButton}
@@ -367,6 +388,29 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 12,
         color: '#333',
+    },
+    cardControls: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        flexDirection: 'column',
+        gap: 4,
+    },
+    controlButton: {
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#FFF',
+    },
+    controlText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: 14,
+        lineHeight: 16,
     },
 });
 

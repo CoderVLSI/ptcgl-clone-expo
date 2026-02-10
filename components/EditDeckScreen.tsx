@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, ScrollView, Dimensions, SafeAreaView, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, ScrollView, Dimensions, SafeAreaView, StatusBar, Platform, Alert, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/colors';
 import { Card } from '../types/game';
+import { fetchStandardCards, LibraryCard } from '../utils/cardLibrary';
 
 const { width, height } = Dimensions.get('window');
 
@@ -11,11 +12,54 @@ interface EditDeckScreenProps {
     deckName: string;
     onBack: () => void;
     onHome: () => void;
+    onUpdateDeck: (deck: Card[]) => void;
 }
 
-const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck, deckName, onBack, onHome }) => {
+const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck: initialDeck, deckName, onBack, onHome, onUpdateDeck }) => {
+    const [deck, setDeck] = useState<Card[]>(initialDeck);
     const [selectedTab, setSelectedTab] = useState<'Pokemon' | 'Trainers' | 'Energy' | 'Deck'>('Trainers');
     const [searchQuery, setSearchQuery] = useState('');
+    const [hasChanges, setHasChanges] = useState(false);
+
+    // Library State
+    const [libraryCards, setLibraryCards] = useState<LibraryCard[]>([]);
+    const [page, setPage] = useState(1);
+    const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
+    const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setPage(1); // Reset page on search
+            loadLibraryCards(1, searchQuery);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    async function loadLibraryCards(pageNum: number, search: string, append: boolean = false) {
+        if (isLoadingLibrary) return;
+        setIsLoadingLibrary(true);
+        const cards = await fetchStandardCards(pageNum, search);
+        if (append) {
+            setLibraryCards(prev => [...prev, ...cards]);
+        } else {
+            setLibraryCards(cards);
+        }
+        setIsLoadingLibrary(false);
+    }
+
+    const handleLoadMore = () => {
+        if (!isLoadingLibrary) {
+            const nextPage = page + 1;
+            setPage(nextPage);
+            loadLibraryCards(nextPage, searchQuery, true);
+        }
+    };
+
+    useEffect(() => {
+        setDeck(initialDeck);
+        setHasChanges(false);
+    }, [initialDeck]);
 
     // Mocking counts for the UI (real logic would calculate these)
     const counts = {
@@ -35,6 +79,68 @@ const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck, deckName, onBack,
         acc[card.name] = (acc[card.name] || 0) + 1;
         return acc;
     }, {} as Record<string, number>);
+
+    const handleAddCard = (cardOrName: string | Card) => {
+        let cardToAdd: Card | undefined;
+
+        if (typeof cardOrName === 'string') {
+            cardToAdd = deck.find(c => c.name === cardOrName);
+        } else {
+            cardToAdd = cardOrName;
+        }
+
+        if (cardToAdd) {
+            const newCard = { ...cardToAdd, id: `${cardToAdd.id}-${Date.now()}` };
+            const newDeck = [...deck, newCard];
+            setDeck(newDeck);
+            setHasChanges(true);
+        }
+    };
+
+    const handleRemoveCard = (cardName: string) => {
+        const index = deck.findIndex(c => c.name === cardName);
+        if (index !== -1) {
+            const newDeck = [...deck];
+            newDeck.splice(index, 1);
+            setDeck(newDeck);
+            setHasChanges(true);
+        }
+    };
+
+    const handleExit = (action: () => void) => {
+        if (!hasChanges) {
+            action();
+            return;
+        }
+
+        Alert.alert(
+            "Unsaved Changes",
+            "You have unsaved changes to your deck. Do you want to save them?",
+            [
+                {
+                    text: "Discard",
+                    style: "destructive",
+                    onPress: action
+                },
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                {
+                    text: "Save",
+                    onPress: () => {
+                        onUpdateDeck(deck);
+                        action();
+                    }
+                }
+            ]
+        );
+    };
+
+    const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }: any) => {
+        const paddingToBottom = 20;
+        return layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+    };
 
     return (
         <View style={styles.container}>
@@ -90,6 +196,14 @@ const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck, deckName, onBack,
                             <View key={index} style={styles.deckCardItem}>
                                 <Image source={{ uri: card?.imageUrl }} style={styles.cardImageSmall} resizeMode="contain" />
                                 <View style={styles.countBadge}><Text style={styles.countText}>{count}</Text></View>
+                                <View style={styles.cardControls}>
+                                    <TouchableOpacity style={styles.controlButton} onPress={() => handleRemoveCard(name)}>
+                                        <Text style={styles.controlText}>-</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={styles.controlButton} onPress={() => handleAddCard(name)}>
+                                        <Text style={styles.controlText}>+</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         );
                     })}
@@ -126,26 +240,108 @@ const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck, deckName, onBack,
             </View>
 
             {/* Card Library Grid (Bottom Section) */}
-            <ScrollView style={styles.libraryGrid} contentContainerStyle={styles.libraryContent}>
-                {/* Mocking a library view by just showing the deck repeatedly for now since we don't have a full library loaded in this specific component context yet */}
-                {/* In a real app, this would be a separate list of ALL cards */}
-                {deck.concat(deck).map((card, index) => (
-                    <View key={`lib-${index}`} style={styles.libraryCardItem}>
-                        <Image source={{ uri: card.imageUrl }} style={styles.cardImageLibrary} resizeMode="contain" />
-                        <View style={styles.libraryCountBadge}><Text style={styles.countText}>4</Text></View>
+            <View style={styles.libraryGrid}>
+                {isLoadingLibrary && page === 1 ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ color: '#888' }}>Loading library...</Text>
                     </View>
-                ))}
-            </ScrollView>
+                ) : (
+                    <ScrollView
+                        contentContainerStyle={styles.libraryContent}
+                        onScroll={({ nativeEvent }) => {
+                            if (isCloseToBottom(nativeEvent)) {
+                                handleLoadMore();
+                            }
+                        }}
+                        scrollEventThrottle={400}
+                    >
+                        {libraryCards.map((card, index) => (
+                            <TouchableOpacity
+                                key={`${card.id}-${index}`}
+                                style={styles.libraryCardItem}
+                                onPress={() => handleAddCard(card)}
+                            >
+                                <Image source={{ uri: card.imageUrl }} style={styles.cardImageLibrary} resizeMode="contain" />
+                                {/* Show count of this card currently in deck */}
+                                {deck.filter(c => c.name === card.name).length > 0 && (
+                                    <View style={styles.libraryCountBadge}>
+                                        <Text style={styles.countText}>{deck.filter(c => c.name === card.name).length}</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        ))}
+                        {isLoadingLibrary && (
+                            <View style={{ width: '100%', padding: 10, alignItems: 'center' }}>
+                                <Text style={{ color: '#888' }}>Loading more...</Text>
+                            </View>
+                        )}
+                    </ScrollView>
+                )}
+            </View>
 
             {/* Bottom Navigation Footer */}
             <View style={styles.bottomFooter}>
-                <TouchableOpacity onPress={onBack} style={styles.footerButton}>
+                <TouchableOpacity onPress={() => handleExit(onBack)} style={styles.footerButton}>
                     <Text style={styles.footerIcon}>←</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={onHome} style={styles.footerButton}>
+                <TouchableOpacity onPress={() => handleExit(onHome)} style={styles.footerButton}>
                     <Text style={styles.footerIcon}>🏠</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* Card Viewer Modal */}
+            <Modal
+                visible={!!selectedCard}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setSelectedCard(null)}
+            >
+                <View style={styles.modalOverlay}>
+                    <TouchableOpacity style={styles.modalBackdrop} onPress={() => setSelectedCard(null)} />
+
+                    {selectedCard && (
+                        <View style={styles.modalContent}>
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>{selectedCard.name}</Text>
+                                <TouchableOpacity onPress={() => setSelectedCard(null)} style={styles.closeButton}>
+                                    <Text style={styles.closeButtonText}>✕</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <Image
+                                source={{ uri: selectedCard.imageUrlLarge || selectedCard.imageUrl }}
+                                style={styles.largeCardImage}
+                                resizeMode="contain"
+                            />
+
+                            <View style={styles.modalControls}>
+                                <View style={styles.deckCountInfo}>
+                                    <Text style={styles.deckCountLabel}>In Deck:</Text>
+                                    <Text style={styles.deckCountValue}>
+                                        {deck.filter(c => c.name === selectedCard.name).length}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.actionButtons}>
+                                    <TouchableOpacity
+                                        style={[styles.modalActionButton, styles.removeButton]}
+                                        onPress={() => handleRemoveCard(selectedCard.name)}
+                                    >
+                                        <Text style={styles.actionButtonText}>- Remove</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={[styles.modalActionButton, styles.addButton]}
+                                        onPress={() => handleAddCard(selectedCard)}
+                                    >
+                                        <Text style={styles.actionButtonText}>+ Add</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
+                    )}
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -157,6 +353,7 @@ const styles = StyleSheet.create({
     },
     headerSafeArea: {
         backgroundColor: '#D00000',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     header: {
         height: 60,
@@ -382,6 +579,30 @@ const styles = StyleSheet.create({
     footerIcon: {
         fontSize: 24,
         color: '#333',
+    },
+    cardControls: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        flexDirection: 'column',
+        gap: 2,
+        zIndex: 10,
+    },
+    controlButton: {
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#FFF',
+    },
+    controlText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: 12,
+        lineHeight: 14,
     },
 });
 

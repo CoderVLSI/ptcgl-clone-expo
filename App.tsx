@@ -8,6 +8,9 @@ import SelectActiveModal from './components/SelectActiveModal';
 import { useGameData } from './hooks/useGameData';
 import Colors from './constants/colors';
 import EditDeckScreen from './components/EditDeckScreen';
+import DeckSelectionScreen from './components/DeckSelectionScreen';
+
+import { Card } from './types/game';
 
 export default function App() {
   const {
@@ -22,9 +25,14 @@ export default function App() {
     reloadGame,
     playerDeck,
     activeDeckName,
+    setActiveDeckName,
+    setPlayerDeck,
+    availableDecks,
   } = useGameData();
 
-  const [currentScreen, setCurrentScreen] = useState<'lobby' | 'game' | 'edit_deck'>('lobby');
+  const [currentScreen, setCurrentScreen] = useState<'lobby' | 'game' | 'edit_deck' | 'deck_selection'>('lobby');
+  const [editingDeck, setEditingDeck] = useState<Card[]>([]);
+  const [editingDeckName, setEditingDeckName] = useState<string>("");
 
   // Loading state
   if (isLoading) {
@@ -57,7 +65,40 @@ export default function App() {
         onPlayPress={() => setCurrentScreen('game')}
         activeDeck={playerDeck}
         activeDeckName={activeDeckName}
-        onEditDeck={() => setCurrentScreen('edit_deck')}
+        onEditDeck={() => {
+          setEditingDeck(playerDeck);
+          setEditingDeckName(activeDeckName);
+          setCurrentScreen('edit_deck');
+        }}
+        onDecksPress={() => setCurrentScreen('deck_selection')}
+        onUpdateDeck={setPlayerDeck}
+      />
+    );
+  }
+
+  // Deck Selection Screen
+  if (currentScreen === 'deck_selection') {
+    return (
+      <DeckSelectionScreen
+        onBack={() => setCurrentScreen('lobby')}
+        playerDeck={playerDeck}
+        availableDecks={availableDecks}
+        onSelectDeck={(deck, name) => {
+          setPlayerDeck(deck);
+          setActiveDeckName(name);
+          setCurrentScreen('lobby');
+        }}
+        onEditDeck={(deck, name) => {
+          setEditingDeck(deck);
+          setEditingDeckName(name);
+          setCurrentScreen('edit_deck');
+        }}
+        onCreateDeck={() => {
+          setEditingDeck([]);
+          setEditingDeckName("New Deck");
+          setCurrentScreen('edit_deck');
+        }}
+        onUpdateDeck={setPlayerDeck}
       />
     );
   }
@@ -70,6 +111,7 @@ export default function App() {
         deckName={activeDeckName}
         onBack={() => setCurrentScreen('lobby')}
         onHome={() => setCurrentScreen('lobby')}
+        onUpdateDeck={setPlayerDeck}
       />
     );
   }

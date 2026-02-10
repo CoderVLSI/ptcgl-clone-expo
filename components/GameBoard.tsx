@@ -87,11 +87,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const [evolutionName, setEvolutionName] = useState<string>('');
 
     // Update game state when external state changes
+    const updateGameStateRef = useRef(updateGameState);
+    updateGameStateRef.current = updateGameState;
+
     useEffect(() => {
         if (externalGameState) {
-            updateGameState(externalGameState);
+            updateGameStateRef.current(externalGameState);
         }
-    }, [externalGameState, updateGameState]);
+    }, [externalGameState]);
 
     // Reset turn-based state when turn changes
     useEffect(() => {

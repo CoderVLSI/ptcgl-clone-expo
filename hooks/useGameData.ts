@@ -28,7 +28,9 @@ export function useGameData() {
     const [setupPhase, setSetupPhase] = useState<SetupPhase>('loading');
     const [decksReady, setDecksReady] = useState(false);
     const [playerDeck, setPlayerDeck] = useState<Card[]>([]);
+    const [activeDeckName, setActiveDeckName] = useState("Mega Lucario ex Battle Deck");
     const [opponentDeck, setOpponentDeck] = useState<Card[]>([]);
+    const [availableDecks, setAvailableDecks] = useState<{ id: string, name: string, cards: Card[], type: string }[]>([]);
 
     // For active selection
     const [playerHand, setPlayerHand] = useState<Card[]>([]);
@@ -58,6 +60,12 @@ export function useGameData() {
 
             console.log(`Player deck size: ${megaLucarioDeck.length}`);
             console.log(`Opponent deck size: ${dragapultDeck.length}`);
+
+            const decks = [
+                { id: 'deck-lucario', name: 'Mega Lucario ex', cards: megaLucarioDeck, type: 'fighting' },
+                { id: 'deck-dragapult', name: 'Dragapult ex', cards: dragapultDeck, type: 'psychic' }
+            ];
+            setAvailableDecks(decks);
 
             // Set decks (already shuffled in builders)
             setPlayerDeck(megaLucarioDeck);
@@ -294,8 +302,11 @@ export function useGameData() {
         selectActiveCard,
         endTurn,
         reloadGame: loadDecks,
-        activeDeckName: "Mega Lucario ex Battle Deck", // Hardcoded for now as it's the only player deck
+        activeDeckName,
+        setActiveDeckName,
         playerDeck,
+        setPlayerDeck, // Expose setter for deck editing
+        availableDecks,
     };
 }
 

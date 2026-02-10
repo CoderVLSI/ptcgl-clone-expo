@@ -58,23 +58,32 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
     }, [externalGameState]);
 
     // Turn Timer Logic - runs for both player and opponent
+    // Track the previous turn to detect actual turn changes
+    const prevTurnRef = useRef<number | undefined>(undefined);
+
     useEffect(() => {
+        const currentTurn = gameState?.turn;
+        const currentPlayer = gameState?.currentPlayer;
+        const timeRemaining = gameState?.timeRemaining;
+
+        // Detect actual turn changes (turn number changed)
+        const turnChanged = prevTurnRef.current !== undefined && prevTurnRef.current !== currentTurn;
+        prevTurnRef.current = currentTurn;
+
         // Clear any existing timer
         if (timerRef.current) {
             clearInterval(timerRef.current);
             timerRef.current = null;
         }
 
-        // Only run timer when there's a game state and time remaining
-        if (!gameState || gameState.timeRemaining <= 0) return;
-
-        // Only start/restart timer when we have a valid state with time remaining
-        const startTime = gameState.timeRemaining;
-        let lastTime = startTime;
+        // Only run timer when there's a game state and time remaining > 0
+        if (!gameState || !currentPlayer || (timeRemaining !== undefined && timeRemaining <= 0)) return;
 
         timerRef.current = setInterval(() => {
             setGameState(prev => {
-                if (!prev || prev.timeRemaining <= 0) return prev;
+                if (!prev) return prev;
+                // Don't decrement if timer is already at 0 or below
+                if (prev.timeRemaining <= 0) return prev;
 
                 const newTime = prev.timeRemaining - 1;
 
@@ -105,7 +114,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 timerRef.current = null;
             }
         };
-    }, [gameState?.currentPlayer]); // Re-run only when current player changes
+    }, [gameState?.currentPlayer, gameState?.turn]); // Re-run when current player or turn changes
 
 
 
@@ -1231,10 +1240,21 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         return true;
     }, [gameState, endTurn]);
 
-    // Check for timer expiry
+    // Check for player timer expiry only
+    // Note: Opponent timeout is handled in the timer effect itself
+    const playerTimedOutRef = useRef(false);
+
     useEffect(() => {
+        // Only handle player timeout, not opponent (opponent handled in timer effect)
         if (gameState?.currentPlayer === 'player' && gameState.timeRemaining <= 0) {
-            endTurn();
+            // Only end turn once per timeout
+            if (!playerTimedOutRef.current) {
+                playerTimedOutRef.current = true;
+                endTurn();
+            }
+        } else if (gameState?.timeRemaining && gameState.timeRemaining > 0) {
+            // Reset flag when timer is valid again
+            playerTimedOutRef.current = false;
         }
     }, [gameState?.timeRemaining, gameState?.currentPlayer, endTurn]);
 
