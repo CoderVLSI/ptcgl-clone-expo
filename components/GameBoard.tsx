@@ -698,6 +698,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                     setMenuCard(null);
                 }}
                 onAttack={handleAttack}
+                onUseAbility={(abilityIndex) => {
+                    if (menuCard) {
+                        useAbility(menuCard.id, abilityIndex);
+                        setShowAttackMenu(false);
+                        setMenuCard(null);
+                    }
+                }}
+                abilitiesUsed={logicState.abilitiesUsed || []}
             />
 
             {/* Card Preview Modal (Long Press) */}
