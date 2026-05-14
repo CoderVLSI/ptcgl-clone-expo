@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, GameState, Player } from '../types/game';
-import { createMegaLucarioExDeck, createDragapultExDeck, createRagingBoltExDeck, createMegaGreninjaExDeck } from '../data/standardDecks';
+import { createMegaLucarioExDeck, createDragapultExDeck, createRagingBoltExDeck, createMegaGreninjaExDeck, createMegaZygardeExDeck } from '../data/standardDecks';
 
 export interface GameSetupData {
     playerDeck: Card[];
@@ -50,21 +50,23 @@ export function useGameData() {
             setError(null);
             setSetupPhase('loading');
 
-            // Load all 4 competitive decks in parallel
-            const [megaLucarioDeck, dragapultDeck, ragingBoltDeck, megaGreninajaDeck] = await Promise.all([
+            // Load all 5 competitive decks in parallel
+            const [megaLucarioDeck, dragapultDeck, ragingBoltDeck, megaGreninajaDeck, megaZygardeDeck] = await Promise.all([
                 createMegaLucarioExDeck(),
                 createDragapultExDeck(),
                 createRagingBoltExDeck(),
                 createMegaGreninjaExDeck(),
+                createMegaZygardeExDeck(),
             ]);
 
-            console.log(`Lucario deck: ${megaLucarioDeck.length} | Dragapult: ${dragapultDeck.length} | Raging Bolt: ${ragingBoltDeck.length} | Mega Greninja: ${megaGreninajaDeck.length}`);
+            console.log(`Lucario: ${megaLucarioDeck.length} | Dragapult: ${dragapultDeck.length} | Raging Bolt: ${ragingBoltDeck.length} | Greninja: ${megaGreninajaDeck.length} | Zygarde: ${megaZygardeDeck.length}`);
 
             const decks = [
                 { id: 'deck-lucario',   name: 'Mega Lucario ex',   cards: megaLucarioDeck,    type: 'fighting'   },
                 { id: 'deck-dragapult', name: 'Dragapult ex',       cards: dragapultDeck,      type: 'psychic'    },
                 { id: 'deck-bolt',      name: 'Raging Bolt ex',     cards: ragingBoltDeck,     type: 'lightning'  },
                 { id: 'deck-greninja',  name: 'Mega Greninja ex',   cards: megaGreninajaDeck,  type: 'water'      },
+                { id: 'deck-zygarde',   name: 'Mega Zygarde ex',    cards: megaZygardeDeck,    type: 'fighting'   },
             ];
             setAvailableDecks(decks);
 

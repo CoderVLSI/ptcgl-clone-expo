@@ -385,100 +385,50 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
 }
 
 // ============================================
-// DRAGAPULT EX DECK — 2026 Standard (H-On)
-// 60 cards: 15 Pokémon / 37 Trainers / 8 Energy
+// DRAGAPULT EX / DUSKNOIR DECK — 2026 Standard (H-On)
+// Real competitive list: Phantom Dive + Sinister Hand combo
+// 60 cards: 17 Pokémon / 37 Trainers / 6 Energy
 // ============================================
 export async function createDragapultExDeck(): Promise<Card[]> {
-    const deck: Card[] = [];
-    let cardIndex = 0;
+    const { deck, addCard } = await buildDeckHelper();
 
-    // Fetch only 2026 Standard-legal sets
-    const [sv5, sv6, sv6pt5, sv7, sv8, sv8pt5, sv9, me1, me2, me2pt5] = await Promise.all([
-        fetchSet('sv5').catch(() => []),
-        fetchSet('sv6').catch(() => []),
-        fetchSet('sv6pt5').catch(() => []),
-        fetchSet('sv7').catch(() => []),
-        fetchSet('sv8').catch(() => []),
-        fetchSet('sv8pt5').catch(() => []),
-        fetchSet('sv9').catch(() => []),
-        fetchSet('me1').catch(() => []),
-        fetchSet('me2').catch(() => []),
-        fetchSet('me2pt5').catch(() => []),
-    ]);
+    // Pokémon (17)
+    addCard('Dreepy', 4);                  // sv5 — Dragapult base
+    addCard('Drakloak', 2);                // sv5 — Stage 1 bridge
+    addCard('Dragapult ex', 3);            // sv5 — Phantom Dive: place 6 damage counters on bench
+    addCard('Duskull', 2);                 // sv6 — Dusknoir base
+    addCard('Dusclops', 1);               // sv6 — Stage 1 bridge
+    addCard('Dusknoir', 1);               // sv6 — Sinister Hand: move all bench counters to active
+    addCard('Budew', 2);                   // sv7 — Thorn Pollen: 1 counter on all Pokémon with Abilities
+    addCard('Hawlucha', 1);               // sv5 — Flying Entry: 2 counters on bench when played
+    addCard('Bloodmoon Ursaluna ex', 1);  // sv6pt5 — Crescent Moon 190dmg, ignores Abilities
 
-    const allCards = [
-        ...me1, ...me2, ...me2pt5,
-        ...sv9, ...sv8pt5, ...sv8,
-        ...sv7, ...sv6pt5, ...sv6, ...sv5,
-    ].filter(isStandardLegal);
+    // Trainers — Supporters (12)
+    addCard('Iono', 4);                          // sv6/sv8 — hand disruption + draw
+    addCard("Lillie's Determination", 3);        // me1 — full-grip draw
+    addCard("Boss's Orders", 3);                 // sv7/sv8 — force active switch
+    addCard('Jacq', 1);                          // sv7 — search for Evolution Pokémon
+    addCard("Brock's Scouting", 1);              // me1 — search 2 Evolutions from deck
 
-    const addCard = (name: string, count: number) => {
-        const apiCard = findCardByName(allCards, name);
-        if (apiCard) {
-            for (let i = 0; i < count; i++) {
-                deck.push(convertApiCard(apiCard, cardIndex++));
-            }
-            return;
-        }
-        if (STANDARD_PROXY_CARDS[name]) {
-            const proxy = STANDARD_PROXY_CARDS[name];
-            for (let i = 0; i < count; i++) {
-                deck.push({
-                    id: `proxy-${name.replace(/\s+/g, '-').toLowerCase()}-${cardIndex++}`,
-                    name: proxy.name!,
-                    type: proxy.type!,
-                    hp: proxy.hp,
-                    energyType: proxy.energyType,
-                    subtypes: proxy.subtypes,
-                    attacks: proxy.attacks,
-                    abilities: proxy.abilities,
-                    imageUrl: proxy.imageUrl,
-                    imageUrlLarge: proxy.imageUrlLarge,
-                });
-            }
-            return;
-        }
-        console.warn(`[2026 Standard] Card not found: ${name}`);
-        for (let i = 0; i < count; i++) {
-            deck.push({ id: `placeholder-opp-${cardIndex++}`, name, type: 'pokemon', hp: 100, subtypes: ['Basic'] });
-        }
-    };
+    // Trainers — Items (23)
+    addCard('Rare Candy', 4);                    // sv5/sv8 — Basic→Stage 2 skip
+    addCard('Ultra Ball', 4);                    // sv5/sv8
+    addCard('Buddy-Buddy Poffin', 4);            // sv5 — grab Budew + Hawlucha (both ≤70HP)
+    addCard('Night Stretcher', 3);               // sv8 — recovery
+    addCard('Counter Catcher', 3);               // sv6 — switch after KO
+    addCard('Super Rod', 2);                     // sv5/sv8
+    addCard('Unfair Stamp', 1);                  // sv8 — opponent draws 3 when they have 1-3 prizes
+    addCard('Exp. Share', 1);                    // sv5 — keep energy when KO'd
+    addCard('Switch', 1);                        // sv5
 
-    // Pokémon (15) — Rotom V and Manaphy removed (rotated), Arven replaced
-    addCard('Dreepy', 4);           // sv5/sv6
-    addCard('Drakloak', 1);         // sv5/sv6
-    addCard('Dragapult ex', 3);     // sv5/sv6
-    addCard('Duskull', 2);          // sv6/sv8
-    addCard('Dusclops', 1);         // sv6/sv8
-    addCard('Dusknoir', 2);         // sv6/sv8
-    addCard('Fezandipiti ex', 1);   // sv6pt5
-    addCard('Munkidori', 1);        // sv6
+    // Trainers — Stadium (2)
+    addCard('Pokémon League Headquarters', 2);   // sv8
 
-    // Trainers (37) — Temple of Sinnoh and Arven replaced with standard cards
-    // Supporters (12)
-    addCard("Professor's Research", 3); // sv5/sv8
-    addCard("Boss's Orders", 3);        // sv7/sv8
-    addCard('Iono', 3);                 // sv6/sv8
-    addCard('Judge', 1);                // sv5
-    addCard('Briar', 2);                // sv6pt5 — replaces rotated Arven
-    addCard('Crispin', 1);              // sv7
-    addCard('Carmine', 1);              // sv6pt5 — replaces rotated Rotom V draw slot
-    // Items (23)
-    addCard('Rare Candy', 4);           // sv5/sv8
-    addCard('Ultra Ball', 4);           // sv5/sv8
-    addCard('Nest Ball', 4);            // sv5/sv8
-    addCard('Super Rod', 2);            // sv5/sv8
-    addCard('Switch', 3);               // sv5/sv8
-    addCard('Night Stretcher', 3);      // sv8 — replaces rotated Manaphy recovery
-    // Stadium (2)
-    addCard('Pokémon League Headquarters', 2); // sv8 — replaces rotated Temple of Sinnoh
+    // Energy (6)
+    addCard('Psychic Energy', 3);
+    addCard('Fire Energy', 3);
 
-    // Energy (8)
-    addCard('Psychic Energy', 5);
-    addCard('Fire Energy', 2);
-    addCard('Neo Upper Energy', 1);     // sv5 (ACE SPEC)
-
-    console.log(`[2026 Standard] Dragapult deck: ${deck.length} cards`);
+    console.log(`[2026 Standard] Dragapult/Dusknoir deck: ${deck.length} cards`);
     return shuffle(deck);
 }
 
@@ -617,15 +567,6 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/25_hires.png',
     },
 
-    'Energy Switch': {
-        name: 'Energy Switch',
-        type: 'trainer',
-        subtypes: ['Item'],
-        flavorText: 'Move a basic Energy from 1 of your Pokémon to another of your Pokémon.',
-        imageUrl: 'https://images.pokemontcg.io/sv5/173.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv5/173_hires.png',
-    },
-
     // ─── Mega Greninja ex line (me4 — Chaos Rising) ──────────────────────────
     'Froakie': {
         name: 'Froakie',
@@ -762,6 +703,289 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         imageUrlLarge: 'https://images.pokemontcg.io/sv7/44_hires.png',
     },
 
+    // ─── Raging Bolt ex support ──────────────────────────────────────────────
+    'Teal Mask Ogerpon ex': {
+        name: 'Teal Mask Ogerpon ex',
+        type: 'pokemon',
+        hp: 190,
+        energyType: 'grass',
+        subtypes: ['Basic', 'ex'],
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        retreatCost: 1,
+        abilities: [{
+            name: 'Teal Dance',
+            type: 'Ability',
+            text: 'When you play this Pokémon from your hand onto your Bench during your turn, you may attach a Grass Energy card from your hand to 1 of your Pokémon.',
+        }],
+        attacks: [
+            { name: 'Ivy Cudgel', damage: 80, energyCost: ['grass', 'colorless'], description: 'If your opponent\'s Active Pokémon has a Pokémon Tool card attached, this attack does 80 more damage.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/sv6pt5/25.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/25_hires.png',
+    },
+
+    'Hoothoot': {
+        name: 'Hoothoot',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'colorless',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        attacks: [{ name: 'Peck', damage: 20, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/sv7/130.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv7/130_hires.png',
+    },
+
+    'Noctowl': {
+        name: 'Noctowl',
+        type: 'pokemon',
+        hp: 100,
+        energyType: 'colorless',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Hoothoot',
+        retreatCost: 1,
+        abilities: [{
+            name: 'Night Shift',
+            type: 'Ability',
+            text: 'Once during your turn, look at the top 3 cards of your deck. Choose 1 and put it in your hand. Put the other cards on the bottom of your deck in any order.',
+        }],
+        attacks: [{ name: 'Gust', damage: 30, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/sv7/131.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv7/131_hires.png',
+    },
+
+    'Fan Rotom': {
+        name: 'Fan Rotom',
+        type: 'pokemon',
+        hp: 70,
+        energyType: 'lightning',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        abilities: [{
+            name: 'Fan Spinning',
+            type: 'Ability',
+            text: 'Once during your turn, you may look at the top 5 cards of your deck. Reveal a Pokémon you find there and put it into your hand. Shuffle the other cards back into your deck.',
+        }],
+        attacks: [{ name: 'Air Slash', damage: 40, energyCost: ['lightning', 'colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/sv8pt5/62.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv8pt5/62_hires.png',
+    },
+
+    // ─── Dragapult ex / Dusknoir support ────────────────────────────────────
+    'Budew': {
+        name: 'Budew',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'grass',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        abilities: [{
+            name: 'Thorn Pollen',
+            type: 'Ability',
+            text: 'Once during your turn, you may put 1 damage counter on each of your opponent\'s Pokémon that has an Ability.',
+        }],
+        attacks: [{ name: 'Leech Seed', damage: 10, energyCost: ['grass'], description: 'Heal 10 damage from this Pokémon.' }],
+        imageUrl: 'https://images.pokemontcg.io/sv7/5.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv7/5_hires.png',
+    },
+
+    'Hawlucha': {
+        name: 'Hawlucha',
+        type: 'pokemon',
+        hp: 70,
+        energyType: 'fighting',
+        subtypes: ['Basic'],
+        retreatCost: 0,
+        abilities: [{
+            name: 'Flying Entry',
+            type: 'Ability',
+            text: 'When you play this Pokémon from your hand onto your Bench during your turn, you may put 2 damage counters on 1 of your opponent\'s Pokémon.',
+        }],
+        attacks: [{ name: 'Cross Chop', damage: 60, energyCost: ['fighting', 'colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/sv5/118.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv5/118_hires.png',
+    },
+
+    'Bloodmoon Ursaluna ex': {
+        name: 'Bloodmoon Ursaluna ex',
+        type: 'pokemon',
+        hp: 260,
+        energyType: 'colorless',
+        subtypes: ['Basic', 'ex'],
+        retreatCost: 3,
+        abilities: [{
+            name: 'Fallen Giant',
+            type: 'Ability',
+            text: 'This Pokémon is not affected by any effects of your opponent\'s Abilities.',
+        }],
+        attacks: [
+            { name: 'Crescent Moon', damage: 190, energyCost: ['colorless', 'colorless', 'colorless'] },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/sv6pt5/141.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/141_hires.png',
+    },
+
+    'Jacq': {
+        name: 'Jacq',
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Search your deck for an Evolution Pokémon, reveal it, and put it into your hand. Then shuffle your deck.',
+        imageUrl: 'https://images.pokemontcg.io/sv7/135.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv7/135_hires.png',
+    },
+
+    'Counter Catcher': {
+        name: 'Counter Catcher',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Play this only if any of your Pokémon were Knocked Out during your opponent\'s last turn. Switch in 1 of your opponent\'s Benched Pokémon to the Active Spot.',
+        imageUrl: 'https://images.pokemontcg.io/sv6/264.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/264_hires.png',
+    },
+
+    'Unfair Stamp': {
+        name: 'Unfair Stamp',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Play this only if your opponent has 1, 2, or 3 Prize cards remaining. Your opponent shuffles their hand into their deck and draws 3 cards.',
+        imageUrl: 'https://images.pokemontcg.io/sv8/230.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv8/230_hires.png',
+    },
+
+    "Brock's Scouting": {
+        name: "Brock's Scouting",
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Search your deck for up to 2 Evolution Pokémon that evolve from a Pokémon you have in play, reveal them, and put them into your hand. Then shuffle your deck.',
+        imageUrl: 'https://images.pokemontcg.io/me1/93.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/93_hires.png',
+    },
+
+    'Exp. Share': {
+        name: 'Exp. Share',
+        type: 'trainer',
+        subtypes: ['Pokémon Tool'],
+        flavorText: 'When the Pokémon this card is attached to is Knocked Out by damage from an attack, move 1 basic Energy card attached to that Pokémon to 1 of your Benched Pokémon.',
+        imageUrl: 'https://images.pokemontcg.io/sv5/174.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv5/174_hires.png',
+    },
+
+    // ─── Mega Zygarde ex line (me3 — Perfect Order) ───────────────────────────
+    'Zygarde': {
+        name: 'Zygarde',
+        type: 'pokemon',
+        hp: 80,
+        energyType: 'fighting',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        attacks: [
+            { name: 'Core Enforcer', damage: 20, energyCost: ['colorless'] },
+            { name: 'Land Force', damage: 60, energyCost: ['fighting', 'colorless'] },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me3/5.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/5_hires.png',
+    },
+
+    'Zygarde 50%': {
+        name: 'Zygarde 50%',
+        type: 'pokemon',
+        hp: 150,
+        energyType: 'fighting',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Zygarde',
+        retreatCost: 2,
+        abilities: [{
+            name: 'Order Shield',
+            type: 'Ability',
+            text: 'This Pokémon takes 20 less damage from attacks (after applying Weakness and Resistance).',
+        }],
+        attacks: [
+            { name: 'Gaia Blade', damage: 110, energyCost: ['fighting', 'fighting', 'colorless'] },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me3/6.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/6_hires.png',
+    },
+
+    'Mega Zygarde ex': {
+        name: 'Mega Zygarde ex',
+        type: 'pokemon',
+        hp: 340,
+        energyType: 'fighting',
+        subtypes: ['Stage 2', 'ex', 'Mega'],
+        evolvesFrom: 'Zygarde 50%',
+        weaknesses: [{ type: 'grass', value: '×2' }],
+        retreatCost: 3,
+        abilities: [{
+            name: 'Lands Force',
+            type: 'Ability',
+            text: 'If you have Lunatone and Solrock on your Bench, your Fighting Pokémon\'s attacks do 30 more damage to the opponent\'s Active Pokémon.',
+        }],
+        attacks: [
+            {
+                name: 'Gaia Wave',
+                damage: 200,
+                energyCost: ['fighting', 'fighting', 'fighting'],
+                description: 'This attack also does 20 damage to each of your opponent\'s Benched Pokémon.',
+            },
+            {
+                name: 'Nullifying Zero',
+                damage: 260,
+                energyCost: ['fighting', 'fighting', 'fighting', 'colorless'],
+                description: 'This attack also does 50 damage to all of your opponent\'s Benched Pokémon. This Pokémon cannot use Nullifying Zero during your next turn.',
+            },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me3/188.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/188_hires.png',
+    },
+
+    'Binacle': {
+        name: 'Binacle',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'fighting',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        attacks: [{ name: 'Scratch', damage: 10, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me3/35.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/35_hires.png',
+    },
+
+    'Barbaracle': {
+        name: 'Barbaracle',
+        type: 'pokemon',
+        hp: 130,
+        energyType: 'fighting',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Binacle',
+        retreatCost: 2,
+        abilities: [{
+            name: 'Stone Arms',
+            type: 'Ability',
+            text: 'Once during your turn, you may attach a Basic Fighting Energy card from your discard pile to 1 of your Pokémon.',
+        }],
+        attacks: [{ name: 'Rock Smash', damage: 100, energyCost: ['fighting', 'fighting'] }],
+        imageUrl: 'https://images.pokemontcg.io/me3/36.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/36_hires.png',
+    },
+
+    'Tarragon': {
+        name: 'Tarragon',
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Retrieve up to 4 Basic Fighting Energy cards from your discard pile and put them into your hand.',
+        imageUrl: 'https://images.pokemontcg.io/me3/95.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/95_hires.png',
+    },
+
+    'Poké Pad': {
+        name: 'Poké Pad',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Search your deck for a Pokémon Tool card or a basic Energy card, reveal it, and put it into your hand. Then shuffle your deck.',
+        imageUrl: 'https://images.pokemontcg.io/me3/101.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/101_hires.png',
+    },
+
     // ─── Shared trainers (if not already in STANDARD_PROXY_CARDS) ────────────
     'Energy Retrieval': {
         name: 'Energy Retrieval',
@@ -871,42 +1095,42 @@ async function buildDeckHelper() {
 
 // ============================================
 // RAGING BOLT EX DECK — 2026 Standard (H-On)
-// Lightning/Ancient aggro — 60 cards
-// 12 Pokémon / 36 Trainers / 12 Energy
+// Real competitive list: Noctowl consistency + Raging Thunder 280 damage
+// 60 cards: 14 Pokémon / 34 Trainers / 12 Energy
 // ============================================
 export async function createRagingBoltExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
 
-    // Pokémon (12)
-    addCard('Raging Bolt ex', 3);      // sv7 — main attacker
-    addCard('Regieleki ex', 2);         // sv5 — Transistor ability: +30 damage
-    addCard('Sandy Shocks ex', 2);      // sv6 — bench snipe spread
-    addCard('Flutter Mane', 2);         // sv5 — draw 2 ability
-    addCard('Ogerpon ex', 1);           // sv6pt5 — versatile pivot + healing
-    addCard('Munkidori', 2);            // sv6 — poison chip damage
+    // Pokémon (14)
+    addCard('Raging Bolt ex', 3);          // sv7 — Raging Thunder: LLLG → 280dmg, discard 2 Lightning
+    addCard('Teal Mask Ogerpon ex', 3);    // sv6pt5 — Teal Dance: attach Grass when played; Ivy Cudgel 80+
+    addCard('Hoothoot', 3);               // sv7 — evolves into Noctowl
+    addCard('Noctowl', 3);                // sv7 — Night Shift: look top 3, take 1 (key consistency engine)
+    addCard('Fan Rotom', 2);              // sv8pt5 — Fan Spinning: look top 5, grab a Pokémon
 
     // Trainers — Supporters (10)
-    addCard("Professor's Research", 4);
-    addCard('Iono', 3);
-    addCard("Boss's Orders", 2);
-    addCard('Crispin', 1);
+    addCard('Iono', 4);
+    addCard("Boss's Orders", 3);
+    addCard('Crispin', 1);                // sv7 — energy from discard
+    addCard('Carmine', 1);                // sv6pt5 — draw up to 5
+    addCard('Judge', 1);                  // sv5 — both players draw 4
 
-    // Trainers — Items (24)
+    // Trainers — Items (22)
     addCard('Ultra Ball', 4);
-    addCard('Nest Ball', 4);
+    addCard('Nest Ball', 3);
+    addCard('Buddy-Buddy Poffin', 3);     // grab Hoothoot + Fan Rotom (both ≤70HP)
     addCard('Switch', 3);
-    addCard('Super Rod', 2);
     addCard('Night Stretcher', 3);
-    addCard('Energy Retrieval', 3);
-    addCard('Premium Power Pro', 3);
-    addCard('Buddy-Buddy Poffin', 2);
+    addCard('Energy Retrieval', 3);       // retrieve Lightning Energy
+    addCard('Super Rod', 2);
+    addCard('Counter Catcher', 1);
 
     // Trainers — Stadiums (2)
     addCard('Pokémon League Headquarters', 2);
 
     // Energy (12)
-    addCard('Lightning Energy', 10);
-    addCard('Grass Energy', 2);          // needed for Raging Thunder cost
+    addCard('Lightning Energy', 9);
+    addCard('Grass Energy', 3);           // for Raging Thunder's 4th energy requirement + Ogerpon
 
     console.log(`[2026 Standard] Raging Bolt ex deck: ${deck.length} cards`);
     return shuffle(deck);
@@ -955,6 +1179,46 @@ export async function createMegaGreninjaExDeck(): Promise<Card[]> {
     return shuffle(deck);
 }
 
+// ============================================
+// MEGA ZYGARDE EX DECK — 2026 Standard (H-On)
+// me3 (Perfect Order) — Fighting/spread control
+// 60 cards: 17 Pokémon / 31 Trainers / 12 Energy
+// ============================================
+export async function createMegaZygardeExDeck(): Promise<Card[]> {
+    const { deck, addCard } = await buildDeckHelper();
+
+    // Pokémon (17)
+    addCard('Zygarde', 4);               // me3 — Basic, evolves into Zygarde 50%
+    addCard('Zygarde 50%', 3);           // me3 — Stage 1, Order Shield -20 damage
+    addCard('Mega Zygarde ex', 2);       // me3 — Stage 2, Gaia Wave + Nullifying Zero spread
+    addCard('Binacle', 4);               // me3 — Basic, evolves into Barbaracle
+    addCard('Barbaracle', 3);            // me3 — Stone Arms: attach Fighting from discard each turn
+    addCard('Lunatone', 1);              // me1 — Lunar Cycle: discard Fighting Energy to draw 3
+
+    // Trainers — Supporters (11)
+    addCard('Tarragon', 4);              // me3 — retrieve 4 Fighting Energy from discard
+    addCard("Professor's Research", 3);
+    addCard('Iono', 2);
+    addCard("Boss's Orders", 2);
+
+    // Trainers — Items (18)
+    addCard('Rare Candy', 4);            // sv5/sv8 — Zygarde→Mega Zygarde ex
+    addCard('Ultra Ball', 4);
+    addCard('Nest Ball', 4);
+    addCard('Super Rod', 2);
+    addCard('Night Stretcher', 2);
+    addCard('Poké Pad', 2);              // me3 — search for Tool or Energy
+
+    // Trainers — Stadiums (2)
+    addCard('Pokémon League Headquarters', 2);
+
+    // Energy (12)
+    addCard('Fighting Energy', 12);
+
+    console.log(`[2026 Standard] Mega Zygarde ex deck: ${deck.length} cards`);
+    return shuffle(deck);
+}
+
 export function shuffleDeck<T>(deck: T[]): T[] {
     return shuffle(deck);
 }
@@ -964,4 +1228,5 @@ export const standardDecks = {
     dragapultEx: createDragapultExDeck,
     ragingBoltEx: createRagingBoltExDeck,
     megaGreninjaEx: createMegaGreninjaExDeck,
+    megaZygardeEx: createMegaZygardeExDeck,
 };
