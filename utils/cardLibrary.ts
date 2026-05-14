@@ -33,9 +33,7 @@ const SET_DISPLAY_NAMES: Record<string, string> = {
     me2:      'Phantasmal Flames',
     me2pt5:   'Ascended Heroes',
     me3:      'Perfect Order',
-    sv10:     'Destined Rivals',
-    zsv10pt5: 'Black Bolt',
-    rsv10pt5: 'White Flare',
+    me4:      'Chaos Rising',
 };
 
 function apiCardToLibraryCard(apiCard: any, setId: string): LibraryCard {

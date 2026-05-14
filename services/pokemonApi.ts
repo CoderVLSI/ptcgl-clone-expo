@@ -79,22 +79,23 @@ export const AVAILABLE_SETS = {
     me1:     'Mega Evolution',
     me2:     'Phantasmal Flames',
     me2pt5:  'Ascended Heroes',
-    me3:     'Perfect Order',
-    // Destined Rivals era — regulation mark J (legal)
-    sv10:    'Destined Rivals',
-    zsv10pt5: 'Black Bolt',
-    rsv10pt5: 'White Flare',
+    me3:     'Perfect Order',      // J mark — Mega Zygarde ex mascot (March 27, 2026)
+    me4:     'Chaos Rising',       // J mark — Mega Greninja ex mascot (May 22, 2026)
+    // Pitch Black (me5, July 17 2026) — not yet released as of May 2026
 } as const;
 
 export type StandardSetId = keyof typeof AVAILABLE_SETS;
 
 // Ordered list of all 2026 Standard set IDs (newest first for search priority)
+// Last updated: May 2026
+// Pitch Black (me5, July 17 2026) omitted — not yet released
 export const STANDARD_2026_SETS: string[] = [
-    'rsv10pt5', 'zsv10pt5', 'sv10',
-    'me3', 'me2pt5', 'me2', 'me1',
-    'sv9', 'sv8pt5', 'sv8',
-    'sv7', 'sv6pt5', 'sv6', 'sv5',
-    'sve',
+    'me4',                          // Chaos Rising       — J mark (May 22, 2026)
+    'me3',                          // Perfect Order      — J mark (March 27, 2026)
+    'me2pt5', 'me2', 'me1',         // Ascended Heroes / Phantasmal Flames / Mega Evolution — H/I
+    'sv9', 'sv8pt5', 'sv8',         // Journey Together / Prismatic Evolutions / Surging Sparks — I
+    'sv7', 'sv6pt5', 'sv6', 'sv5',  // Stellar Crown / Shrouded Fable / Twilight Masquerade / Temporal Forces — H
+    'sve',                          // SV Energies
 ];
 
 const BASE_DATA_URL = 'https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master/cards/en';
