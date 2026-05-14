@@ -554,20 +554,28 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             {/* Card Selector Modals (Ultra Ball, etc) */}
             <CardSelectorModal
                 visible={logicState.actionMode === 'discard_from_hand'}
-                title={`Discard ${logicState.discardCount || 1} Cards`}
-                subtitle={logicState.message || "Select cards to discard"}
+                title={
+                    logicState.activeCardId === 'carmine_topdeck'
+                        ? 'Carmine — Put 2 Cards on Deck'
+                        : `Discard ${logicState.discardCount || 1} Cards`
+                }
+                subtitle={logicState.message || "Select cards"}
                 cards={gameState.player.hand.filter(c => c.id !== logicState.activeCardId)}
                 minSelection={logicState.discardCount || 1}
                 maxSelection={logicState.discardCount || 1}
                 onConfirm={confirmDiscard}
                 onCancel={() => selectCard(null, 'none')}
-                confirmText="Discard Selected"
+                confirmText={
+                    logicState.activeCardId === 'carmine_topdeck'
+                        ? 'Put on Top of Deck'
+                        : 'Discard Selected'
+                }
             />
 
             <CardSelectorModal
                 visible={logicState.actionMode === 'search_deck'}
-                title="Ultra Ball"
-                subtitle="Select a Pokémon to put into your hand"
+                title="Search Deck — Pick a Pokémon"
+                subtitle={logicState.message || "Select a Pokémon to put into your hand"}
                 cards={[
                     // Pokémon first (eligible)
                     ...gameState.player.deck.filter(c => c.type === 'pokemon'),
@@ -581,7 +589,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 maxSelection={1}
                 onConfirm={confirmDeckSelection}
                 onCancel={() => selectCard(null, 'none')}
-                confirmText="Select Pokémon"
+                confirmText="Add to Hand"
             />
 
             {/* Nest Ball Modal */}
@@ -648,17 +656,27 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 confirmText="Add to Hand"
             />
 
-            {/* Energy Selection from Discard (Mega Lucario) */}
+            {/* Energy Selection from Discard (Mega Lucario Ora Jab / Crispin) */}
             <CardSelectorModal
                 visible={logicState.actionMode === 'attach_energy_from_discard'}
                 title="Select Energy from Discard"
-                subtitle={logicState.message || "Select up to 3 Fighting Energy to attach."}
-                cards={gameState.player.discardPile.filter(c => c.type === 'energy' && (c.name.includes('Fighting') || c.energyType === 'fighting'))}
+                subtitle={logicState.message || "Select Energy card(s) to attach."}
+                cards={
+                    logicState.activeCardId === 'crispin_attach'
+                        // Crispin: any basic energy
+                        ? gameState.player.discardPile.filter(c => c.type === 'energy')
+                        // Ora Jab: Fighting Energy only
+                        : gameState.player.discardPile.filter(c => c.type === 'energy' && (c.name.includes('Fighting') || c.energyType === 'fighting'))
+                }
                 minSelection={1}
-                maxSelection={3}
-                onConfirm={confirmDiscardEnergySelection}
+                maxSelection={logicState.activeCardId === 'crispin_attach' ? 1 : 3}
+                onConfirm={
+                    logicState.activeCardId === 'crispin_attach'
+                        ? (ids) => confirmDiscardSelection(ids)
+                        : confirmDiscardEnergySelection
+                }
                 onCancel={() => selectCard(null, 'none')}
-                confirmText="Attach to Bench"
+                confirmText={logicState.activeCardId === 'crispin_attach' ? 'Attach Energy' : 'Attach to Bench'}
             />
 
             {/* Switch / Retreat bench selection */}

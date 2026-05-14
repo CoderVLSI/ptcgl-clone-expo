@@ -116,6 +116,19 @@ const CardSelectorModal: React.FC<CardSelectorModalProps> = ({
                                     >
                                         <Card card={card} isSmall />
 
+                                        {/* Card name label */}
+                                        <Text style={styles.cardNameLabel} numberOfLines={2}>
+                                            {card.name}
+                                        </Text>
+
+                                        {/* HP / type badge */}
+                                        {card.type === 'pokemon' && card.hp && (
+                                            <Text style={styles.cardHpLabel}>{card.hp} HP</Text>
+                                        )}
+                                        {card.type === 'energy' && (
+                                            <Text style={styles.cardHpLabel}>{(card.energyType || 'colorless').toUpperCase()}</Text>
+                                        )}
+
                                         {/* Ineligible Overlay */}
                                         {isIneligible && (
                                             <View style={styles.ineligibleOverlay}>
@@ -269,6 +282,19 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         marginTop: 50,
+    },
+    cardNameLabel: {
+        color: '#fff',
+        fontSize: 9,
+        textAlign: 'center',
+        marginTop: 4,
+        maxWidth: 70,
+        fontWeight: '600',
+    },
+    cardHpLabel: {
+        color: '#aaa',
+        fontSize: 8,
+        textAlign: 'center',
     },
     footer: {
         flexDirection: 'row',
