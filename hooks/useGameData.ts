@@ -106,8 +106,14 @@ export function useGameData() {
             offlineDeck.push(createCard(`energy-${i}`, `Energy ${i + 1}`, 'energy'));
         }
 
-        setPlayerDeck(shuffle([...offlineDeck]));
+        const shuffledDeck = shuffle([...offlineDeck]);
+        setPlayerDeck(shuffledDeck);
         setOpponentDeck(shuffle([...offlineDeck.map(c => ({ ...c, id: `opp-${c.id}` }))]));
+        // Provide minimal availableDecks so Deck Selection screen doesn't crash
+        setAvailableDecks([
+            { id: 'deck-offline-1', name: 'Offline Deck A', cards: shuffledDeck, type: 'fighting' },
+            { id: 'deck-offline-2', name: 'Offline Deck B', cards: shuffle([...offlineDeck.map(c => ({ ...c, id: `b-${c.id}` }))]), type: 'psychic' },
+        ]);
         setDecksReady(true);
         setSetupPhase('coin_flip');
     }

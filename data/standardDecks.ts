@@ -80,42 +80,31 @@ function findCardByName(cards: PokemonCardData[], name: string): PokemonCardData
 // but may not always be reachable from the API.
 // ============================================
 const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
-    // --- Mega Lucario ex line (me1) ---
+    // --- Mega Lucario ex line (me1) — data verified against local me1.json ---
     'Mega Lucario ex': {
         name: 'Mega Lucario ex',
         type: 'pokemon',
         hp: 340,
         energyType: 'fighting',
-        subtypes: ['Stage 2', 'ex', 'Mega'],
+        subtypes: ['Stage 1', 'MEGA', 'ex'],  // Stage 1 MEGA evolves directly from Riolu
+        evolvesFrom: 'Riolu',
         attacks: [
-            { name: 'Aura Jab', damage: 130, energyCost: ['fighting'], description: 'Attach up to 3 Basic Fighting Energy from your discard pile to your Benched Pokémon.' },
+            { name: 'Aura Jab', damage: 130, energyCost: ['fighting'], description: 'Attach up to 3 Basic Fighting Energy cards from your discard pile to your Benched Pokémon in any way you like.' },
             { name: 'Mega Brave', damage: 270, energyCost: ['fighting', 'fighting'], description: 'During your next turn, this Pokémon cannot use Mega Brave.' }
         ],
-        imageUrl: 'https://images.pokemontcg.io/me1/188.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me1/188_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me1/77.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/77_hires.png',
     },
-    'Lucario': {
-        name: 'Lucario',
-        type: 'pokemon',
-        hp: 120,
-        energyType: 'fighting',
-        subtypes: ['Stage 1'],
-        attacks: [
-            { name: 'Spike Draw', damage: 40, energyCost: ['fighting'] },
-            { name: 'Knuckle Impact', damage: 120, energyCost: ['fighting', 'fighting'] }
-        ],
-        imageUrl: 'https://images.pokemontcg.io/me1/71.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me1/71_hires.png',
-    },
+    // NOTE: Lucario (Stage 1) does NOT exist in me1. Evolution is Riolu → Mega Lucario ex directly.
     'Riolu': {
         name: 'Riolu',
         type: 'pokemon',
-        hp: 70,
+        hp: 80,
         energyType: 'fighting',
         subtypes: ['Basic'],
-        attacks: [{ name: 'Punch', damage: 10, energyCost: ['colorless'] }],
-        imageUrl: 'https://images.pokemontcg.io/me1/70.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me1/70_hires.png',
+        attacks: [{ name: 'Accelerating Stab', damage: 30, energyCost: ['fighting'], description: 'During your next turn, this Pokémon can\'t use Accelerating Stab.' }],
+        imageUrl: 'https://images.pokemontcg.io/me1/76.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/76_hires.png',
     },
     'Hariyama': {
         name: 'Hariyama',
@@ -197,7 +186,7 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
         name: 'Premium Power Pro',
         type: 'trainer',
         subtypes: ['Item'],
-        flavorText: 'Your Pokémon\'s attacks do +30 more damage.',
+        flavorText: 'During this turn, attacks used by your Fighting Pokémon do 30 more damage to your opponent\'s Active Pokémon (before applying Weakness and Resistance).',
         imageUrl: 'https://images.pokemontcg.io/me1/105.png',
         imageUrlLarge: 'https://images.pokemontcg.io/me1/105_hires.png',
     },
@@ -214,11 +203,15 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
         name: 'Fezandipiti ex',
         type: 'pokemon',
         hp: 210,
-        energyType: 'psychic',
+        energyType: 'darkness',
         subtypes: ['Basic', 'ex'],
+        abilities: [{
+            name: 'Flip the Script',
+            type: 'Ability',
+            text: 'Once during your turn, if any of your Pokémon were Knocked Out during your opponent\'s last turn, you may use this Ability. Each player shuffles their hand into their deck. You draw 7 cards; your opponent draws 4 cards.',
+        }],
         attacks: [
-            { name: 'Adrena-Pheromone', damage: 0, energyCost: ['colorless'], description: 'Flip a coin. If heads, prevent all damage done to this Pokémon during your opponent\'s next turn.' },
-            { name: 'Energy Feather', damage: 30, energyCost: ['psychic'], description: 'This attack does 30 more damage for each Energy attached to this Pokémon.' }
+            { name: 'Feather Storm', damage: 60, energyCost: ['darkness', 'colorless'], description: 'This attack does 60 damage to 2 of your opponent\'s Pokémon (don\'t apply Weakness and Resistance for Benched Pokémon).' },
         ],
         imageUrl: 'https://images.pokemontcg.io/sv6pt5/38.png',
         imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/38_hires.png',
@@ -229,7 +222,12 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
         hp: 110,
         energyType: 'psychic',
         subtypes: ['Basic'],
-        attacks: [{ name: 'Mind Bend', damage: 30, energyCost: ['psychic', 'colorless'], description: 'Your opponent\'s Active Pokémon is now Confused.' }],
+        abilities: [{
+            name: 'Adrena-Brain',
+            type: 'Ability',
+            text: 'Once during your turn, if this Pokémon has any Darkness Energy attached, you may move 3 damage counters from 1 of your Pokémon to 1 of your opponent\'s Pokémon.',
+        }],
+        attacks: [{ name: 'Mind Bend', damage: 60, energyCost: ['psychic', 'colorless'], description: 'Your opponent\'s Active Pokémon is now Confused.' }],
         imageUrl: 'https://images.pokemontcg.io/sv6/95.png',
         imageUrlLarge: 'https://images.pokemontcg.io/sv6/95_hires.png',
     },
@@ -294,7 +292,8 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
 
 // ============================================
 // MEGA LUCARIO EX DECK — 2026 Standard (H-On)
-// 60 cards: 16 Pokémon / 32 Trainers / 12 Energy
+// 60 cards: 15 Pokémon / 33 Trainers / 12 Energy
+// Evolution: Riolu → Mega Lucario ex (Stage 1 MEGA directly, no Lucario Stage 1)
 // ============================================
 export async function createMegaLucarioExDeck(): Promise<Card[]> {
     const deck: Card[] = [];
@@ -352,29 +351,28 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
         }
     };
 
-    // Pokémon (16) — all standard-legal
-    addCard('Mega Lucario ex', 3);   // me1
-    addCard('Lucario', 1);            // me1
-    addCard('Riolu', 4);              // me1
+    // Pokémon (16) — Riolu evolves DIRECTLY into Mega Lucario ex (Stage 1 MEGA, no Lucario Stage 1 exists)
+    addCard('Mega Lucario ex', 3);   // me1 — Stage 1 MEGA, evolvesFrom Riolu
+    addCard('Riolu', 4);              // me1 — Basic
     addCard('Lunatone', 2);           // me1
     addCard('Solrock', 2);            // me1
     addCard('Hariyama', 2);           // me1
     addCard('Makuhita', 2);           // me1
 
-    // Trainers (32) — all standard-legal
+    // Trainers (33) — all standard-legal
     // Supporters (9)
     addCard("Professor's Research", 4); // sv5/sv8
     addCard('Iono', 3);                 // sv6/sv8
     addCard("Boss's Orders", 2);        // sv7/sv8
-    // Items (21)
-    addCard('Fighting Gong', 4);        // me1
+    // Items (22)
+    addCard('Fighting Gong', 4);        // me1 — search Fighting Energy or Fighting Pokémon
     addCard('Ultra Ball', 4);           // sv5/sv8
-    addCard('Nest Ball', 3);            // sv5/sv8
-    addCard('Buddy-Buddy Poffin', 3);   // sv5 — replaces rotated Manaphy + Radiant Greninja
-    addCard('Premium Power Pro', 3);    // me1
+    addCard('Nest Ball', 4);            // sv5/sv8 — Riolu/Makuhita 80HP don't qualify for Poffin
+    addCard('Premium Power Pro', 3);    // me1 — Fighting attacks +30 this turn
     addCard('Super Rod', 2);            // sv5/sv8
-    addCard('Switch', 2);               // sv5/sv8
-    // Trainers (2) — special
+    addCard('Switch', 3);               // sv5/sv8
+    addCard('Energy Retrieval', 2);     // sv5 — get Fighting Energy back
+    // Supporters — special
     addCard("Lillie's Determination", 2); // me1
 
     // Energy (12)
@@ -443,7 +441,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
     'Raging Bolt ex': {
         name: 'Raging Bolt ex',
         type: 'pokemon',
-        hp: 210,
+        hp: 230,
         energyType: 'lightning',
         subtypes: ['Basic', 'ex', 'Ancient'],
         weaknesses: [{ type: 'fighting', value: '×2' }],
@@ -707,7 +705,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
     'Teal Mask Ogerpon ex': {
         name: 'Teal Mask Ogerpon ex',
         type: 'pokemon',
-        hp: 190,
+        hp: 160,
         energyType: 'grass',
         subtypes: ['Basic', 'ex'],
         weaknesses: [{ type: 'fire', value: '×2' }],
@@ -715,10 +713,10 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         abilities: [{
             name: 'Teal Dance',
             type: 'Ability',
-            text: 'When you play this Pokémon from your hand onto your Bench during your turn, you may attach a Grass Energy card from your hand to 1 of your Pokémon.',
+            text: 'When you play this Pokémon from your hand onto your Bench during your turn, you may attach a basic Grass Energy card from your hand to 1 of your Pokémon.',
         }],
         attacks: [
-            { name: 'Ivy Cudgel', damage: 80, energyCost: ['grass', 'colorless'], description: 'If your opponent\'s Active Pokémon has a Pokémon Tool card attached, this attack does 80 more damage.' },
+            { name: 'Ivy Cudgel', damage: 80, energyCost: ['grass', 'colorless'], description: 'If your opponent\'s Active Pokémon has a Rule Box, this attack does 80 more damage.' },
         ],
         imageUrl: 'https://images.pokemontcg.io/sv6pt5/25.png',
         imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/25_hires.png',
@@ -775,16 +773,16 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
     'Budew': {
         name: 'Budew',
         type: 'pokemon',
-        hp: 60,
+        hp: 40,
         energyType: 'grass',
         subtypes: ['Basic'],
-        retreatCost: 1,
+        retreatCost: 0,
         abilities: [{
-            name: 'Thorn Pollen',
+            name: 'Irritating Pollen',
             type: 'Ability',
-            text: 'Once during your turn, you may put 1 damage counter on each of your opponent\'s Pokémon that has an Ability.',
+            text: 'Once during your turn, if this Pokémon is in the Active Spot, your opponent can\'t play any Supporter cards from their hand during their next turn.',
         }],
-        attacks: [{ name: 'Leech Seed', damage: 10, energyCost: ['grass'], description: 'Heal 10 damage from this Pokémon.' }],
+        attacks: [{ name: 'Ram', damage: 10, energyCost: ['colorless'] }],
         imageUrl: 'https://images.pokemontcg.io/sv7/5.png',
         imageUrlLarge: 'https://images.pokemontcg.io/sv7/5_hires.png',
     },

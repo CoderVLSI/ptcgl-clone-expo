@@ -101,8 +101,8 @@ const DeckSelectionScreen: React.FC<DeckSelectionScreenProps> = ({ onBack, playe
         </View>
     );
 
-    // Get currently selected deck data for the modal
-    const currentSelectedDeck = displayDecks.find(d => d.id === selectedDeckId) || displayDecks[0];
+    // Get currently selected deck data for the modal (safe fallback to empty deck)
+    const currentSelectedDeck = displayDecks.find(d => d.id === selectedDeckId) || displayDecks[0] || { id: '', name: '', cards: [], type: '', color: '#888', valid: false, image: '' };
 
     return (
         <View style={styles.container}>
