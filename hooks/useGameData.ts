@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, GameState, Player } from '../types/game';
-import { createMegaLucarioExDeck, createDragapultExDeck } from '../data/standardDecks';
+import { createMegaLucarioExDeck, createDragapultExDeck, createRagingBoltExDeck, createMegaGreninjaExDeck } from '../data/standardDecks';
 
 export interface GameSetupData {
     playerDeck: Card[];
@@ -50,24 +50,25 @@ export function useGameData() {
             setError(null);
             setSetupPhase('loading');
 
-            // Use 2026 Standard Format top decks (async - fetches from API)
-            // Player: Mega Lucario ex deck (60 cards)
-            // Opponent: Dragapult ex deck (60 cards)
-            const [megaLucarioDeck, dragapultDeck] = await Promise.all([
+            // Load all 4 competitive decks in parallel
+            const [megaLucarioDeck, dragapultDeck, ragingBoltDeck, megaGreninajaDeck] = await Promise.all([
                 createMegaLucarioExDeck(),
                 createDragapultExDeck(),
+                createRagingBoltExDeck(),
+                createMegaGreninjaExDeck(),
             ]);
 
-            console.log(`Player deck size: ${megaLucarioDeck.length}`);
-            console.log(`Opponent deck size: ${dragapultDeck.length}`);
+            console.log(`Lucario deck: ${megaLucarioDeck.length} | Dragapult: ${dragapultDeck.length} | Raging Bolt: ${ragingBoltDeck.length} | Mega Greninja: ${megaGreninajaDeck.length}`);
 
             const decks = [
-                { id: 'deck-lucario', name: 'Mega Lucario ex', cards: megaLucarioDeck, type: 'fighting' },
-                { id: 'deck-dragapult', name: 'Dragapult ex', cards: dragapultDeck, type: 'psychic' }
+                { id: 'deck-lucario',   name: 'Mega Lucario ex',   cards: megaLucarioDeck,    type: 'fighting'   },
+                { id: 'deck-dragapult', name: 'Dragapult ex',       cards: dragapultDeck,      type: 'psychic'    },
+                { id: 'deck-bolt',      name: 'Raging Bolt ex',     cards: ragingBoltDeck,     type: 'lightning'  },
+                { id: 'deck-greninja',  name: 'Mega Greninja ex',   cards: megaGreninajaDeck,  type: 'water'      },
             ];
             setAvailableDecks(decks);
 
-            // Set decks (already shuffled in builders)
+            // Default: player starts with Lucario, opponent with Dragapult
             setPlayerDeck(megaLucarioDeck);
             setOpponentDeck(dragapultDeck);
             setDecksReady(true);
