@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Colors from '../constants/colors';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import useGameDimensions from '../hooks/useGameDimensions';
 
 interface DeckPileProps {
     count: number;
@@ -17,8 +16,9 @@ export const DeckPile: React.FC<DeckPileProps> = ({
     onPress,
     size = 'medium',
 }) => {
+    const { width: GAME_WIDTH } = useGameDimensions();
     const sizeMultiplier = size === 'small' ? 0.7 : size === 'large' ? 1.3 : 1;
-    const cardWidth = SCREEN_WIDTH * 0.12 * sizeMultiplier;
+    const cardWidth = GAME_WIDTH * 0.12 * sizeMultiplier;
     const cardHeight = cardWidth * 1.4;
 
     // Create stacked card effect

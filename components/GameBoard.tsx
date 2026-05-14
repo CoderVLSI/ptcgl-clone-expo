@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Dimensions, Alert } from 'react-native';
+import { View, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
 import { GameState, Card as CardType, EnergyType } from '../types/game';
 import Colors from '../constants/colors';
 import useGameLogic from '../hooks/useGameLogic';
 import { getNextAIAction, applyAIAction, AIAction } from '../utils/aiOpponent';
+import useGameDimensions from '../hooks/useGameDimensions';
 import OpponentArea from './OpponentArea';
 import PlayMat from './PlayMat';
 import PlayerArea from './PlayerArea';
@@ -26,13 +27,13 @@ import {
 } from './Animations';
 import { TouchableOpacity, Text } from 'react-native';
 
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-
 interface GameBoardProps {
     gameState?: GameState;
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameState }) => {
+    const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useGameDimensions();
+
     const {
         gameState,
         logicState,
@@ -778,7 +779,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         left: 0,
         right: 0,
-        bottom: SCREEN_HEIGHT * 0.05,
+        bottom: '5%',
         zIndex: 10,
     },
     pendingIndicator: {

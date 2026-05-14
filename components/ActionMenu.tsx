@@ -5,10 +5,10 @@ import {
     StyleSheet,
     TouchableOpacity,
     PanResponder,
-    Dimensions,
 } from 'react-native';
 import { Card } from '../types/game';
 import Colors from '../constants/colors';
+import useGameDimensions from '../hooks/useGameDimensions';
 
 interface ActionMenuProps {
     card: Card | null;
@@ -28,8 +28,6 @@ interface ActionMenuProps {
     selectionMode?: boolean;
 }
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 export const ActionMenu: React.FC<ActionMenuProps> = ({
     card,
     visible,
@@ -47,22 +45,20 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
     message,
     selectionMode = false,
 }) => {
-    // Position state - default below end turn button
-    const [position, setPosition] = useState({ x: SCREEN_WIDTH - 170, y: 100 });
+    const { width: GAME_WIDTH, height: GAME_HEIGHT } = useGameDimensions();
+    const [position, setPosition] = useState({ x: GAME_WIDTH - 170, y: 100 });
 
     const panResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponder: () => true,
             onPanResponderMove: (_, gesture) => {
-                setPosition({
-                    x: Math.max(0, Math.min(SCREEN_WIDTH - 160, position.x + gesture.dx)),
-                    y: Math.max(0, Math.min(SCREEN_HEIGHT - 200, position.y + gesture.dy)),
-                });
+                setPosition(prev => ({
+                    x: Math.max(0, Math.min(GAME_WIDTH - 160, prev.x + gesture.dx)),
+                    y: Math.max(0, Math.min(GAME_HEIGHT - 200, prev.y + gesture.dy)),
+                }));
             },
-            onPanResponderRelease: () => {
-                // Position is already updated
-            },
+            onPanResponderRelease: () => {},
         })
     ).current;
 

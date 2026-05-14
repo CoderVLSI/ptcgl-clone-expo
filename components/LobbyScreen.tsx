@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/colors';
 import { Card } from '../types/game';
 import DeckManager from './DeckManager';
-
-const { width, height } = Dimensions.get('window');
 
 interface LobbyScreenProps {
     onPlayPress: () => void;
@@ -19,6 +17,7 @@ interface LobbyScreenProps {
 export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDeck = [], activeDeckName = "Deck", onEditDeck, onDecksPress, onUpdateDeck }) => {
     const [mode, setMode] = useState<'Ranked' | 'Casual'>('Ranked');
     const [showDeckManager, setShowDeckManager] = useState(false);
+    const { width, height } = useWindowDimensions();
 
     return (
         <View style={styles.container}>
@@ -36,14 +35,14 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDec
 
             {/* Background */}
             <Image
-                source={{ uri: 'https://images.pokemontcg.io/swsh12pt5/160_hires.png' }} // Placeholder for dynamic background (Pikachu VMAX or similar)
-                style={styles.backgroundImage}
+                source={{ uri: 'https://images.pokemontcg.io/swsh12pt5/160_hires.png' }}
+                style={[styles.backgroundImage, { width, height }]}
                 resizeMode="cover"
                 blurRadius={3}
             />
             <LinearGradient
                 colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.7)', '#1A1A2E']}
-                style={styles.gradientOverlay}
+                style={[styles.gradientOverlay, { width, height }]}
             />
 
             <SafeAreaView style={styles.safeArea}>
@@ -210,14 +209,10 @@ const styles = StyleSheet.create({
     },
     backgroundImage: {
         position: 'absolute',
-        width: width,
-        height: height,
         opacity: 0.6,
     },
     gradientOverlay: {
         position: 'absolute',
-        width: width,
-        height: height,
     },
     safeArea: {
         flex: 1,

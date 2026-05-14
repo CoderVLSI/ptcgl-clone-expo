@@ -6,14 +6,11 @@ import {
     TouchableOpacity,
     Modal,
     ScrollView,
-    Dimensions,
     Image,
 } from 'react-native';
 import { Card as CardType } from '../types/game';
 import Colors from '../constants/colors';
 import Card from './Card';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface CardSelectorModalProps {
     visible: boolean;

@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Colors from '../constants/colors';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import useGameDimensions from '../hooks/useGameDimensions';
 
 interface PrizeCardsProps {
     count: number;
@@ -17,7 +16,8 @@ export const PrizeCards: React.FC<PrizeCardsProps> = ({
     isOpponent = false,
     orientation = 'horizontal',
 }) => {
-    const cardWidth = SCREEN_WIDTH * 0.08;
+    const { width: GAME_WIDTH } = useGameDimensions();
+    const cardWidth = GAME_WIDTH * 0.08;
     const cardHeight = cardWidth * 1.4;
 
     const isVertical = orientation === 'vertical';

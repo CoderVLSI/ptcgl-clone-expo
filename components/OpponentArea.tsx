@@ -1,12 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { Player } from '../types/game';
 import Colors from '../constants/colors';
 import DeckPile from './DeckPile';
 import DiscardPile from './DiscardPile';
 import PrizeCards from './PrizeCards';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface OpponentAreaProps {
     opponent: Player;

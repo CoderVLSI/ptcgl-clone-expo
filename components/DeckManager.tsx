@@ -1,10 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/colors';
 import { Card } from '../types/game';
-
-const { width, height } = Dimensions.get('window');
 
 interface DeckManagerProps {
     visible: boolean;
@@ -174,8 +172,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     container: {
-        width: width * 0.85,
-        height: height * 0.75,
+        width: '85%',
+        height: '75%',
         backgroundColor: '#F0F0F0',
         borderRadius: 16,
         overflow: 'hidden',

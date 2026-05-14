@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import { View, StyleSheet, Animated, Easing, Dimensions, Text } from 'react-native';
+import { View, StyleSheet, Animated, Easing, Text } from 'react-native';
 import Colors from '../constants/colors';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SCREEN_WIDTH = 480;
 
 interface ShuffleAnimationProps {
     visible: boolean;
