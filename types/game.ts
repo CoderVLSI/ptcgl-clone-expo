@@ -2,6 +2,8 @@
  * PTCGL Game Types
  */
 
+export type StatusCondition = 'poisoned' | 'burned' | 'asleep' | 'paralyzed' | 'confused';
+
 // Energy types mapping (API uses capitalized, we use lowercase)
 export type EnergyType =
     | 'fire'
@@ -56,6 +58,9 @@ export interface Card {
     previousEvolutions?: Card[]; // Store pre-evolutions
     evolvesFrom?: string; // Set name of Pokémon this evolves from
     damageCounters?: number; // Damage currently on this card
+    statusCondition?: StatusCondition;
+    cannotAttackNextTurn?: boolean; // Set by paralysis; cleared at end of opponent's turn
+    poisonCounters?: number; // 1 = poisoned, 2 = badly poisoned
 }
 
 export interface Ability {
@@ -110,7 +115,7 @@ export interface GameLogicState {
     abilitiesUsed: string[]; // Track card IDs that used abilities this turn
     coinFlipResult: 'heads' | 'tails' | null;
     selectedCard: Card | null;
-    actionMode: 'none' | 'attach_energy' | 'evolve' | 'select_target' | 'discard_from_hand' | 'search_deck' | 'search_deck_basic' | 'switch_opponent_active' | 'search_deck_fighting' | 'attach_energy_from_discard' | 'distribute_energy_from_discard';
+    actionMode: 'none' | 'attach_energy' | 'evolve' | 'select_target' | 'discard_from_hand' | 'search_deck' | 'search_deck_basic' | 'switch_opponent_active' | 'search_deck_fighting' | 'attach_energy_from_discard' | 'distribute_energy_from_discard' | 'retreat_select_bench' | 'select_from_discard' | 'search_deck_multiple' | 'select_discard_multiple';
     message: string;
     activeCardId?: string;
     discardCount: number;

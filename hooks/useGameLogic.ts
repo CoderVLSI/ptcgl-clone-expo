@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, Player, GameState, EnergyType, GameLogicState, Attack } from '../types/game';
+import { Card, Player, GameState, EnergyType, GameLogicState, Attack, StatusCondition } from '../types/game';
+import { parseAttackEffects, applyAttackEffects, processStatusCondition } from '../utils/attackEffects';
 
 export interface GameLogicReturn {
     gameState: GameState | null;
@@ -21,11 +22,17 @@ export interface GameLogicReturn {
     confirmBossOrdersSelection: (benchCardId: string) => void;
     confirmFightingGongSelection: (cardIds: string[]) => void;
     attack: (attackIndex: number) => boolean;
-    currentPhase?: 'setup' | 'draw' | 'action' | 'attack'; // Optional phase tracking if needed
+    currentPhase?: 'setup' | 'draw' | 'action' | 'attack';
     confirmDiscardEnergySelection: (cardIds: string[]) => void;
     distributeEnergyToTarget: (targetId: string) => void;
     useAbility: (cardId: string, abilityIndex: number) => boolean;
     setLogicState: React.Dispatch<React.SetStateAction<GameLogicState>>;
+    // New in full card implementation
+    retreat: (benchCardId: string) => boolean;
+    confirmSwitchBenchSelection: (benchCardId: string) => void;
+    confirmDiscardSelection: (cardIds: string[]) => void;
+    confirmMultiDeckSelection: (cardIds: string[]) => void;
+    confirmCarmineSelection: (cardIds: string[]) => void;
 }
 
 const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
@@ -529,6 +536,295 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
+        // Switch — swap player's active with a bench Pokémon
+        if (cardNameLower === 'switch' || cardNameLower.startsWith('switch ')) {
+            if (gameState.player.bench.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Benched Pokémon to switch with!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'retreat_select_bench',
+                activeCardId: cardId,
+                message: 'Select a Benched Pokémon to switch with your Active.',
+            }));
+            return true;
+        }
+
+        // Super Rod — shuffle up to 3 cards from discard back into deck
+        if (cardNameLower.includes('super rod')) {
+            const discardCount = gameState.player.discardPile.length;
+            if (discardCount === 0) {
+                setLogicState(prev => ({ ...prev, message: 'Discard pile is empty!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'select_discard_multiple',
+                activeCardId: cardId,
+                discardCount: 3,
+                message: 'Select up to 3 Pokémon or Energy from your discard to shuffle into your deck.',
+            }));
+            return true;
+        }
+
+        // Night Stretcher — put a Pokémon from discard to hand, OR attach Energy from discard to benched
+        if (cardNameLower.includes('night stretcher')) {
+            const pokemonInDiscard = gameState.player.discardPile.filter(c => c.type === 'pokemon');
+            if (pokemonInDiscard.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Pokémon in discard pile!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'select_from_discard',
+                activeCardId: 'night_stretcher_pokemon',
+                message: 'Select a Pokémon from your discard pile to put into your hand.',
+            }));
+            return true;
+        }
+
+        // Rare Candy — evolve a Basic directly into a Stage 2 (skip Stage 1)
+        if (cardNameLower.includes('rare candy')) {
+            const stage2InHand = gameState.player.hand.filter(
+                c => c.type === 'pokemon' && c.subtypes?.includes('Stage 2') && c.id !== cardId
+            );
+            if (stage2InHand.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Stage 2 Pokémon in hand!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'evolve',
+                activeCardId: cardId,
+                message: 'Select a Stage 2 Pokémon in hand, then select the Basic to evolve (Rare Candy skips Stage 1).',
+            }));
+            return true;
+        }
+
+        // Judge — both players shuffle hand into deck, draw 4
+        if (cardNameLower === 'judge') {
+            setGameState(prev => {
+                if (!prev) return prev;
+                const newDeck = [...prev.player.deck, ...prev.player.hand.filter(c => c.id !== cardId)];
+                for (let i = newDeck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+                }
+                const drawn = newDeck.splice(0, 4);
+                // Opponent also shuffles and draws 4
+                const oppDeck = [...prev.opponent.deck, ...prev.opponent.hand];
+                for (let i = oppDeck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [oppDeck[i], oppDeck[j]] = [oppDeck[j], oppDeck[i]];
+                }
+                const oppDrawn = oppDeck.splice(0, 4);
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: drawn,
+                        deck: newDeck,
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                    opponent: {
+                        ...prev.opponent,
+                        hand: oppDrawn,
+                        deck: oppDeck,
+                    },
+                    message: 'Judge: Both players shuffled their hands and drew 4 cards!',
+                };
+            });
+            setLogicState(prev => ({ ...prev, hasPlayedSupporter: true, message: 'Judge! Both drew 4.' }));
+            return true;
+        }
+
+        // Carmine — put 2 cards from hand on top of deck, draw 4
+        if (cardNameLower === 'carmine') {
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'discard_from_hand',
+                activeCardId: 'carmine_topdeck',
+                discardCount: 2,
+                message: 'Carmine: Select 2 cards to put on top of your deck.',
+                hasPlayedSupporter: true,
+            }));
+            return true;
+        }
+
+        // Briar — search deck for up to 2 Pokémon, put in hand
+        if (cardNameLower === 'briar') {
+            const pokemonInDeck = gameState.player.deck.filter(c => c.type === 'pokemon');
+            if (pokemonInDeck.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Pokémon in deck!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck_multiple',
+                activeCardId: 'briar_search',
+                discardCount: 2,
+                hasPlayedSupporter: true,
+                message: 'Briar: Search your deck for up to 2 Pokémon to put into your hand.',
+            }));
+            return true;
+        }
+
+        // Crispin — attach a basic Energy from discard to any of your Pokémon
+        if (cardNameLower === 'crispin') {
+            const energyInDiscard = gameState.player.discardPile.filter(c => c.type === 'energy');
+            if (energyInDiscard.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Energy in discard pile!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'attach_energy_from_discard',
+                activeCardId: 'crispin_attach',
+                discardCount: 1,
+                hasPlayedSupporter: true,
+                message: 'Crispin: Select a basic Energy from your discard pile to attach.',
+            }));
+            return true;
+        }
+
+        // Energy Retrieval — put 2 basic Energy from discard into hand
+        if (cardNameLower.includes('energy retrieval')) {
+            const energyInDiscard = gameState.player.discardPile.filter(c => c.type === 'energy');
+            if (energyInDiscard.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Energy in discard pile!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                const toRetrieve = prev.player.discardPile.filter(c => c.type === 'energy').slice(0, 2);
+                const ids = toRetrieve.map(c => c.id);
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: [...prev.player.hand.filter(c => c.id !== cardId), ...toRetrieve],
+                        discardPile: [...prev.player.discardPile.filter(c => !ids.includes(c.id)), card],
+                    },
+                    message: `Energy Retrieval: Put ${toRetrieve.length} Energy into hand.`,
+                };
+            });
+            setLogicState(prev => ({ ...prev, message: 'Retrieved 2 Energy from discard.' }));
+            return true;
+        }
+
+        // Buddy-Buddy Poffin — search for 2 Basic Pokémon with ≤70 HP, put on bench
+        if (cardNameLower.includes('buddy-buddy poffin') || cardNameLower.includes('buddy buddy poffin')) {
+            if (gameState.player.bench.length >= 5) {
+                setLogicState(prev => ({ ...prev, message: 'Your bench is full!' }));
+                return false;
+            }
+            const smallBasics = gameState.player.deck.filter(
+                c => c.type === 'pokemon' && c.subtypes?.includes('Basic') && (c.hp || 0) <= 70
+            );
+            if (smallBasics.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Basic Pokémon with ≤70 HP in deck!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck_multiple',
+                activeCardId: 'buddy_poffin',
+                discardCount: Math.min(2, 5 - gameState.player.bench.length),
+                message: 'Buddy-Buddy Poffin: Select up to 2 Basic Pokémon (≤70 HP) to put on your Bench.',
+            }));
+            return true;
+        }
+
+        // Professor's Research / any Research supporter
         if (cardNameLower.includes('professor') || cardNameLower.includes('research')) {
             discardHand = true;
             extraCards = 7;
@@ -632,6 +928,33 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 ...prev,
                 actionMode: 'search_deck',
                 message: 'Select a Pokemon from your deck.',
+            }));
+        } else if (logicState.activeCardId === 'carmine_topdeck') {
+            // Carmine: the discarded cards go on top of deck, then draw 4
+            setGameState(prev => {
+                if (!prev) return prev;
+                const toTop = prev.player.discardPile
+                    .filter(c => discardedCardIds.includes(c.id))
+                    .slice(0, 2);
+                const newDiscardAfterTop = prev.player.discardPile.filter(c => !discardedCardIds.includes(c.id));
+                const newDeck = [...toTop, ...prev.player.deck];
+                const drawn = newDeck.splice(0, 4);
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: [...prev.player.hand, ...drawn],
+                        deck: newDeck,
+                        discardPile: newDiscardAfterTop,
+                    },
+                    message: `Carmine: Put ${toTop.length} card(s) on top of deck and drew 4.`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'none',
+                activeCardId: undefined,
+                message: 'Carmine complete.',
             }));
         } else {
             // Ability complete or other trainer
@@ -853,21 +1176,328 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         }));
     }, [gameState, logicState.activeCardId]);
 
+    /** Retreat: pay retreat cost (discard energy from active), promote bench Pokémon */
+    const retreat = useCallback((benchCardId: string) => {
+        if (!gameState || gameState.currentPlayer !== 'player') return false;
+        const active = gameState.player.activePokemon;
+        if (!active) return false;
+
+        const benchCard = gameState.player.bench.find(c => c.id === benchCardId);
+        if (!benchCard) return false;
+
+        const retreatCost = active.retreatCost || 0;
+        const attachedEnergy = active.attachedEnergy || [];
+
+        if (attachedEnergy.length < retreatCost) {
+            setLogicState(prev => ({
+                ...prev,
+                message: `Not enough Energy to retreat ${active.name} (needs ${retreatCost})!`,
+            }));
+            return false;
+        }
+
+        setGameState(prev => {
+            if (!prev || !prev.player.activePokemon) return prev;
+            const updatedActive: Card = {
+                ...prev.player.activePokemon,
+                attachedEnergy: prev.player.activePokemon.attachedEnergy?.slice(retreatCost) || [],
+                statusCondition: undefined, // retreating cures status
+                cannotAttackNextTurn: false,
+            };
+            return {
+                ...prev,
+                player: {
+                    ...prev.player,
+                    activePokemon: benchCard,
+                    bench: [
+                        updatedActive,
+                        ...prev.player.bench.filter(c => c.id !== benchCardId),
+                    ],
+                },
+                message: `${active.name} retreated. ${benchCard.name} is now Active!`,
+            };
+        });
+
+        setLogicState(prev => ({
+            ...prev,
+            actionMode: 'none',
+            activeCardId: undefined,
+            hasTakenAction: true,
+        }));
+        return true;
+    }, [gameState]);
+
+    /** Confirm bench selection for Switch trainer or retreat */
+    const confirmSwitchBenchSelection = useCallback((benchCardId: string) => {
+        if (!gameState) return;
+        const benchCard = gameState.player.bench.find(c => c.id === benchCardId);
+        if (!benchCard) return;
+
+        setGameState(prev => {
+            if (!prev || !prev.player.activePokemon) return prev;
+            const currentActive = prev.player.activePokemon;
+            return {
+                ...prev,
+                player: {
+                    ...prev.player,
+                    activePokemon: benchCard,
+                    bench: [
+                        currentActive,
+                        ...prev.player.bench.filter(c => c.id !== benchCardId),
+                    ],
+                },
+                message: `Switched ${benchCard.name} to Active!`,
+            };
+        });
+
+        setLogicState(prev => ({
+            ...prev,
+            actionMode: 'none',
+            activeCardId: undefined,
+            message: `Switched ${benchCard.name} to Active!`,
+        }));
+    }, [gameState]);
+
+    /** Confirm selecting cards from discard pile (Night Stretcher, Crispin, etc.) */
+    const confirmDiscardSelection = useCallback((selectedCardIds: string[]) => {
+        if (!gameState || selectedCardIds.length === 0) return;
+        const sourceAction = logicState.activeCardId;
+
+        setGameState(prev => {
+            if (!prev) return prev;
+            const selectedCards = prev.player.discardPile.filter(c => selectedCardIds.includes(c.id));
+            const newDiscard = prev.player.discardPile.filter(c => !selectedCardIds.includes(c.id));
+
+            if (sourceAction === 'night_stretcher_pokemon') {
+                // Put selected Pokémon into hand
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: [...prev.player.hand, ...selectedCards],
+                        discardPile: newDiscard,
+                    },
+                    message: `Night Stretcher: Put ${selectedCards.map(c => c.name).join(', ')} into hand.`,
+                };
+            }
+
+            if (sourceAction === 'crispin_attach') {
+                // Attach energy to active
+                const energyCard = selectedCards[0];
+                if (!energyCard || !prev.player.activePokemon) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        activePokemon: {
+                            ...prev.player.activePokemon,
+                            attachedEnergy: [
+                                ...(prev.player.activePokemon.attachedEnergy || []),
+                                energyCard.energyType || 'colorless',
+                            ],
+                        },
+                        discardPile: newDiscard,
+                    },
+                    message: `Crispin: Attached ${energyCard.name} to ${prev.player.activePokemon.name}.`,
+                };
+            }
+
+            // Default: shuffle into deck (Super Rod)
+            const newDeck = [...prev.player.deck, ...selectedCards];
+            for (let i = newDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+            }
+            return {
+                ...prev,
+                player: {
+                    ...prev.player,
+                    deck: newDeck,
+                    discardPile: newDiscard,
+                },
+                message: `Shuffled ${selectedCards.length} card(s) into the deck.`,
+            };
+        });
+
+        setLogicState(prev => ({
+            ...prev,
+            actionMode: 'none',
+            activeCardId: undefined,
+            message: 'Action complete.',
+        }));
+    }, [gameState, logicState.activeCardId]);
+
+    /** Confirm multi-card deck search (Briar, Buddy-Buddy Poffin) */
+    const confirmMultiDeckSelection = useCallback((selectedCardIds: string[]) => {
+        if (!gameState || selectedCardIds.length === 0) return;
+        const sourceAction = logicState.activeCardId;
+
+        setGameState(prev => {
+            if (!prev) return prev;
+            const selectedCards = prev.player.deck.filter(c => selectedCardIds.includes(c.id));
+            const newDeck = prev.player.deck.filter(c => !selectedCardIds.includes(c.id));
+            // Shuffle remaining deck
+            for (let i = newDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+            }
+
+            if (sourceAction === 'buddy_poffin') {
+                // Put basics on bench
+                const benchable = selectedCards.filter(c => prev.player.bench.length + selectedCards.indexOf(c) < 5);
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        deck: newDeck,
+                        bench: [
+                            ...prev.player.bench,
+                            ...benchable.map(c => ({ ...c, playedTurn: prev.turn })),
+                        ],
+                    },
+                    message: `Buddy-Buddy Poffin: Put ${benchable.map(c => c.name).join(', ')} on the Bench.`,
+                };
+            }
+
+            // Briar and generic multi-search: put into hand
+            return {
+                ...prev,
+                player: {
+                    ...prev.player,
+                    hand: [...prev.player.hand, ...selectedCards],
+                    deck: newDeck,
+                },
+                message: `Found ${selectedCards.map(c => c.name).join(', ')}.`,
+            };
+        });
+
+        setLogicState(prev => ({
+            ...prev,
+            actionMode: 'none',
+            activeCardId: undefined,
+            message: 'Search complete.',
+        }));
+    }, [gameState, logicState.activeCardId]);
+
+    /** Carmine: put 2 cards on top of deck, then draw 4 */
+    const confirmCarmineSelection = useCallback((cardIds: string[]) => {
+        if (!gameState) return;
+        setGameState(prev => {
+            if (!prev) return prev;
+            const toTop = prev.player.hand.filter(c => cardIds.includes(c.id));
+            const remaining = prev.player.hand.filter(c => !cardIds.includes(c.id));
+            const newDeck = [...toTop, ...prev.player.deck];
+            const drawn = newDeck.splice(0, 4);
+            return {
+                ...prev,
+                player: {
+                    ...prev.player,
+                    hand: [...remaining, ...drawn],
+                    deck: newDeck,
+                },
+                message: `Carmine: Put ${toTop.length} card(s) on top of deck and drew 4.`,
+            };
+        });
+        setLogicState(prev => ({
+            ...prev,
+            actionMode: 'none',
+            activeCardId: undefined,
+            message: 'Carmine complete.',
+        }));
+    }, [gameState]);
+
     const endTurn = useCallback(() => {
         if (!gameState) return;
         setGameState(prev => {
             if (!prev) return prev;
             const [opponentDrawn, ...opponentRemainingDeck] = prev.opponent.deck;
+
+            const statusMessages: string[] = [];
+
+            // Process status conditions on each side's active Pokémon at end of turn
+            let playerActive = prev.player.activePokemon;
+            let opponentActive = prev.opponent.activePokemon;
+
+            if (playerActive?.statusCondition) {
+                const result = processStatusCondition(playerActive, () => Math.random() < 0.5);
+                playerActive = result.pokemon;
+                if (result.message) statusMessages.push(result.message);
+                // Check KO from status damage
+                if (playerActive && (playerActive.damageCounters || 0) >= (playerActive.hp || 1)) {
+                    statusMessages.push(`${playerActive.name} was knocked out by status damage!`);
+                    playerActive = undefined;
+                }
+            }
+
+            if (opponentActive?.statusCondition) {
+                const result = processStatusCondition(opponentActive, () => Math.random() < 0.5);
+                opponentActive = result.pokemon;
+                if (result.message) statusMessages.push(result.message);
+                if (opponentActive && (opponentActive.damageCounters || 0) >= (opponentActive.hp || 1)) {
+                    statusMessages.push(`${opponentActive.name} was knocked out by status damage!`);
+                    opponentActive = undefined;
+                }
+            }
+
+            // Clear paralysis from the current player's active (paralysis lasts 1 turn)
+            const isPlayerTurn = prev.currentPlayer === 'player';
+            if (isPlayerTurn && playerActive?.statusCondition === 'paralyzed') {
+                playerActive = { ...playerActive, statusCondition: undefined, cannotAttackNextTurn: false };
+            }
+            if (!isPlayerTurn && opponentActive?.statusCondition === 'paralyzed') {
+                opponentActive = { ...opponentActive, statusCondition: undefined, cannotAttackNextTurn: false };
+            }
+
+            let newPlayerActive = playerActive;
+            let newPlayerBench = prev.player.bench;
+            let newPlayerDiscard = prev.player.discardPile;
+
+            if (!newPlayerActive && prev.player.activePokemon) {
+                newPlayerDiscard = [...newPlayerDiscard, prev.player.activePokemon];
+                if (newPlayerBench.length > 0) {
+                    newPlayerActive = newPlayerBench[0];
+                    newPlayerBench = newPlayerBench.slice(1);
+                }
+            }
+
+            let newOpponentActive = opponentActive;
+            let newOpponentBench = prev.opponent.bench;
+            let newOpponentDiscard = prev.opponent.discardPile;
+
+            if (!newOpponentActive && prev.opponent.activePokemon) {
+                newOpponentDiscard = [...newOpponentDiscard, prev.opponent.activePokemon];
+                if (newOpponentBench.length > 0) {
+                    newOpponentActive = newOpponentBench[0];
+                    newOpponentBench = newOpponentBench.slice(1);
+                }
+            }
+
+            const baseMessage = prev.currentPlayer === 'player' ? "Opponent's turn" : 'Your turn! Draw a card.';
+            const fullMessage = statusMessages.length > 0
+                ? `${baseMessage} ${statusMessages.join(' ')}`
+                : baseMessage;
+
             return {
                 ...prev,
                 turn: prev.turn + 1,
                 currentPlayer: prev.currentPlayer === 'player' ? 'opponent' : 'player',
-                opponent: opponentDrawn ? {
+                player: {
+                    ...prev.player,
+                    activePokemon: newPlayerActive,
+                    bench: newPlayerBench,
+                    discardPile: newPlayerDiscard,
+                },
+                opponent: {
                     ...prev.opponent,
-                    hand: [...prev.opponent.hand, opponentDrawn],
-                    deck: opponentRemainingDeck,
-                } : prev.opponent,
-                message: prev.currentPlayer === 'player' ? "Opponent's turn" : 'Your turn! Draw a card.',
+                    activePokemon: newOpponentActive,
+                    bench: newOpponentBench,
+                    discardPile: newOpponentDiscard,
+                    ...(opponentDrawn ? {
+                        hand: [...prev.opponent.hand, opponentDrawn],
+                        deck: opponentRemainingDeck,
+                    } : {}),
+                },
+                message: fullMessage,
                 timeRemaining: 60,
             };
         });
@@ -989,7 +1619,193 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return false;
         }
 
+        // 5. Sinister Hand / Shadowy Trickery (Dusknoir) - move damage from opp bench to opp active
+        if (ability.name === 'Sinister Hand' || ability.name === 'Shadowy Trickery') {
+            const totalBenchDamage = gameState.opponent.bench.reduce((sum, b) => sum + (b.damageCounters || 0), 0);
+            if (totalBenchDamage === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No damage counters on opponent\'s Bench!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev || !prev.opponent.activePokemon) return prev;
+                const moved = totalBenchDamage;
+                return {
+                    ...prev,
+                    opponent: {
+                        ...prev.opponent,
+                        activePokemon: {
+                            ...prev.opponent.activePokemon,
+                            damageCounters: (prev.opponent.activePokemon.damageCounters || 0) + moved,
+                        },
+                        bench: prev.opponent.bench.map(b => ({ ...b, damageCounters: 0 })),
+                    },
+                    message: `${ability.name}: Moved ${moved} damage counters to opponent's Active Pokémon!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: `${ability.name} used!`,
+            }));
+            return true;
+        }
 
+        // 6. Binding Toxin (Munkidori) - Poison opponent's Active Pokémon
+        if (ability.name === 'Binding Toxin' || ability.name === 'Toxic Scales') {
+            if (!gameState.opponent.activePokemon) return false;
+            setGameState(prev => {
+                if (!prev || !prev.opponent.activePokemon) return prev;
+                return {
+                    ...prev,
+                    opponent: {
+                        ...prev.opponent,
+                        activePokemon: {
+                            ...prev.opponent.activePokemon,
+                            statusCondition: 'poisoned',
+                            poisonCounters: 1,
+                        },
+                    },
+                    message: `${ability.name}: Opponent's Active Pokémon is now Poisoned!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: `${card.name} Poisoned the opponent's Active!`,
+            }));
+            return true;
+        }
+
+        // 7. Sparkling Scales (Fezandipiti ex) - passive damage reduction for bench
+        if (ability.name === 'Sparkling Scales' || ability.name === 'Brilliant Scales') {
+            setLogicState(prev => ({ ...prev, message: 'This ability is passive — Benched Pokémon take -20 damage.' }));
+            return false;
+        }
+
+        // 8. Generic draw ability — "draw X cards" text in ability
+        const abilityText = ability.text?.toLowerCase() || '';
+        const drawMatch = abilityText.match(/draw (\d+) cards?/);
+        if (drawMatch) {
+            const drawCount = parseInt(drawMatch[1]);
+            setGameState(prev => {
+                if (!prev) return prev;
+                const drawn = prev.player.deck.slice(0, drawCount);
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: [...prev.player.hand, ...drawn],
+                        deck: prev.player.deck.slice(drawCount),
+                    },
+                    message: `${ability.name}: Drew ${drawn.length} card(s)!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: `${ability.name} drew ${drawCount} cards.`,
+            }));
+            return true;
+        }
+
+        // 9. Generic "put X damage counters" ability — bench sniping
+        const putDamageMatch = abilityText.match(/put (\d+) damage counters? on/);
+        if (putDamageMatch && abilityText.includes('opponent')) {
+            const counters = parseInt(putDamageMatch[1]);
+            const dmg = counters * 10;
+            if (!gameState.opponent.activePokemon) return false;
+            setGameState(prev => {
+                if (!prev || !prev.opponent.activePokemon) return prev;
+                return {
+                    ...prev,
+                    opponent: {
+                        ...prev.opponent,
+                        activePokemon: {
+                            ...prev.opponent.activePokemon,
+                            damageCounters: (prev.opponent.activePokemon.damageCounters || 0) + dmg,
+                        },
+                    },
+                    message: `${ability.name}: Put ${counters} damage counter(s) on opponent's Active!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: `${ability.name} used.`,
+            }));
+            return true;
+        }
+
+        // 10. Generic heal ability — "remove X damage counters from"
+        const healMatch = abilityText.match(/remove (\d+) damage counters? from/);
+        if (healMatch) {
+            const counters = parseInt(healMatch[1]);
+            const healAmt = counters * 10;
+            setGameState(prev => {
+                if (!prev || !prev.player.activePokemon) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        activePokemon: {
+                            ...prev.player.activePokemon,
+                            damageCounters: Math.max(0, (prev.player.activePokemon.damageCounters || 0) - healAmt),
+                        },
+                    },
+                    message: `${ability.name}: Healed ${healAmt} damage from Active Pokémon!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: `${ability.name} healed ${healAmt}.`,
+            }));
+            return true;
+        }
+
+        // 11. Generic search ability — "search your deck for" → put in hand
+        if (abilityText.includes('search your deck for') && abilityText.includes('pokémon')) {
+            const pokemonInDeck = gameState.player.deck.filter(c => c.type === 'pokemon');
+            if (pokemonInDeck.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Pokémon in deck!' }));
+                return false;
+            }
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck',
+                activeCardId: cardId,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: `${ability.name}: Select a Pokémon from your deck.`,
+            }));
+            return true;
+        }
+
+        // 12. Generic status-inflicting ability
+        if (abilityText.includes('is now poisoned') || abilityText.includes('becomes poisoned')) {
+            if (!gameState.opponent.activePokemon) return false;
+            setGameState(prev => {
+                if (!prev || !prev.opponent.activePokemon) return prev;
+                return {
+                    ...prev,
+                    opponent: {
+                        ...prev.opponent,
+                        activePokemon: { ...prev.opponent.activePokemon, statusCondition: 'poisoned', poisonCounters: 1 },
+                    },
+                    message: `${ability.name}: Opponent's Active is Poisoned!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+            }));
+            return true;
+        }
+
+        // If no specific handler matched, show generic message
+        setLogicState(prev => ({
+            ...prev,
+            message: `${ability.name}: This ability has no specific implementation yet.`,
+        }));
         return false;
     }, [gameState, logicState, endTurn]);
 
@@ -1124,6 +1940,38 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return false;
         }
 
+        // Check paralysis / confusion BEFORE calculating damage
+        if (attacker.statusCondition === 'paralyzed' || attacker.cannotAttackNextTurn) {
+            setLogicState(prev => ({
+                ...prev,
+                message: `${attacker.name} is Paralyzed and cannot attack!`,
+            }));
+            return false;
+        }
+
+        // Confusion: flip coin — tails = 30 damage to self, attack fails
+        if (attacker.statusCondition === 'confused') {
+            const headsForConfusion = flipCoin();
+            if (!headsForConfusion) {
+                setGameState(prev => {
+                    if (!prev || !prev.player.activePokemon) return prev;
+                    return {
+                        ...prev,
+                        player: {
+                            ...prev.player,
+                            activePokemon: {
+                                ...prev.player.activePokemon,
+                                damageCounters: (prev.player.activePokemon.damageCounters || 0) + 30,
+                            },
+                        },
+                        message: `${attacker.name} is Confused! Tails — took 30 damage to itself and attack failed!`,
+                    };
+                });
+                setTimeout(() => endTurn(), 1500);
+                return true;
+            }
+        }
+
         // Ora Jab Logic (Mega Lucario)
         if (selectedAttack.name === 'Ora Jab') {
             const fightingEnergyInDiscard = gameState.player.discardPile.filter(c =>
@@ -1188,10 +2036,21 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             }
         }
 
+        // Parse attack description for effects (status, bench damage, heal, etc.)
+        const attackEffects = parseAttackEffects(selectedAttack.description || '');
+        const effectResults = applyAttackEffects(
+            attackEffects,
+            attacker,
+            defender,
+            gameState.opponent.bench,
+            flipCoin,
+        );
+        damage += effectResults.bonusDamage;
+
         setGameState(prev => {
             if (!prev) return prev;
 
-            let newDefender = { ...defender };
+            let newDefender = { ...effectResults.defender };
             // Use damage counters instead of reducing HP
             const currentDamage = (newDefender.damageCounters || 0) + damage;
             newDefender.damageCounters = currentDamage;
@@ -1201,11 +2060,21 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             let remainingPrizes = [...prev.player.prizeCards];
 
             if (knockout) {
-                const prizeCount = 1;
+                // ex Pokémon give 2 prize cards
+                const isEx = attacker.subtypes?.some(s => s.toLowerCase().includes('ex')) ||
+                    newDefender.name.toLowerCase().includes(' ex') ||
+                    newDefender.subtypes?.some(s => s.toLowerCase().includes('ex'));
+                const prizeCount = isEx ? 2 : 1;
                 drawnPrizes = remainingPrizes.splice(0, prizeCount);
             }
 
-            let opponentBench = prev.opponent.bench;
+            let opponentBench = effectResults.opponentBench;
+            // Remove KO'd bench Pokémon
+            const koedBench = opponentBench.filter(b => (b.damageCounters || 0) >= (b.hp || 1));
+            opponentBench = opponentBench.filter(b => (b.damageCounters || 0) < (b.hp || 1));
+            // Add KO'd bench to opponent discard
+            const opponentExtraDiscard = koedBench;
+
             let opponentActive = knockout ? undefined : newDefender;
 
             if (knockout && opponentBench.length > 0) {
@@ -1213,10 +2082,21 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 opponentBench = opponentBench.slice(1);
             }
 
+            // Update attacker on player side
+            const newPlayerActive = prev.player.activePokemon?.id === attacker.id
+                ? effectResults.attacker
+                : prev.player.activePokemon;
+            const newPlayerBench = prev.player.bench.map(b =>
+                b.id === attacker.id ? effectResults.attacker : b
+            );
+
+            const effectMessages = effectResults.messages.join(' ');
             return {
                 ...prev,
                 player: {
                     ...prev.player,
+                    activePokemon: newPlayerActive,
+                    bench: newPlayerBench,
                     hand: [...prev.player.hand, ...drawnPrizes],
                     prizeCards: remainingPrizes,
                 },
@@ -1224,9 +2104,13 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                     ...prev.opponent,
                     activePokemon: opponentActive,
                     bench: opponentBench,
-                    discardPile: knockout ? [...prev.opponent.discardPile, defender] : prev.opponent.discardPile,
+                    discardPile: [
+                        ...prev.opponent.discardPile,
+                        ...(knockout ? [defender] : []),
+                        ...opponentExtraDiscard,
+                    ],
                 },
-                message: `Used ${selectedAttack.name}! Dealt ${damage} damage.${knockout ? ' KNOCKOUT!' : ''}`,
+                message: `Used ${selectedAttack.name}! Dealt ${damage} damage.${knockout ? ' KNOCKOUT!' : ''} ${effectMessages}`.trim(),
             };
         });
 
@@ -1290,6 +2174,11 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         useAbility,
         distributeEnergyToTarget,
         setLogicState,
+        retreat,
+        confirmSwitchBenchSelection,
+        confirmDiscardSelection,
+        confirmMultiDeckSelection,
+        confirmCarmineSelection,
     };
 }
 

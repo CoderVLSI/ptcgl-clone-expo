@@ -58,6 +58,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         attack,
         useAbility,
         setLogicState,
+        retreat,
+        confirmSwitchBenchSelection,
+        confirmDiscardSelection,
+        confirmMultiDeckSelection,
+        confirmCarmineSelection,
     } = useGameLogic(externalGameState || null);
 
     const [selectedCardId, setSelectedCardId] = useState<string | undefined>();
@@ -523,6 +528,27 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 discardCount={gameState.player.discardPile.length}
                 currentTurn={gameState.turn}
                 isPlayerTurn={isPlayerTurn}
+                activeStatusCondition={gameState.player.activePokemon?.statusCondition}
+                activeRetreatCost={gameState.player.activePokemon?.retreatCost ?? 0}
+                activeEnergyCount={gameState.player.activePokemon?.attachedEnergy?.length ?? 0}
+                canRetreat={
+                    isPlayerTurn &&
+                    gameState.player.bench.length > 0 &&
+                    (gameState.player.activePokemon?.retreatCost ?? 0) <= (gameState.player.activePokemon?.attachedEnergy?.length ?? 0)
+                }
+                onRetreat={() => {
+                    if (gameState.player.bench.length === 1) {
+                        // Only one bench option — retreat directly
+                        retreat(gameState.player.bench[0].id);
+                    } else {
+                        // Show bench selection
+                        setLogicState(prev => ({
+                            ...prev,
+                            actionMode: 'retreat_select_bench',
+                            message: 'Select a Benched Pokémon to retreat to.',
+                        }));
+                    }
+                }}
             />
 
             {/* Card Selector Modals (Ultra Ball, etc) */}
@@ -633,6 +659,62 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 onConfirm={confirmDiscardEnergySelection}
                 onCancel={() => selectCard(null, 'none')}
                 confirmText="Attach to Bench"
+            />
+
+            {/* Switch / Retreat bench selection */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'retreat_select_bench'}
+                title="Switch Active"
+                subtitle="Select a Benched Pokémon to switch with your Active"
+                cards={gameState.player.bench}
+                minSelection={1}
+                maxSelection={1}
+                onConfirm={(ids) => confirmSwitchBenchSelection(ids[0])}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Switch"
+            />
+
+            {/* Night Stretcher — select Pokémon from discard */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'select_from_discard'}
+                title="Select from Discard"
+                subtitle={logicState.message || "Select a card from your discard pile"}
+                cards={gameState.player.discardPile.filter(c => c.type === 'pokemon')}
+                minSelection={1}
+                maxSelection={1}
+                onConfirm={(ids) => confirmDiscardSelection(ids)}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Put in Hand"
+            />
+
+            {/* Briar / Buddy-Buddy Poffin multi-deck search */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'search_deck_multiple'}
+                title="Search Deck"
+                subtitle={logicState.message || "Select Pokémon from your deck"}
+                cards={
+                    logicState.activeCardId === 'buddy_poffin'
+                        ? gameState.player.deck.filter(c => c.type === 'pokemon' && c.subtypes?.includes('Basic') && (c.hp || 0) <= 70)
+                        : gameState.player.deck.filter(c => c.type === 'pokemon')
+                }
+                minSelection={0}
+                maxSelection={logicState.discardCount || 2}
+                onConfirm={(ids) => confirmMultiDeckSelection(ids)}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Add to Hand"
+            />
+
+            {/* Super Rod — select from discard to shuffle back */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'select_discard_multiple'}
+                title="Super Rod"
+                subtitle="Select up to 3 Pokémon or Energy to shuffle into your deck"
+                cards={gameState.player.discardPile.filter(c => c.type === 'pokemon' || c.type === 'energy')}
+                minSelection={0}
+                maxSelection={3}
+                onConfirm={(ids) => confirmDiscardSelection(ids)}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Shuffle into Deck"
             />
 
             {/* Action Menu Modal */}
