@@ -632,8 +632,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'This attack also does 30 damage to each of your opponent\'s Benched Pokémon.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv6/57.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6/57_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me4/22.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me4/22_hires.png',
     },
 
     'Greninja': {
