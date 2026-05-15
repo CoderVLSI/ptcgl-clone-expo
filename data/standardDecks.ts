@@ -626,8 +626,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'You may put a Water Energy attached to this Pokémon into your hand and have this attack do 80 more damage.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/cri/22.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/cri/22_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/106.png',     // temp: sv6 Greninja ex until cri/22.png goes live (2026-05-22)
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/106_hires.png',
     },
 
     'Greninja': {

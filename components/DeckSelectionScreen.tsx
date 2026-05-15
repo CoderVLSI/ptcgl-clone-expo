@@ -76,28 +76,42 @@ const DeckSelectionScreen: React.FC<DeckSelectionScreenProps> = ({ onBack, playe
         setShowDeckManager(true);
     };
 
-    const renderDeckItem = ({ item }: { item: any }) => (
-        <TouchableOpacity
-            style={[styles.deckItem, selectedDeckId === item.id && styles.selectedDeckItem]}
-            onPress={() => handleDeckPress(item)}
-            activeOpacity={0.8}
-        >
-            <View style={styles.deckBoxVisual}>
-                <View style={styles.deckBoxDepth} />
-                <Image source={{ uri: item.image }} style={styles.deckBoxCover} resizeMode="cover" />
-                <View style={styles.deckTypeBadge}>
-                    <View style={[styles.typeIcon, { backgroundColor: item.color }]} />
-                </View>
-                {!item.valid && (
-                    <View style={styles.invalidOverlay}>
-                        <Text style={styles.invalidText}>⚠️</Text>
+    const renderDeckItem = ({ item }: { item: any }) => {
+        const [imgError, setImgError] = useState(false);
+        return (
+            <TouchableOpacity
+                style={[styles.deckItem, selectedDeckId === item.id && styles.selectedDeckItem]}
+                onPress={() => handleDeckPress(item)}
+                activeOpacity={0.8}
+            >
+                <View style={styles.deckBoxVisual}>
+                    <View style={styles.deckBoxDepth} />
+                    {!imgError && item.image ? (
+                        <Image
+                            source={{ uri: item.image }}
+                            style={styles.deckBoxCover}
+                            resizeMode="cover"
+                            onError={() => setImgError(true)}
+                        />
+                    ) : (
+                        <View style={[styles.deckBoxCover, styles.deckBoxFallback, { backgroundColor: item.color }]}>
+                            <Text style={styles.deckBoxFallbackText}>{item.name.split(' ')[0]}</Text>
+                        </View>
+                    )}
+                    <View style={styles.deckTypeBadge}>
+                        <View style={[styles.typeIcon, { backgroundColor: item.color }]} />
                     </View>
-                )}
-            </View>
-            <Text style={styles.deckName} numberOfLines={2}>{item.name}</Text>
-            {selectedDeckId === item.id && <View style={styles.selectionBorder} />}
-        </TouchableOpacity>
-    );
+                    {!item.valid && (
+                        <View style={styles.invalidOverlay}>
+                            <Text style={styles.invalidText}>⚠️</Text>
+                        </View>
+                    )}
+                </View>
+                <Text style={styles.deckName} numberOfLines={2}>{item.name}</Text>
+                {selectedDeckId === item.id && <View style={styles.selectionBorder} />}
+            </TouchableOpacity>
+        );
+    };
 
     const renderHeader = () => (
         <View style={styles.gridHeader}>
@@ -371,6 +385,20 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         borderRadius: 4,
+    },
+    deckBoxFallback: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    deckBoxFallbackText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 11,
+        textAlign: 'center',
+        opacity: 0.9,
+        textShadowColor: 'rgba(0,0,0,0.5)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
     deckTypeBadge: {
         position: 'absolute',
