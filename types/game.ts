@@ -39,6 +39,7 @@ export interface Card {
     type: 'pokemon' | 'trainer' | 'energy';
     imageUrl?: string;
     imageUrlLarge?: string;
+    localImageSource?: number; // require('../assets/...') for bundled images
     energyType?: EnergyType;
     hp?: number;
     abilities?: Ability[];

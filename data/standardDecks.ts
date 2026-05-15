@@ -14,6 +14,8 @@
 import { Card, EnergyType, ENERGY_TYPE_MAP } from '../types/game';
 import { fetchSet, PokemonCardData, isStandardLegal } from '../services/pokemonApi';
 
+const MEGA_GRENINJA_EX_IMAGE = require('../assets/mega-greninja-ex.png');
+
 // Fisher-Yates shuffle
 function shuffle<T>(deck: T[]): T[] {
     const result = [...deck];
@@ -343,6 +345,7 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
                     abilities: proxy.abilities,
                     imageUrl: proxy.imageUrl,
                     imageUrlLarge: proxy.imageUrlLarge,
+                    localImageSource: proxy.localImageSource,
                 });
             }
             return;
@@ -626,8 +629,9 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'You may put a Water Energy attached to this Pokémon into your hand and have this attack do 80 more damage.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv6/106.png',     // temp: sv6 Greninja ex until cri/22.png goes live (2026-05-22)
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6/106_hires.png',
+        localImageSource: MEGA_GRENINJA_EX_IMAGE,  // bundled scan; swap for cri/22.png after 2026-05-22
+        imageUrl: 'https://images.pokemontcg.io/cri/22.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/22_hires.png',
     },
 
     'Greninja': {
@@ -1179,6 +1183,7 @@ async function buildDeckHelper() {
                     evolvesFrom: proxy.evolvesFrom,
                     imageUrl: proxy.imageUrl,
                     imageUrlLarge: proxy.imageUrlLarge,
+                    localImageSource: proxy.localImageSource,
                     flavorText: proxy.flavorText,
                 });
             }

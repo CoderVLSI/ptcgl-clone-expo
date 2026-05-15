@@ -73,11 +73,12 @@ export const Card: React.FC<CardProps> = ({
         };
 
         // If we have a full card image from the API, show it directly
-        if (showFullImage && card.imageUrl && !imageError) {
+        const hasImage = card.localImageSource || (card.imageUrl && !imageError);
+        if (showFullImage && hasImage) {
             return (
                 <View style={[styles.fullCardContainer, { width: cardWidth, height: cardHeight }]}>
                     <Image
-                        source={{ uri: card.imageUrl }}
+                        source={card.localImageSource ? card.localImageSource : { uri: card.imageUrl }}
                         style={styles.fullCardImage}
                         onLoadStart={() => setImageLoading(true)}
                         onLoadEnd={() => setImageLoading(false)}
