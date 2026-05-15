@@ -6,13 +6,10 @@ import {
     TouchableOpacity,
     Modal,
     ScrollView,
-    Dimensions,
 } from 'react-native';
 import { Card as CardType } from '../types/game';
 import Colors from '../constants/colors';
 import Card from './Card';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface DiscardPileProps {
     cards: CardType[];
@@ -208,7 +205,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: 20,
         width: '90%',
-        maxHeight: SCREEN_HEIGHT * 0.75,
+        maxHeight: '75%',
         borderWidth: 2,
         borderColor: Colors.energy.fire,
     },

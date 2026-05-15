@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, ScrollView, Dimensions, SafeAreaView, StatusBar, FlatList, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, ScrollView, SafeAreaView, StatusBar, FlatList, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/colors';
 import { Card } from '../types/game';
 import DeckManager from './DeckManager';
-
-const { width, height } = Dimensions.get('window');
 
 interface DeckSelectionScreenProps {
     onBack: () => void;
@@ -14,7 +12,7 @@ interface DeckSelectionScreenProps {
     onEditDeck: (deck: Card[], name: string) => void;
     onCreateDeck: () => void;
     onUpdateDeck: (deck: Card[]) => void;
-    availableDecks: { id: string, name: string, cards: Card[], type: string }[];
+    availableDecks: { id: string, name: string, cards: Card[], type: string, mainCard?: string }[];
 }
 
 const DeckSelectionScreen: React.FC<DeckSelectionScreenProps> = ({ onBack, playerDeck, onSelectDeck, onEditDeck, onCreateDeck, onUpdateDeck, availableDecks }) => {
@@ -26,21 +24,47 @@ const DeckSelectionScreen: React.FC<DeckSelectionScreenProps> = ({ onBack, playe
     // Prepare deck list for display. We map available decks to the visual format.
     // If availableDecks is empty (loading/error), we might want to show a placeholder or keep current behavior.
     const displayDecks = availableDecks.map(d => {
-        // Find a representative card for the cover
-        // Priority: Specific aces/exs -> First Pokemon -> Random valid image
-        let coverCard = d.cards.find(c => c.name === 'Dragapult ex' || c.name === 'Mega Lucario ex' || c.name.includes(' ex') || c.name.includes(' VMAX') || c.name.includes(' VSTAR'));
+        // Find the main/featured card for the deck cover
+        // Priority: mainCard name match → any ex/MEGA → first pokemon
+        let coverCard = d.mainCard
+            ? d.cards.find(c => c.name === d.mainCard)
+            : undefined;
+
+        if (!coverCard) {
+            coverCard = d.cards.find(c =>
+                c.name.includes(' ex') || c.name.includes('Mega ') ||
+                c.name.includes(' VMAX') || c.name.includes(' VSTAR')
+            );
+        }
 
         if (!coverCard) {
             coverCard = d.cards.find(c => c.type === 'pokemon');
         }
 
-        const coverImage = coverCard?.imageUrl || (d.type === 'fighting' ? 'https://images.pokemontcg.io/xy3/55.png' : 'https://images.pokemontcg.io/swsh2/88_hires.png');
+        const TYPE_FALLBACK_IMAGE: Record<string, string> = {
+            fighting: 'https://images.pokemontcg.io/sv5/118.png',
+            psychic: 'https://images.pokemontcg.io/sv6pt5/38.png',
+            lightning: 'https://images.pokemontcg.io/sv5/123.png',
+            water: 'https://images.pokemontcg.io/sv6/56.png',
+        };
+        const coverImage = coverCard?.imageUrl || TYPE_FALLBACK_IMAGE[d.type] || 'https://images.pokemontcg.io/sv5/118.png';
+
+        const TYPE_COLOR: Record<string, string> = {
+            fighting: '#C03028',
+            psychic: '#A040A0',
+            lightning: '#C8A000',
+            water: '#2060C0',
+            grass: '#3A8A30',
+            fire: '#C04808',
+            darkness: '#403830',
+            metal: '#6870A0',
+        };
 
         return {
             id: d.id,
             name: d.name,
             type: d.type,
-            color: d.type === 'fighting' ? '#C03028' : (d.type === 'psychic' ? '#A040A0' : '#888'),
+            color: TYPE_COLOR[d.type] || '#888',
             valid: d.cards.length === 60,
             image: coverImage,
             cards: d.cards
@@ -86,8 +110,8 @@ const DeckSelectionScreen: React.FC<DeckSelectionScreenProps> = ({ onBack, playe
         </View>
     );
 
-    // Get currently selected deck data for the modal
-    const currentSelectedDeck = displayDecks.find(d => d.id === selectedDeckId) || displayDecks[0];
+    // Get currently selected deck data for the modal (safe fallback to empty deck)
+    const currentSelectedDeck = displayDecks.find(d => d.id === selectedDeckId) || displayDecks[0] || { id: '', name: '', cards: [], type: '', color: '#888', valid: false, image: '' };
 
     return (
         <View style={styles.container}>

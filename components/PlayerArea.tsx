@@ -1,13 +1,12 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Dimensions, Text } from 'react-native';
+import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import { Player, Card as CardType } from '../types/game';
 import Colors from '../constants/colors';
 import Card from './Card';
 import DeckPile from './DeckPile';
 import DiscardPile from './DiscardPile';
 import PrizeCards from './PrizeCards';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import useGameDimensions from '../hooks/useGameDimensions';
 
 interface PlayerAreaProps {
     player: Player;
@@ -22,6 +21,7 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
     onCardLongPress,
     selectedCardId,
 }) => {
+    const { width: GAME_WIDTH } = useGameDimensions();
     return (
         <View style={styles.container}>
             {/* Top Row - Deck, Discard, Hand, Prize */}
@@ -52,7 +52,7 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.handContainer}
                     decelerationRate="fast"
-                    snapToInterval={SCREEN_WIDTH * 0.15}
+                    snapToInterval={GAME_WIDTH * 0.15}
                 >
                     {player.hand.length === 0 ? (
                         <View style={styles.emptyHand}>

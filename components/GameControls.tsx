@@ -3,8 +3,18 @@ import {
     View,
     Text,
     StyleSheet,
+    TouchableOpacity,
 } from 'react-native';
 import Colors from '../constants/colors';
+import { StatusCondition } from '../types/game';
+
+const STATUS_EMOJI: Record<StatusCondition, string> = {
+    poisoned: '☠',
+    burned: '🔥',
+    asleep: '💤',
+    paralyzed: '⚡',
+    confused: '😵',
+};
 
 interface GameControlsProps {
     hasAttachedEnergy: boolean;
@@ -12,6 +22,11 @@ interface GameControlsProps {
     discardCount: number;
     currentTurn: number;
     isPlayerTurn: boolean;
+    activeStatusCondition?: StatusCondition;
+    activeRetreatCost?: number;
+    activeEnergyCount?: number;
+    canRetreat?: boolean;
+    onRetreat?: () => void;
 }
 
 export const GameControls: React.FC<GameControlsProps> = ({
@@ -20,6 +35,11 @@ export const GameControls: React.FC<GameControlsProps> = ({
     discardCount,
     currentTurn,
     isPlayerTurn,
+    activeStatusCondition,
+    activeRetreatCost = 0,
+    activeEnergyCount = 0,
+    canRetreat = false,
+    onRetreat,
 }) => {
     return (
         <View style={styles.container}>
@@ -38,6 +58,15 @@ export const GameControls: React.FC<GameControlsProps> = ({
                     </Text>
                 </View>
 
+                {/* Active Status Condition */}
+                {activeStatusCondition && (
+                    <View style={styles.statusBadge}>
+                        <Text style={styles.statusBadgeText}>
+                            {STATUS_EMOJI[activeStatusCondition]} {activeStatusCondition.toUpperCase()}
+                        </Text>
+                    </View>
+                )}
+
                 {/* Energy Attached */}
                 <View style={styles.statusItem}>
                     <View style={[styles.statusDot, hasAttachedEnergy && styles.statusDotActive]} />
@@ -55,6 +84,19 @@ export const GameControls: React.FC<GameControlsProps> = ({
                     <Text style={styles.countLabel}>Discard</Text>
                     <Text style={styles.countValue}>{discardCount}</Text>
                 </View>
+
+                {/* Retreat Button */}
+                {isPlayerTurn && activeRetreatCost >= 0 && onRetreat && (
+                    <TouchableOpacity
+                        style={[styles.retreatButton, !canRetreat && styles.retreatButtonDisabled]}
+                        onPress={canRetreat ? onRetreat : undefined}
+                        disabled={!canRetreat}
+                    >
+                        <Text style={styles.retreatButtonText}>
+                            ↩ {activeRetreatCost > 0 ? `(${activeRetreatCost})` : 'FREE'}
+                        </Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </View>
     );
@@ -133,6 +175,32 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
         color: Colors.ui.white,
+    },
+    statusBadge: {
+        backgroundColor: '#800080',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+    },
+    statusBadgeText: {
+        fontSize: 9,
+        color: '#FFF',
+        fontWeight: 'bold',
+    },
+    retreatButton: {
+        backgroundColor: '#1A6B3A',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    retreatButtonDisabled: {
+        backgroundColor: '#333',
+        opacity: 0.5,
+    },
+    retreatButtonText: {
+        fontSize: 10,
+        color: '#FFF',
+        fontWeight: 'bold',
     },
 });
 

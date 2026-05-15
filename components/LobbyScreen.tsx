@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/colors';
 import { Card } from '../types/game';
 import DeckManager from './DeckManager';
-
-const { width, height } = Dimensions.get('window');
 
 interface LobbyScreenProps {
     onPlayPress: () => void;
@@ -19,6 +17,30 @@ interface LobbyScreenProps {
 export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDeck = [], activeDeckName = "Deck", onEditDeck, onDecksPress, onUpdateDeck }) => {
     const [mode, setMode] = useState<'Ranked' | 'Casual'>('Ranked');
     const [showDeckManager, setShowDeckManager] = useState(false);
+    const { width, height } = useWindowDimensions();
+
+    // Derive main card image and type color from active deck
+    const mainPokemon = activeDeck.find(c =>
+        c.type === 'pokemon' && (c.name.includes(' ex') || c.name.includes('Mega ') || c.name.includes(' VMAX'))
+    ) || activeDeck.find(c => c.type === 'pokemon');
+
+    const mainCardImage = mainPokemon?.imageUrlLarge || mainPokemon?.imageUrl;
+
+    const TYPE_COLOR: Record<string, string> = {
+        fighting: '#C03028',
+        psychic: '#A040A0',
+        lightning: '#C8A000',
+        water: '#2060C0',
+        grass: '#3A8A30',
+        fire: '#C04808',
+        darkness: '#403830',
+        metal: '#6870A0',
+        colorless: '#888888',
+    };
+    const deckTypeColor = TYPE_COLOR[mainPokemon?.energyType || 'colorless'] || '#888888';
+
+    // Background: use main card image blurred, or gradient fallback
+    const bgImage = mainCardImage || 'https://images.pokemontcg.io/sv5/123_hires.png';
 
     return (
         <View style={styles.container}>
@@ -34,16 +56,16 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDec
             />
             <StatusBar barStyle="light-content" />
 
-            {/* Background */}
+            {/* Background — use active deck's main card blurred */}
             <Image
-                source={{ uri: 'https://images.pokemontcg.io/swsh12pt5/160_hires.png' }} // Placeholder for dynamic background (Pikachu VMAX or similar)
-                style={styles.backgroundImage}
+                source={{ uri: bgImage }}
+                style={[styles.backgroundImage, { width, height }]}
                 resizeMode="cover"
-                blurRadius={3}
+                blurRadius={8}
             />
             <LinearGradient
-                colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.7)', '#1A1A2E']}
-                style={styles.gradientOverlay}
+                colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0.75)', '#1A1A2E']}
+                style={[styles.gradientOverlay, { width, height }]}
             />
 
             <SafeAreaView style={styles.safeArea}>
@@ -75,19 +97,23 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDec
 
                 {/* Main Content - Featured Card & Play */}
                 <View style={styles.centerContent}>
-                    {/* Hexagon/Featured Graphics */}
+                    {/* Featured Card — shows active deck's main Pokémon */}
                     <View style={styles.featuredContainer}>
-                        <View style={styles.hexagonBorder}>
-                            <Image
-                                source={{ uri: 'https://images.pokemontcg.io/swsh9/122_hires.png' }} // Arceus VSTAR
-                                style={styles.featuredCard}
-                                resizeMode="contain"
-                            />
+                        <View style={[styles.hexagonBorder, { borderColor: deckTypeColor }]}>
+                            {mainCardImage ? (
+                                <Image
+                                    source={{ uri: mainCardImage }}
+                                    style={styles.featuredCard}
+                                    resizeMode="contain"
+                                />
+                            ) : (
+                                <View style={[styles.featuredCard, { backgroundColor: deckTypeColor, opacity: 0.5, borderRadius: 8 }]} />
+                            )}
                         </View>
                     </View>
 
                     {/* Rank Score */}
-                    <View style={styles.rankContainer}>
+                    <View style={[styles.rankContainer, { borderColor: deckTypeColor }]}>
                         <Text style={styles.rankScore}>1708</Text>
                     </View>
 
@@ -110,16 +136,20 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDec
                     >
                         <View style={styles.deckBoxVisual}>
                             {/* Back Layer (Box depth) */}
-                            <View style={styles.deckBoxDepth} />
+                            <View style={[styles.deckBoxDepth, { backgroundColor: deckTypeColor }]} />
                             {/* Front Layer (Card/Cover) */}
-                            <Image
-                                source={{ uri: 'https://images.pokemontcg.io/xy3/55.png' }} // Mega Lucario
-                                style={styles.deckBoxCover}
-                                resizeMode="cover"
-                            />
+                            {mainCardImage ? (
+                                <Image
+                                    source={{ uri: mainCardImage }}
+                                    style={styles.deckBoxCover}
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <View style={[styles.deckBoxCover, { backgroundColor: deckTypeColor }]} />
+                            )}
                             {/* Type Badge */}
                             <View style={styles.deckTypeBadge}>
-                                <View style={[styles.typeIcon, { backgroundColor: '#C03028' }]} />
+                                <View style={[styles.typeIcon, { backgroundColor: deckTypeColor }]} />
                             </View>
                         </View>
 
@@ -189,11 +219,9 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDec
                     {/* Shop */}
                     <TouchableOpacity style={styles.navItem}>
                         <View style={styles.shopContainer}>
-                            <Image
-                                source={{ uri: 'https://images.pokemontcg.io/sv08/logo.png' }} // Surging Sparks Logo approximation
-                                style={styles.shopLogo}
-                                resizeMode="contain"
-                            />
+                            <View style={styles.shopIconBox}>
+                                <Text style={styles.shopIconText}>🛍️</Text>
+                            </View>
                             <Text style={styles.navLabel}>SHOP</Text>
                         </View>
                     </TouchableOpacity>
@@ -210,14 +238,10 @@ const styles = StyleSheet.create({
     },
     backgroundImage: {
         position: 'absolute',
-        width: width,
-        height: height,
         opacity: 0.6,
     },
     gradientOverlay: {
         position: 'absolute',
-        width: width,
-        height: height,
     },
     safeArea: {
         flex: 1,
@@ -455,9 +479,14 @@ const styles = StyleSheet.create({
     shopContainer: {
         alignItems: 'center',
     },
-    shopLogo: {
-        width: 60,
-        height: 30,
+    shopIconBox: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    shopIconText: {
+        fontSize: 28,
     },
     activeDeckContainer: {
         flexDirection: 'row',

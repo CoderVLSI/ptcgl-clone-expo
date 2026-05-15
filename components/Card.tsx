@@ -5,12 +5,12 @@ import {
     StyleSheet,
     Image,
     TouchableOpacity,
-    Dimensions,
     ActivityIndicator,
 } from 'react-native';
 import { Card as CardType, EnergyType } from '../types/game';
 import Colors from '../constants/colors';
 import EnergyIcon from './EnergyIcon';
+import useGameDimensions from '../hooks/useGameDimensions';
 
 interface CardProps {
     card?: CardType;
@@ -20,10 +20,9 @@ interface CardProps {
     onPress?: () => void;
     onLongPress?: () => void;
     showEnergy?: boolean;
-    showFullImage?: boolean; // Shows full card image from API
+    showFullImage?: boolean;
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_ASPECT_RATIO = 1.4;
 
 export const Card: React.FC<CardProps> = ({
@@ -38,8 +37,9 @@ export const Card: React.FC<CardProps> = ({
 }) => {
     const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
+    const { width: GAME_WIDTH } = useGameDimensions();
 
-    const cardWidth = isSmall ? SCREEN_WIDTH * 0.12 : SCREEN_WIDTH * 0.18;
+    const cardWidth = isSmall ? GAME_WIDTH * 0.12 : GAME_WIDTH * 0.18;
     const cardHeight = cardWidth * CARD_ASPECT_RATIO;
 
     const renderCardBack = () => (

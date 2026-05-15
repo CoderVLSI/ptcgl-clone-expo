@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, GameState, Player } from '../types/game';
-import { createMegaLucarioExDeck, createDragapultExDeck } from '../data/standardDecks';
+import { createMegaLucarioExDeck, createDragapultExDeck, createRagingBoltExDeck, createMegaGreninjaExDeck, createMegaZygardeExDeck } from '../data/standardDecks';
 
 export interface GameSetupData {
     playerDeck: Card[];
@@ -30,7 +30,7 @@ export function useGameData() {
     const [playerDeck, setPlayerDeck] = useState<Card[]>([]);
     const [activeDeckName, setActiveDeckName] = useState("Mega Lucario ex Battle Deck");
     const [opponentDeck, setOpponentDeck] = useState<Card[]>([]);
-    const [availableDecks, setAvailableDecks] = useState<{ id: string, name: string, cards: Card[], type: string }[]>([]);
+    const [availableDecks, setAvailableDecks] = useState<{ id: string, name: string, cards: Card[], type: string, mainCard: string }[]>([]);
 
     // For active selection
     const [playerHand, setPlayerHand] = useState<Card[]>([]);
@@ -50,24 +50,27 @@ export function useGameData() {
             setError(null);
             setSetupPhase('loading');
 
-            // Use 2026 Standard Format top decks (async - fetches from API)
-            // Player: Mega Lucario ex deck (60 cards)
-            // Opponent: Dragapult ex deck (60 cards)
-            const [megaLucarioDeck, dragapultDeck] = await Promise.all([
+            // Load all 5 competitive decks in parallel
+            const [megaLucarioDeck, dragapultDeck, ragingBoltDeck, megaGreninajaDeck, megaZygardeDeck] = await Promise.all([
                 createMegaLucarioExDeck(),
                 createDragapultExDeck(),
+                createRagingBoltExDeck(),
+                createMegaGreninjaExDeck(),
+                createMegaZygardeExDeck(),
             ]);
 
-            console.log(`Player deck size: ${megaLucarioDeck.length}`);
-            console.log(`Opponent deck size: ${dragapultDeck.length}`);
+            console.log(`Lucario: ${megaLucarioDeck.length} | Dragapult: ${dragapultDeck.length} | Raging Bolt: ${ragingBoltDeck.length} | Greninja: ${megaGreninajaDeck.length} | Zygarde: ${megaZygardeDeck.length}`);
 
             const decks = [
-                { id: 'deck-lucario', name: 'Mega Lucario ex', cards: megaLucarioDeck, type: 'fighting' },
-                { id: 'deck-dragapult', name: 'Dragapult ex', cards: dragapultDeck, type: 'psychic' }
+                { id: 'deck-lucario',   name: 'Mega Lucario ex',   cards: megaLucarioDeck,    type: 'fighting',   mainCard: 'Mega Lucario ex'  },
+                { id: 'deck-dragapult', name: 'Dragapult ex',       cards: dragapultDeck,      type: 'psychic',    mainCard: 'Dragapult ex'     },
+                { id: 'deck-bolt',      name: 'Raging Bolt ex',     cards: ragingBoltDeck,     type: 'lightning',  mainCard: 'Raging Bolt ex'   },
+                { id: 'deck-greninja',  name: 'Mega Greninja ex',   cards: megaGreninajaDeck,  type: 'water',      mainCard: 'Mega Greninja ex' },
+                { id: 'deck-zygarde',   name: 'Mega Zygarde ex',    cards: megaZygardeDeck,    type: 'fighting',   mainCard: 'Mega Zygarde ex'  },
             ];
             setAvailableDecks(decks);
 
-            // Set decks (already shuffled in builders)
+            // Default: player starts with Lucario, opponent with Dragapult
             setPlayerDeck(megaLucarioDeck);
             setOpponentDeck(dragapultDeck);
             setDecksReady(true);
@@ -103,8 +106,14 @@ export function useGameData() {
             offlineDeck.push(createCard(`energy-${i}`, `Energy ${i + 1}`, 'energy'));
         }
 
-        setPlayerDeck(shuffle([...offlineDeck]));
+        const shuffledDeck = shuffle([...offlineDeck]);
+        setPlayerDeck(shuffledDeck);
         setOpponentDeck(shuffle([...offlineDeck.map(c => ({ ...c, id: `opp-${c.id}` }))]));
+        // Provide minimal availableDecks so Deck Selection screen doesn't crash
+        setAvailableDecks([
+            { id: 'deck-offline-1', name: 'Offline Deck A', cards: shuffledDeck, type: 'fighting' },
+            { id: 'deck-offline-2', name: 'Offline Deck B', cards: shuffle([...offlineDeck.map(c => ({ ...c, id: `b-${c.id}` }))]), type: 'psychic' },
+        ]);
         setDecksReady(true);
         setSetupPhase('coin_flip');
     }

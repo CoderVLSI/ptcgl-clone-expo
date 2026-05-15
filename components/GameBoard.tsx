@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Dimensions, Alert } from 'react-native';
+import { View, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
 import { GameState, Card as CardType, EnergyType } from '../types/game';
 import Colors from '../constants/colors';
 import useGameLogic from '../hooks/useGameLogic';
 import { getNextAIAction, applyAIAction, AIAction } from '../utils/aiOpponent';
+import useGameDimensions from '../hooks/useGameDimensions';
 import OpponentArea from './OpponentArea';
 import PlayMat from './PlayMat';
 import PlayerArea from './PlayerArea';
@@ -26,13 +27,13 @@ import {
 } from './Animations';
 import { TouchableOpacity, Text } from 'react-native';
 
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-
 interface GameBoardProps {
     gameState?: GameState;
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameState }) => {
+    const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useGameDimensions();
+
     const {
         gameState,
         logicState,
@@ -57,6 +58,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         attack,
         useAbility,
         setLogicState,
+        retreat,
+        confirmSwitchBenchSelection,
+        confirmDiscardSelection,
+        confirmMultiDeckSelection,
+        confirmCarmineSelection,
     } = useGameLogic(externalGameState || null);
 
     const [selectedCardId, setSelectedCardId] = useState<string | undefined>();
@@ -96,12 +102,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         }
     }, [externalGameState]);
 
-    // Reset turn-based state when turn changes
+    // Reset turn-based state when turn changes; auto-draw for player on turn 3+ (skip turn 1)
+    const prevTurnPlayerRef = useRef<number>(-1);
     useEffect(() => {
         if (gameState?.currentPlayer === 'player') {
             setHasDrawnThisTurn(false);
+            // Auto-draw at start of player's turn (not on very first turn of the game)
+            if (gameState.turn > 1 && prevTurnPlayerRef.current !== gameState.turn) {
+                prevTurnPlayerRef.current = gameState.turn;
+                // Small delay so state settles before drawing
+                setTimeout(() => {
+                    const success = drawCard();
+                    if (success) setHasDrawnThisTurn(true);
+                }, 400);
+            }
         }
-    }, [gameState?.turn]);
+    }, [gameState?.turn, gameState?.currentPlayer]);
 
     // Trigger animations based on game state messages
     useEffect(() => {
@@ -397,7 +413,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
 
     const handleDrawCard = useCallback(() => {
         if (hasDrawnThisTurn) {
-            Alert.alert('Already Drew', 'You can only draw one card per turn at the start.');
+            Alert.alert('Already Drew', 'You already drew a card this turn (auto-drawn at turn start).');
             return;
         }
         const success = drawCard();
@@ -522,25 +538,82 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 discardCount={gameState.player.discardPile.length}
                 currentTurn={gameState.turn}
                 isPlayerTurn={isPlayerTurn}
+                activeStatusCondition={gameState.player.activePokemon?.statusCondition}
+                activeRetreatCost={gameState.player.activePokemon?.retreatCost ?? 0}
+                activeEnergyCount={gameState.player.activePokemon?.attachedEnergy?.length ?? 0}
+                canRetreat={
+                    isPlayerTurn &&
+                    gameState.player.bench.length > 0 &&
+                    (gameState.player.activePokemon?.retreatCost ?? 0) <= (gameState.player.activePokemon?.attachedEnergy?.length ?? 0)
+                }
+                onRetreat={() => {
+                    if (gameState.player.bench.length === 1) {
+                        // Only one bench option — retreat directly
+                        retreat(gameState.player.bench[0].id);
+                    } else {
+                        // Show bench selection
+                        setLogicState(prev => ({
+                            ...prev,
+                            actionMode: 'retreat_select_bench',
+                            message: 'Select a Benched Pokémon to retreat to.',
+                        }));
+                    }
+                }}
+            />
+
+            {/* Promote Pokémon Modal — shown when player's active is KO'd by opponent */}
+            <CardSelectorModal
+                visible={!!gameState?.pendingPlayerPromotion && gameState.player.bench.length > 0}
+                title="Your Pokémon was Knocked Out!"
+                subtitle="Choose a Benched Pokémon to become your new Active Pokémon"
+                cards={gameState?.player.bench || []}
+                minSelection={1}
+                maxSelection={1}
+                onConfirm={(ids) => {
+                    if (!gameState) return;
+                    const promoted = gameState.player.bench.find(c => c.id === ids[0]);
+                    if (!promoted) return;
+                    updateGameState({
+                        ...gameState,
+                        pendingPlayerPromotion: false,
+                        player: {
+                            ...gameState.player,
+                            activePokemon: promoted,
+                            bench: gameState.player.bench.filter(c => c.id !== ids[0]),
+                        },
+                        message: `${promoted.name} is now your Active Pokémon!`,
+                    });
+                }}
+                onCancel={() => {}} // Cannot cancel — must promote
+                confirmText="Promote"
+                hideCancel
             />
 
             {/* Card Selector Modals (Ultra Ball, etc) */}
             <CardSelectorModal
                 visible={logicState.actionMode === 'discard_from_hand'}
-                title={`Discard ${logicState.discardCount || 1} Cards`}
-                subtitle={logicState.message || "Select cards to discard"}
+                title={
+                    logicState.activeCardId === 'carmine_topdeck'
+                        ? 'Carmine — Put 2 Cards on Deck'
+                        : `Discard ${logicState.discardCount || 1} Cards`
+                }
+                subtitle={logicState.message || "Select cards"}
                 cards={gameState.player.hand.filter(c => c.id !== logicState.activeCardId)}
                 minSelection={logicState.discardCount || 1}
                 maxSelection={logicState.discardCount || 1}
                 onConfirm={confirmDiscard}
                 onCancel={() => selectCard(null, 'none')}
-                confirmText="Discard Selected"
+                confirmText={
+                    logicState.activeCardId === 'carmine_topdeck'
+                        ? 'Put on Top of Deck'
+                        : 'Discard Selected'
+                }
             />
 
             <CardSelectorModal
                 visible={logicState.actionMode === 'search_deck'}
-                title="Ultra Ball"
-                subtitle="Select a Pokémon to put into your hand"
+                title="Search Deck — Pick a Pokémon"
+                subtitle={logicState.message || "Select a Pokémon to put into your hand"}
                 cards={[
                     // Pokémon first (eligible)
                     ...gameState.player.deck.filter(c => c.type === 'pokemon'),
@@ -554,7 +627,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 maxSelection={1}
                 onConfirm={confirmDeckSelection}
                 onCancel={() => selectCard(null, 'none')}
-                confirmText="Select Pokémon"
+                confirmText="Add to Hand"
             />
 
             {/* Nest Ball Modal */}
@@ -621,17 +694,83 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 confirmText="Add to Hand"
             />
 
-            {/* Energy Selection from Discard (Mega Lucario) */}
+            {/* Energy Selection from Discard (Mega Lucario Ora Jab / Crispin) */}
             <CardSelectorModal
                 visible={logicState.actionMode === 'attach_energy_from_discard'}
                 title="Select Energy from Discard"
-                subtitle={logicState.message || "Select up to 3 Fighting Energy to attach."}
-                cards={gameState.player.discardPile.filter(c => c.type === 'energy' && (c.name.includes('Fighting') || c.energyType === 'fighting'))}
+                subtitle={logicState.message || "Select Energy card(s) to attach."}
+                cards={
+                    logicState.activeCardId === 'crispin_attach'
+                        // Crispin: any basic energy
+                        ? gameState.player.discardPile.filter(c => c.type === 'energy')
+                        // Ora Jab: Fighting Energy only
+                        : gameState.player.discardPile.filter(c => c.type === 'energy' && (c.name.includes('Fighting') || c.energyType === 'fighting'))
+                }
                 minSelection={1}
-                maxSelection={3}
-                onConfirm={confirmDiscardEnergySelection}
+                maxSelection={logicState.activeCardId === 'crispin_attach' ? 1 : 3}
+                onConfirm={
+                    logicState.activeCardId === 'crispin_attach'
+                        ? (ids) => confirmDiscardSelection(ids)
+                        : confirmDiscardEnergySelection
+                }
                 onCancel={() => selectCard(null, 'none')}
-                confirmText="Attach to Bench"
+                confirmText={logicState.activeCardId === 'crispin_attach' ? 'Attach Energy' : 'Attach to Bench'}
+            />
+
+            {/* Switch / Retreat bench selection */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'retreat_select_bench'}
+                title="Switch Active"
+                subtitle="Select a Benched Pokémon to switch with your Active"
+                cards={gameState.player.bench}
+                minSelection={1}
+                maxSelection={1}
+                onConfirm={(ids) => confirmSwitchBenchSelection(ids[0])}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Switch"
+            />
+
+            {/* Night Stretcher — select Pokémon from discard */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'select_from_discard'}
+                title="Select from Discard"
+                subtitle={logicState.message || "Select a card from your discard pile"}
+                cards={gameState.player.discardPile.filter(c => c.type === 'pokemon')}
+                minSelection={1}
+                maxSelection={1}
+                onConfirm={(ids) => confirmDiscardSelection(ids)}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Put in Hand"
+            />
+
+            {/* Briar / Buddy-Buddy Poffin multi-deck search */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'search_deck_multiple'}
+                title="Search Deck"
+                subtitle={logicState.message || "Select Pokémon from your deck"}
+                cards={
+                    logicState.activeCardId === 'buddy_poffin'
+                        ? gameState.player.deck.filter(c => c.type === 'pokemon' && c.subtypes?.includes('Basic') && (c.hp || 0) <= 70)
+                        : gameState.player.deck.filter(c => c.type === 'pokemon')
+                }
+                minSelection={0}
+                maxSelection={logicState.discardCount || 2}
+                onConfirm={(ids) => confirmMultiDeckSelection(ids)}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Add to Hand"
+            />
+
+            {/* Super Rod — select from discard to shuffle back */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'select_discard_multiple'}
+                title="Super Rod"
+                subtitle="Select up to 3 Pokémon or Energy to shuffle into your deck"
+                cards={gameState.player.discardPile.filter(c => c.type === 'pokemon' || c.type === 'energy')}
+                minSelection={0}
+                maxSelection={3}
+                onConfirm={(ids) => confirmDiscardSelection(ids)}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Shuffle into Deck"
             />
 
             {/* Action Menu Modal */}
@@ -778,7 +917,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         left: 0,
         right: 0,
-        bottom: SCREEN_HEIGHT * 0.05,
+        bottom: '5%',
         zIndex: 10,
     },
     pendingIndicator: {

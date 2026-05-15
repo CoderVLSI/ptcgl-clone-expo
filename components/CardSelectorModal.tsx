@@ -6,14 +6,11 @@ import {
     TouchableOpacity,
     Modal,
     ScrollView,
-    Dimensions,
     Image,
 } from 'react-native';
 import { Card as CardType } from '../types/game';
 import Colors from '../constants/colors';
 import Card from './Card';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface CardSelectorModalProps {
     visible: boolean;
@@ -26,6 +23,7 @@ interface CardSelectorModalProps {
     onCancel: () => void;
     confirmText?: string;
     eligibleCardIds?: string[]; // Cards that can be selected (others will be greyed out)
+    hideCancel?: boolean; // Hide cancel button (for forced selections like post-KO promotion)
 }
 
 const CardSelectorModal: React.FC<CardSelectorModalProps> = ({
@@ -39,6 +37,7 @@ const CardSelectorModal: React.FC<CardSelectorModalProps> = ({
     onCancel,
     confirmText = 'Confirm',
     eligibleCardIds,
+    hideCancel = false,
 }) => {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -119,6 +118,19 @@ const CardSelectorModal: React.FC<CardSelectorModalProps> = ({
                                     >
                                         <Card card={card} isSmall />
 
+                                        {/* Card name label */}
+                                        <Text style={styles.cardNameLabel} numberOfLines={2}>
+                                            {card.name}
+                                        </Text>
+
+                                        {/* HP / type badge */}
+                                        {card.type === 'pokemon' && card.hp && (
+                                            <Text style={styles.cardHpLabel}>{card.hp} HP</Text>
+                                        )}
+                                        {card.type === 'energy' && (
+                                            <Text style={styles.cardHpLabel}>{(card.energyType || 'colorless').toUpperCase()}</Text>
+                                        )}
+
                                         {/* Ineligible Overlay */}
                                         {isIneligible && (
                                             <View style={styles.ineligibleOverlay}>
@@ -140,12 +152,14 @@ const CardSelectorModal: React.FC<CardSelectorModalProps> = ({
 
                     {/* Footer Buttons */}
                     <View style={styles.footer}>
-                        <TouchableOpacity
-                            style={[styles.button, styles.cancelButton]}
-                            onPress={onCancel}
-                        >
-                            <Text style={styles.cancelText}>Cancel</Text>
-                        </TouchableOpacity>
+                        {!hideCancel && (
+                            <TouchableOpacity
+                                style={[styles.button, styles.cancelButton]}
+                                onPress={onCancel}
+                            >
+                                <Text style={styles.cancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                        )}
 
                         <TouchableOpacity
                             style={[
@@ -272,6 +286,19 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         marginTop: 50,
+    },
+    cardNameLabel: {
+        color: '#fff',
+        fontSize: 9,
+        textAlign: 'center',
+        marginTop: 4,
+        maxWidth: 70,
+        fontWeight: '600',
+    },
+    cardHpLabel: {
+        color: '#aaa',
+        fontSize: 8,
+        textAlign: 'center',
     },
     footer: {
         flexDirection: 'row',

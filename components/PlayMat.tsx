@@ -1,11 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Card as CardType } from '../types/game';
 import Colors from '../constants/colors';
 import Card from './Card';
 import StadiumZone from './StadiumZone';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import useGameDimensions from '../hooks/useGameDimensions';
 
 interface PlayMatProps {
     opponentActive?: CardType;
@@ -32,6 +31,10 @@ export const PlayMat: React.FC<PlayMatProps> = ({
     stadium,
     stadiumOwner,
 }) => {
+    const { width: GAME_WIDTH } = useGameDimensions();
+    const emptySlotSize = GAME_WIDTH * 0.18;
+    const emptyBenchSlotSize = GAME_WIDTH * 0.12;
+
     const handlePlayerBenchPress = (cardId: string) => {
         if (onBenchCardPress) {
             onBenchCardPress(cardId);
@@ -81,7 +84,7 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                                         onPress={() => onCardPress?.(benchCard.id)}
                                     />
                                 ) : (
-                                    <View style={styles.emptyBenchSlot} />
+                                    <View style={[styles.emptyBenchSlot, { width: emptyBenchSlotSize, height: emptyBenchSlotSize * 1.4 }]} />
                                 )}
                             </View>
                         );
@@ -97,7 +100,7 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                             onPress={() => onCardPress?.(opponentActive.id)}
                         />
                     ) : (
-                        <View style={styles.emptySlot} />
+                        <View style={[styles.emptySlot, { width: emptySlotSize, height: emptySlotSize * 1.4 }]} />
                     )}
                 </View>
             </View>
@@ -124,7 +127,7 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                             onPress={handlePlayerActivePress}
                         />
                     ) : (
-                        <View style={styles.emptySlot} />
+                        <View style={[styles.emptySlot, { width: emptySlotSize, height: emptySlotSize * 1.4 }]} />
                     )}
                 </View>
 
@@ -144,7 +147,7 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                                         onPress={() => handlePlayerBenchPress(benchCard.id)}
                                     />
                                 ) : (
-                                    <View style={styles.emptyBenchSlot} />
+                                    <View style={[styles.emptyBenchSlot, { width: emptyBenchSlotSize, height: emptyBenchSlotSize * 1.4 }]} />
                                 )}
                             </View>
                         );
@@ -209,8 +212,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     emptySlot: {
-        width: SCREEN_WIDTH * 0.18,
-        height: SCREEN_WIDTH * 0.18 * 1.4,
         borderRadius: 8,
         borderWidth: 2,
         borderColor: Colors.playMat.border,
@@ -218,8 +219,6 @@ const styles = StyleSheet.create({
         opacity: 0.4,
     },
     emptyBenchSlot: {
-        width: SCREEN_WIDTH * 0.12,
-        height: SCREEN_WIDTH * 0.12 * 1.4,
         borderRadius: 6,
         borderWidth: 1,
         borderColor: Colors.playMat.border,

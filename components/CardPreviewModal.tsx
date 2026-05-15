@@ -5,13 +5,10 @@ import {
     StyleSheet,
     Modal,
     TouchableOpacity,
-    Dimensions,
 } from 'react-native';
 import { Card as CardType } from '../types/game';
 import Colors from '../constants/colors';
 import Card from './Card';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface CardPreviewModalProps {
     visible: boolean;
@@ -83,7 +80,7 @@ const styles = StyleSheet.create({
     },
     container: {
         alignItems: 'center',
-        maxWidth: SCREEN_WIDTH * 0.9,
+        maxWidth: '90%',
     },
     closeHint: {
         position: 'absolute',

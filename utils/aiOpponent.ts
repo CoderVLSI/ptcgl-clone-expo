@@ -71,7 +71,7 @@ export function getNextAIAction(gameState: GameState, usedSupporter: boolean = f
             };
         }
         // Find target on bench
-        const benchTarget = opponent.bench.find(p => p.evolvesFrom === evo.name);
+        const benchTarget = opponent.bench.find(p => p.name === evo.evolvesFrom);
         if (benchTarget) {
             return {
                 type: 'PLAY_EVOLUTION',
@@ -328,32 +328,39 @@ export function applyAIAction(
             }
 
             let newDefender = { ...defender };
-            // Use damage counters instead of reducing HP
             const currentDamage = (newDefender.damageCounters || 0) + damage;
             newDefender.damageCounters = currentDamage;
 
             const knockout = currentDamage >= (newDefender.hp || 0);
-            let playerBench = gameState.player.bench;
-            let playerActive = knockout ? (playerBench.length > 0 ? playerBench[0] : undefined) : newDefender;
-            if (knockout && playerBench.length > 0) playerBench = playerBench.slice(1);
+
+            // ex Pokémon give 2 prize cards when KO'd
+            const isEx = defender.subtypes?.some(s => s.toLowerCase() === 'ex') || defender.name.toLowerCase().includes(' ex');
+            const prizesToTake = knockout ? (isEx ? 2 : 1) : 0;
+            const newOpponentPrizes = knockout ? opponent.prizeCards.slice(prizesToTake) : opponent.prizeCards;
+
+            // If player's active is KO'd and they have bench Pokémon, require them to promote
+            const playerBench = gameState.player.bench;
+            const needsPromotion = knockout && playerBench.length > 0;
 
             return {
                 ...gameState,
                 turn: gameState.turn + 1,
                 currentPlayer: 'player',
                 timeRemaining: 60,
+                pendingPlayerPromotion: needsPromotion,
                 player: {
                     ...gameState.player,
-                    activePokemon: playerActive,
+                    activePokemon: knockout ? (needsPromotion ? undefined : undefined) : newDefender,
                     bench: playerBench,
                     discardPile: knockout ? [...gameState.player.discardPile, defender] : gameState.player.discardPile,
-                    prizeCards: gameState.player.prizeCards, // AI doesn't take player prizes
                 },
                 opponent: {
                     ...opponent,
-                    prizeCards: knockout ? opponent.prizeCards.slice(1) : opponent.prizeCards,
+                    prizeCards: newOpponentPrizes,
                 },
-                message: `Opponent used ${attack.name}! Dealt ${damage} damage.${knockout ? ' KNOCKOUT!' : ''} Your turn!`,
+                message: knockout
+                    ? `Opponent used ${attack.name}! ${defender.name} was Knocked Out! Choose a Pokémon to promote!`
+                    : `Opponent used ${attack.name}! Dealt ${damage} damage. Your turn!`,
             };
         }
 
