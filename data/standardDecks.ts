@@ -567,7 +567,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/25_hires.png',
     },
 
-    // ─── Mega Greninja ex line (me4 — Chaos Rising) ──────────────────────────
+    // ─── Mega Greninja ex line (CRI — Chaos Rising, releases 2026-05-22) ───────
     'Froakie': {
         name: 'Froakie',
         type: 'pokemon',
@@ -626,8 +626,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'You may put a Water Energy attached to this Pokémon into your hand and have this attack do 80 more damage.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me4/22.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me4/22_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/cri/22.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/22_hires.png',
     },
 
     'Greninja': {
@@ -1132,7 +1132,7 @@ const ALL_PROXY_CARDS: Record<string, Partial<Card>> = {
 
 /** Shared deck builder helper — fetches sets and creates an addCard function */
 async function buildDeckHelper() {
-    const [sv5, sv6, sv6pt5, sv7, sv8, sv8pt5, sv9, me1, me2, me2pt5, me3, me4] = await Promise.all([
+    const [sv5, sv6, sv6pt5, sv7, sv8, sv8pt5, sv9, me1, me2, me2pt5, me3, cri] = await Promise.all([
         fetchSet('sv5').catch(() => []),
         fetchSet('sv6').catch(() => []),
         fetchSet('sv6pt5').catch(() => []),
@@ -1144,11 +1144,11 @@ async function buildDeckHelper() {
         fetchSet('me2').catch(() => []),
         fetchSet('me2pt5').catch(() => []),
         fetchSet('me3').catch(() => []),
-        fetchSet('me4').catch(() => []),
+        fetchSet('cri').catch(() => []),  // Chaos Rising (releases 2026-05-22)
     ]);
 
     const allCards = [
-        ...me4, ...me3, ...me2pt5, ...me2, ...me1,
+        ...cri, ...me3, ...me2pt5, ...me2, ...me1,
         ...sv9, ...sv8pt5, ...sv8,
         ...sv7, ...sv6pt5, ...sv6, ...sv5,
     ].filter(isStandardLegal);
@@ -1246,10 +1246,10 @@ export async function createMegaGreninjaExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
 
     // Pokémon (13)
-    addCard('Froakie', 4);              // me4 — base of evolution line
-    addCard('Frogadier', 1);            // me4 — stage 1 bridge
-    addCard('Mega Greninja ex', 3);     // me4 — main attacker, bench snipe + spread
-    addCard('Greninja', 1);             // me4 — secondary attacker
+    addCard('Froakie', 4);              // CRI — base of evolution line
+    addCard('Frogadier', 1);            // CRI — stage 1 bridge
+    addCard('Mega Greninja ex', 3);     // CRI 022 — main attacker
+    addCard('Greninja', 1);             // CRI — secondary attacker
     addCard('Tatsugiri', 2);            // sv7 — draw 2 ability
     addCard('Dondozo', 1);              // sv7 — bulky pivot/wall
     addCard('Munkidori', 1);            // sv6 — poison chip
