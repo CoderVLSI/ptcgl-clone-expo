@@ -171,7 +171,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             setEvolutionName(evoName);
             setTimeout(() => setShowEvolution(true), 200);
         }
-    }, [gameState?.message, gameState?.player.activePokemon]);
+    }, [gameState?.message, gameState?.player.activePokemon?.id]);
 
     // Energy attachment animation
     useEffect(() => {

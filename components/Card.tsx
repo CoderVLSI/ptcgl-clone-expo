@@ -5,7 +5,6 @@ import {
     StyleSheet,
     Image,
     TouchableOpacity,
-    ActivityIndicator,
 } from 'react-native';
 import { Card as CardType, EnergyType } from '../types/game';
 import Colors from '../constants/colors';
@@ -35,7 +34,6 @@ export const Card: React.FC<CardProps> = ({
     showEnergy = true,
     showFullImage = true,
 }) => {
-    const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
     const { width: GAME_WIDTH } = useGameDimensions();
 
@@ -80,17 +78,8 @@ export const Card: React.FC<CardProps> = ({
                     <Image
                         source={card.localImageSource ? card.localImageSource : { uri: card.imageUrl }}
                         style={styles.fullCardImage}
-                        onLoadStart={() => setImageLoading(true)}
-                        onLoadEnd={() => setImageLoading(false)}
-                        onError={() => {
-                            setImageError(true);
-                            setImageLoading(false);
-                        }}
+                        onError={() => setImageError(true)}
                     />
-                    {imageLoading && (
-                        <View style={styles.loadingOverlay}>
-                            <ActivityIndicator size="small" color={Colors.card.highlight} />
-                        </View>
                     )}
                     {/* Damage counters overlay */}
                     {(card.damageCounters && card.damageCounters > 0 || card.hp) && (
