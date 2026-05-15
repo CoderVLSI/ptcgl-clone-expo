@@ -2,103 +2,66 @@ import React, { useRef, useEffect } from 'react';
 import { View, StyleSheet, Animated, Easing, Text } from 'react-native';
 import Colors from '../constants/colors';
 
-const SCREEN_WIDTH = 480;
-
+// ─── Shuffle Animation ────────────────────────────────────────────────────────
 interface ShuffleAnimationProps {
     visible: boolean;
     onComplete?: () => void;
-    x?: number;
-    y?: number;
 }
 
-export const ShuffleAnimation: React.FC<ShuffleAnimationProps> = ({
-    visible,
-    onComplete,
-    x = SCREEN_WIDTH / 2,
-    y = 200,
-}) => {
-    const shuffleAnim = useRef(new Animated.Value(0)).current;
-    const scaleAnim = useRef(new Animated.Value(1)).current;
+export const ShuffleAnimation: React.FC<ShuffleAnimationProps> = ({ visible, onComplete }) => {
+    const anims = [0, 1, 2].map(() => ({
+        x: useRef(new Animated.Value(0)).current,
+        y: useRef(new Animated.Value(0)).current,
+        opacity: useRef(new Animated.Value(0)).current,
+        rotate: useRef(new Animated.Value(0)).current,
+    }));
 
     useEffect(() => {
-        if (visible) {
-            startShuffle();
-        }
-    }, [visible]);
-
-    const startShuffle = () => {
-        // Reset animations
-        shuffleAnim.setValue(0);
-        scaleAnim.setValue(1);
-
-        // Shuffle sequence - simplified to avoid transform errors
-        Animated.sequence([
-            // Rise up
-            Animated.parallel([
-                Animated.timing(shuffleAnim, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(scaleAnim, {
-                    toValue: 1.2,
-                    duration: 200,
-                    useNativeDriver: true,
-                }),
-            ]),
-            // Shake effect using translateY instead of rotate
-            Animated.loop(
-                Animated.timing(shuffleAnim, {
-                    toValue: 2,
-                    duration: 100,
-                    useNativeDriver: true,
-                    easing: Easing.inOut(Easing.sin),
-                }),
-                { iterations: 6 }
-            ),
-            // Settle back down
-            Animated.parallel([
-                Animated.timing(shuffleAnim, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(scaleAnim, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                }),
-            ]),
-        ]).start(() => {
+        if (!visible) return;
+        const offsets = [-20, 0, 20];
+        const sequences = anims.map((a, i) =>
+            Animated.sequence([
+                Animated.delay(i * 60),
+                Animated.parallel([
+                    Animated.timing(a.opacity, { toValue: 1, duration: 80, useNativeDriver: true }),
+                    Animated.timing(a.x, { toValue: offsets[i], duration: 80, useNativeDriver: true }),
+                ]),
+                Animated.parallel([
+                    Animated.timing(a.x, { toValue: offsets[i] * -1, duration: 120, useNativeDriver: true, easing: Easing.inOut(Easing.quad) }),
+                    Animated.timing(a.rotate, { toValue: 1, duration: 120, useNativeDriver: true }),
+                ]),
+                Animated.parallel([
+                    Animated.timing(a.x, { toValue: 0, duration: 120, useNativeDriver: true }),
+                    Animated.timing(a.y, { toValue: -30, duration: 120, useNativeDriver: true }),
+                ]),
+                Animated.parallel([
+                    Animated.timing(a.opacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+                    Animated.timing(a.y, { toValue: -60, duration: 200, useNativeDriver: true }),
+                ]),
+            ])
+        );
+        Animated.parallel(sequences).start(() => {
+            anims.forEach(a => { a.x.setValue(0); a.y.setValue(0); a.opacity.setValue(0); a.rotate.setValue(0); });
             onComplete?.();
         });
-    };
+    }, [visible]);
 
     if (!visible) return null;
 
     return (
-        <View style={[styles.container, { left: x - 40, top: y - 40 }]}>
-            {/* Stack effect - simplified without rotate */}
-            {[0, 1, 2].map((i) => (
+        <View style={styles.shuffleContainer} pointerEvents="none">
+            {anims.map((a, i) => (
                 <Animated.View
                     key={i}
                     style={[
-                        styles.cardStack,
+                        styles.shuffleCard,
                         {
                             transform: [
-                                {
-                                    translateY: shuffleAnim.interpolate({
-                                        inputRange: [0, 0.5, 1, 1.5, 2],
-                                        outputRange: [0, -20 - i * 8, -10 - i * 8, -5 - i * 8, 0],
-                                    }),
-                                },
-                                {
-                                    scale: scaleAnim.interpolate({
-                                        inputRange: [0, 0.5, 1],
-                                        outputRange: [1, 1.2, 1],
-                                    }),
-                                },
-                            ] as any,
+                                { translateX: a.x },
+                                { translateY: a.y },
+                                { rotate: a.rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', i % 2 === 0 ? '15deg' : '-15deg'] }) },
+                            ],
+                            opacity: a.opacity,
                         },
                     ]}
                 />
@@ -107,177 +70,64 @@ export const ShuffleAnimation: React.FC<ShuffleAnimationProps> = ({
     );
 };
 
+// ─── Draw Animation ───────────────────────────────────────────────────────────
 interface DrawAnimationProps {
     visible: boolean;
     onComplete?: () => void;
-    x?: number;
-    y?: number;
 }
 
-export const DrawAnimation: React.FC<DrawAnimationProps> = ({
-    visible,
-    onComplete,
-    x = SCREEN_WIDTH / 2,
-    y = 300,
-}) => {
-    const slideAnim = useRef(new Animated.Value(-100)).current;
-    const opacityAnim = useRef(new Animated.Value(0)).current;
+export const DrawAnimation: React.FC<DrawAnimationProps> = ({ visible, onComplete }) => {
+    const translateY = useRef(new Animated.Value(0)).current;
+    const translateX = useRef(new Animated.Value(0)).current;
+    const scale = useRef(new Animated.Value(0.6)).current;
+    const opacity = useRef(new Animated.Value(0)).current;
+    const rotate = useRef(new Animated.Value(-0.1)).current;
 
     useEffect(() => {
-        if (visible) {
-            slideAnim.setValue(-100);
-            opacityAnim.setValue(0);
-            startDraw();
-        }
-    }, [visible]);
+        if (!visible) return;
+        translateY.setValue(0);
+        translateX.setValue(0);
+        scale.setValue(0.6);
+        opacity.setValue(0);
+        rotate.setValue(-0.1);
 
-    const startDraw = () => {
         Animated.sequence([
-            Animated.timing(slideAnim, {
-                toValue: 0,
-                duration: 150,
-                useNativeDriver: true,
-            }),
-            Animated.spring(opacityAnim, {
-                toValue: 1,
-                useNativeDriver: true,
-                friction: 8,
-            }),
+            // Card lifts from deck
+            Animated.parallel([
+                Animated.timing(opacity, { toValue: 1, duration: 100, useNativeDriver: true }),
+                Animated.spring(scale, { toValue: 1, friction: 6, tension: 200, useNativeDriver: true }),
+                Animated.timing(translateY, { toValue: -40, duration: 200, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+            ]),
+            // Arc to hand
+            Animated.parallel([
+                Animated.timing(translateX, { toValue: 80, duration: 320, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+                Animated.timing(translateY, { toValue: 60, duration: 320, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+                Animated.timing(rotate, { toValue: 0.15, duration: 320, useNativeDriver: true }),
+                Animated.timing(scale, { toValue: 0.8, duration: 320, useNativeDriver: true }),
+            ]),
+            // Fade out as it joins hand
+            Animated.timing(opacity, { toValue: 0, duration: 150, useNativeDriver: true }),
         ]).start(() => {
-            setTimeout(() => {
-                Animated.timing(opacityAnim, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start(onComplete);
-            }, 300);
+            opacity.setValue(0);
+            onComplete?.();
         });
-    };
+    }, [visible]);
 
     if (!visible) return null;
 
     return (
-        <View style={[styles.container, { left: x - 20, top: y - 30 }]}>
+        <View style={styles.drawContainer} pointerEvents="none">
             <Animated.View
                 style={[
                     styles.drawCard,
                     {
-                        transform: [{ translateY: slideAnim }],
-                        opacity: opacityAnim,
-                    },
-                ]}
-            >
-                <View style={styles.cardBack}>
-                    <View style={styles.cardBackInner} />
-                </View>
-            </Animated.View>
-        </View>
-    );
-};
-
-interface AttackAnimationProps {
-    visible: boolean;
-    onComplete?: () => void;
-    type?: 'physical' | 'special' | 'fire' | 'water' | 'electric' | 'psychic';
-    x?: number;
-    y?: number;
-}
-
-export const AttackAnimation: React.FC<AttackAnimationProps> = ({
-    visible,
-    onComplete,
-    type = 'physical',
-    x = SCREEN_WIDTH / 2,
-    y = 200,
-}) => {
-    const scaleAnim = useRef(new Animated.Value(0)).current;
-    const opacityAnim = useRef(new Animated.Value(1)).current;
-    const impactAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        if (visible) {
-            startAttack();
-        }
-    }, [visible]);
-
-    const startAttack = () => {
-        Animated.sequence([
-            // Wind up
-            Animated.spring(scaleAnim, {
-                toValue: 0.5,
-                useNativeDriver: true,
-                friction: 8,
-            }),
-            // Strike
-            Animated.spring(scaleAnim, {
-                toValue: 1.5,
-                useNativeDriver: true,
-                friction: 2,
-                tension: 200,
-            }),
-            // Impact
-            Animated.parallel([
-                Animated.spring(scaleAnim, {
-                    toValue: 1,
-                    useNativeDriver: true,
-                    friction: 8,
-                }),
-                Animated.spring(impactAnim, {
-                    toValue: 1,
-                    useNativeDriver: true,
-                    friction: 4,
-                    tension: 300,
-                }),
-            ]),
-            // Fade out
-            Animated.timing(opacityAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-            }),
-        ]).start(() => {
-            scaleAnim.setValue(0);
-            impactAnim.setValue(0);
-            opacityAnim.setValue(1);
-            onComplete?.();
-        });
-    };
-
-    const getEffectColor = () => {
-        switch (type) {
-            case 'fire': return Colors.energy.fire;
-            case 'water': return Colors.energy.water;
-            case 'electric': return Colors.energy.lightning;
-            case 'psychic': return Colors.energy.psychic;
-            case 'special': return '#9B59B6';
-            default: return Colors.energy.fighting;
-        }
-    };
-
-    const effectColor = getEffectColor();
-
-    if (!visible) return null;
-
-    return (
-        <View style={[styles.container, { left: x - 50, top: y - 50 }]}>
-            <Animated.View
-                style={[
-                    styles.attackRing,
-                    {
-                        borderColor: effectColor,
+                        opacity,
                         transform: [
-                            { scale: scaleAnim },
-                            {
-                                scale: impactAnim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [1, 3],
-                                }),
-                            },
-                        ] as any,
-                        opacity: opacityAnim.interpolate({
-                            inputRange: [0, 0.7, 1],
-                            outputRange: [0, 1, 0],
-                        }),
+                            { translateX },
+                            { translateY },
+                            { scale },
+                            { rotate: rotate.interpolate({ inputRange: [-1, 1], outputRange: ['-360deg', '360deg'] }) },
+                        ],
                     },
                 ]}
             />
@@ -285,573 +135,478 @@ export const AttackAnimation: React.FC<AttackAnimationProps> = ({
     );
 };
 
-interface DamageNumberProps {
+// ─── Attack Animation ─────────────────────────────────────────────────────────
+interface AttackAnimationProps {
     visible: boolean;
-    damage: number;
-    type?: 'damage' | 'heal' | 'healing';
     onComplete?: () => void;
-    x?: number;
-    y?: number;
+    type?: 'physical' | 'fire' | 'water' | 'electric' | 'psychic' | 'special';
 }
 
-export const DamageNumberAnimation: React.FC<DamageNumberProps> = ({
-    visible,
-    damage,
-    type = 'damage',
-    onComplete,
-    x = SCREEN_WIDTH / 2,
-    y = 200,
-}) => {
-    const moveAnim = useRef(new Animated.Value(0)).current;
-    const opacityAnim = useRef(new Animated.Value(1)).current;
-    const scaleAnim = useRef(new Animated.Value(0.5)).current;
+const TYPE_COLORS: Record<string, string> = {
+    fire: Colors.energy.fire,
+    water: Colors.energy.water,
+    electric: Colors.energy.lightning,
+    psychic: Colors.energy.psychic,
+    special: '#9B59B6',
+    physical: Colors.energy.fighting,
+};
+
+const TYPE_EMOJIS: Record<string, string> = {
+    fire: '🔥', water: '💧', electric: '⚡', psychic: '🔮', special: '✨', physical: '💥',
+};
+
+export const AttackAnimation: React.FC<AttackAnimationProps> = ({ visible, onComplete, type = 'physical' }) => {
+    const rings = [0, 1, 2].map(() => ({
+        scale: useRef(new Animated.Value(0)).current,
+        opacity: useRef(new Animated.Value(0.9)).current,
+    }));
+    const flash = useRef(new Animated.Value(0)).current;
+    const emojiScale = useRef(new Animated.Value(0)).current;
+    const emojiOpacity = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        if (visible) {
-            moveAnim.setValue(0);
-            opacityAnim.setValue(1);
-            scaleAnim.setValue(0.5);
-            startAnimation();
-        }
-    }, [visible]);
+        if (!visible) return;
+        rings.forEach(r => { r.scale.setValue(0); r.opacity.setValue(0.9); });
+        flash.setValue(0);
+        emojiScale.setValue(0);
+        emojiOpacity.setValue(0);
 
-    const startAnimation = () => {
+        const color = TYPE_COLORS[type] || TYPE_COLORS.physical;
+
+        // Flash + shockwave rings
         Animated.parallel([
-            Animated.spring(moveAnim, {
-                toValue: -60,
-                useNativeDriver: true,
-                friction: 5,
-            }),
-            Animated.spring(scaleAnim, {
-                toValue: 1.2,
-                useNativeDriver: true,
-                friction: 5,
-            }),
-        ]).start(() => {
-            Animated.parallel([
-                Animated.timing(moveAnim, {
-                    toValue: -80,
-                    duration: 200,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(opacityAnim, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: true,
-                }),
-            ]).start(() => {
-                onComplete?.();
-            });
-        });
-    };
-
-    const textColor = type === 'heal' || type === 'healing' ? '#4CAF50' : '#FF4444';
-    const sign = type === 'heal' || type === 'healing' ? '+' : '-';
-
-    if (!visible) return null;
-
-    return (
-        <Animated.View
-            style={[
-                styles.damageContainer,
-                { left: x, top: y },
-                {
-                    transform: [{ translateY: moveAnim }, { scale: scaleAnim }],
-                    opacity: opacityAnim,
-                },
-            ]}
-        >
-            <Text style={[styles.damageText, { color: textColor }]}>
-                {sign}{damage}
-            </Text>
-        </Animated.View>
-    );
-};
-
-interface EnergyAttachmentProps {
-    visible: boolean;
-    energyType?: string;
-    onComplete?: () => void;
-    x?: number;
-    y?: number;
-}
-
-export const EnergyAttachmentAnimation: React.FC<EnergyAttachmentProps> = ({
-    visible,
-    energyType = 'colorless',
-    onComplete,
-    x = 100,
-    y = 300,
-}) => {
-    const progressAnim = useRef(new Animated.Value(0)).current;
-    const scaleAnim = useRef(new Animated.Value(0)).current;
-    const opacityAnim = useRef(new Animated.Value(1)).current;
-
-    useEffect(() => {
-        if (visible) {
-            progressAnim.setValue(0);
-            scaleAnim.setValue(0);
-            startAttachment();
-        }
-    }, [visible]);
-
-    const startAttachment = () => {
-        Animated.sequence([
-            Animated.spring(scaleAnim, {
-                toValue: 1,
-                useNativeDriver: true,
-                friction: 6,
-            }),
-            Animated.timing(progressAnim, {
-                toValue: 1,
-                duration: 500,
-                useNativeDriver: true,
-                easing: Easing.out(Easing.ease),
-            }),
-            Animated.spring(scaleAnim, {
-                toValue: 0.8,
-                useNativeDriver: true,
-                friction: 6,
-            }),
-        ]).start(() => {
-            Animated.timing(opacityAnim, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-            }).start(() => {
-                scaleAnim.setValue(0);
-                progressAnim.setValue(0);
-                opacityAnim.setValue(1);
-                onComplete?.();
-            });
-        });
-    };
-
-    const getEnergyColor = () => {
-        const colors: Record<string, string> = {
-            fire: Colors.energy.fire,
-            water: Colors.energy.water,
-            grass: Colors.energy.grass,
-            lightning: Colors.energy.lightning,
-            psychic: Colors.energy.psychic,
-            fighting: Colors.energy.fighting,
-            darkness: Colors.energy.darkness,
-            metal: Colors.energy.metal,
-            fairy: Colors.energy.fairy,
-            dragon: Colors.energy.dragon,
-            colorless: '#E0E0E0',
-        };
-        return colors[energyType] || colors.colorless;
-    };
-
-    const energyColor = getEnergyColor();
-
-    if (!visible) return null;
-
-    return (
-        <View style={[styles.container, { left: x, top: y }]}>
-            <Animated.View
-                style={[
-                    styles.energyOrb,
-                    {
-                        backgroundColor: energyColor,
-                        transform: [{ scale: scaleAnim }],
-                        opacity: opacityAnim,
-                    },
-                ]}
-            >
-                <Animated.View
-                    style={[
-                        styles.energyInner,
-                        {
-                            opacity: progressAnim.interpolate({
-                                inputRange: [0, 0.3, 0.7, 1],
-                                outputRange: [0, 0.3, 0.6, 0],
-                            }),
-                        },
-                    ]}
-                />
-            </Animated.View>
-        </View>
-    );
-};
-
-interface EvolutionAnimationProps {
-    visible: boolean;
-    onComplete?: () => void;
-    isMega?: boolean;
-    x?: number;
-    y?: number;
-    evolutionName?: string;
-}
-
-export const EvolutionAnimation: React.FC<EvolutionAnimationProps> = ({
-    visible,
-    onComplete,
-    isMega = false,
-    x = SCREEN_WIDTH / 2,
-    y = 300,
-    evolutionName = 'Evolved',
-}) => {
-    const scaleAnim = useRef(new Animated.Value(0)).current;
-    const opacityAnim = useRef(new Animated.Value(1)).current;
-    const rotationAnim = useRef(new Animated.Value(0)).current;
-    const glowAnim = useRef(new Animated.Value(0)).current;
-    const pulseAnim = useRef(new Animated.Value(1)).current;
-    const textOpacityAnim = useRef(new Animated.Value(0)).current;
-    const textScaleAnim = useRef(new Animated.Value(0.5)).current;
-
-    useEffect(() => {
-        if (visible) {
-            startEvolution();
-        }
-    }, [visible]);
-
-    const startEvolution = () => {
-        // Reset animations
-        scaleAnim.setValue(0);
-        opacityAnim.setValue(1);
-        rotationAnim.setValue(0);
-        glowAnim.setValue(0);
-        pulseAnim.setValue(1);
-        textOpacityAnim.setValue(0);
-        textScaleAnim.setValue(0.5);
-
-        const duration = isMega ? 1500 : 1000;
-        const pulseSpeed = isMega ? 200 : 300;
-
-        // Main evolution sequence
-        Animated.sequence([
-            // Initial burst
-            Animated.parallel([
-                Animated.timing(scaleAnim, {
-                    toValue: 1,
-                    duration: duration * 0.3,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(glowAnim, {
-                    toValue: 1,
-                    duration: duration * 0.3,
-                    useNativeDriver: false,
-                }),
+            // Screen flash
+            Animated.sequence([
+                Animated.timing(flash, { toValue: 1, duration: 80, useNativeDriver: true }),
+                Animated.timing(flash, { toValue: 0, duration: 300, useNativeDriver: true }),
             ]),
-            // Pulsing rings
-            Animated.loop(
-                Animated.timing(pulseAnim, {
-                    toValue: 1.5,
-                    duration: pulseSpeed,
-                    useNativeDriver: true,
-                }),
-                { iterations: isMega ? 5 : 3 }
+            // Emoji impact
+            Animated.sequence([
+                Animated.delay(40),
+                Animated.parallel([
+                    Animated.spring(emojiScale, { toValue: 1.4, friction: 3, tension: 300, useNativeDriver: true }),
+                    Animated.timing(emojiOpacity, { toValue: 1, duration: 80, useNativeDriver: true }),
+                ]),
+                Animated.parallel([
+                    Animated.timing(emojiScale, { toValue: 0.8, duration: 200, useNativeDriver: true }),
+                    Animated.timing(emojiOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+                ]),
+            ]),
+            // Three expanding rings with delays
+            ...rings.map((r, i) =>
+                Animated.sequence([
+                    Animated.delay(i * 80),
+                    Animated.parallel([
+                        Animated.timing(r.scale, { toValue: 3 + i * 0.8, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+                        Animated.timing(r.opacity, { toValue: 0, duration: 500, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+                    ]),
+                ])
             ),
-            // Show text and hold
-            Animated.parallel([
-                Animated.timing(textOpacityAnim, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                }),
-                Animated.spring(textScaleAnim, {
-                    toValue: 1,
-                    friction: 6,
-                    useNativeDriver: true,
-                }),
-            ]),
-            Animated.delay(isMega ? 400 : 200),
-            // Fade out
-            Animated.parallel([
-                Animated.timing(opacityAnim, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(textOpacityAnim, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true,
-                }),
-            ]),
         ]).start(() => {
-            scaleAnim.setValue(0);
-            glowAnim.setValue(0);
-            pulseAnim.setValue(1);
-            opacityAnim.setValue(1);
-            textOpacityAnim.setValue(0);
-            textScaleAnim.setValue(0.5);
+            rings.forEach(r => { r.scale.setValue(0); r.opacity.setValue(0); });
+            flash.setValue(0);
+            emojiScale.setValue(0);
+            emojiOpacity.setValue(0);
             onComplete?.();
         });
-    };
+    }, [visible]);
 
     if (!visible) return null;
 
-    // Mega evolution has golden/blue colors, regular has green/white
-    const innerColor = isMega ? '#FFD700' : '#4ADE80';
-    const outerColor = isMega ? '#00BFFF' : '#FFFFFF';
-    const glowColor = isMega ? 'rgba(255, 215, 0, 0.8)' : 'rgba(74, 222, 128, 0.6)';
-    const ringCount = isMega ? 5 : 3;
+    const color = TYPE_COLORS[type] || TYPE_COLORS.physical;
+    const emoji = TYPE_EMOJIS[type] || '💥';
 
     return (
-        <View style={[styles.container, { left: x - 75, top: y - 75 }]}>
-            {/* Multiple expanding rings */}
-            {Array.from({ length: ringCount }).map((_, i) => (
+        <View style={styles.attackContainer} pointerEvents="none">
+            {/* Screen flash */}
+            <Animated.View style={[styles.flashOverlay, { opacity: flash, backgroundColor: color + '44' }]} />
+
+            {/* Shockwave rings */}
+            {rings.map((r, i) => (
                 <Animated.View
                     key={i}
                     style={[
-                        styles.evoRing,
-                        {
-                            borderColor: outerColor,
-                            transform: [
-                                {
-                                    scale: pulseAnim.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [1, 2 + i * 0.5],
-                                    }),
-                                },
-                            ] as any,
-                            opacity: opacityAnim.interpolate({
-                                inputRange: [0, 0.5, 1],
-                                outputRange: [1, 0.6, 0],
-                            }),
-                        },
+                        styles.attackRing,
+                        { borderColor: color, transform: [{ scale: r.scale }], opacity: r.opacity },
                     ]}
                 />
             ))}
 
-            {/* Central glow */}
-            <Animated.View
+            {/* Impact emoji */}
+            <Animated.Text
                 style={[
-                    styles.evoGlow,
-                    {
-                        backgroundColor: glowAnim.interpolate({
-                            inputRange: [0, 0.5, 1],
-                            outputRange: ['rgba(255,255,255,0)', glowColor, 'rgba(255,255,255,0.8)'],
-                        }) as any,
-                        transform: [{ scale: scaleAnim }] as any,
-                        opacity: opacityAnim,
-                    },
-                ]}
-            />
-
-            {/* Inner core */}
-            <Animated.View
-                style={[
-                    styles.evoCore,
-                    {
-                        backgroundColor: innerColor,
-                        transform: [{ scale: scaleAnim }] as any,
-                        opacity: opacityAnim,
-                        shadowColor: innerColor,
-                    },
-                ]}
-            />
-
-            {/* Evolution text */}
-            <Animated.View
-                style={[
-                    styles.evoTextContainer,
-                    {
-                        opacity: textOpacityAnim,
-                        transform: [{ scale: textScaleAnim }],
-                    },
+                    styles.attackEmoji,
+                    { transform: [{ scale: emojiScale }], opacity: emojiOpacity },
                 ]}
             >
-                <Text style={[styles.evoText, isMega && styles.evoTextMega]}>
-                    {isMega ? 'MEGA EVOLUTION!' : 'EVOLVED!'}
-                </Text>
-                {evolutionName && evolutionName !== 'Evolved' && (
-                    <Text style={styles.evoSubText}>{evolutionName}</Text>
-                )}
-            </Animated.View>
-
-            {/* Sparkle particles for mega evolution */}
-            {isMega && (
-                <>
-                    {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
-                        const angle = (i * 45) * Math.PI / 180;
-                        const distance = 60;
-                        return (
-                            <Animated.View
-                                key={`sparkle-${i}`}
-                                style={[
-                                    styles.sparkle,
-                                    {
-                                        left: 75 + Math.cos(angle) * distance,
-                                        top: 75 + Math.sin(angle) * distance,
-                                        transform: [
-                                            {
-                                                scale: glowAnim.interpolate({
-                                                    inputRange: [0, 0.5, 1],
-                                                    outputRange: [0, 1.5, 0.5],
-                                                }),
-                                            },
-                                            {
-                                                translateY: glowAnim.interpolate({
-                                                    inputRange: [0, 1],
-                                                    outputRange: [20, -20],
-                                                }),
-                                            },
-                                        ] as any,
-                                        opacity: opacityAnim.interpolate({
-                                            inputRange: [0, 0.3, 0.7, 1],
-                                            outputRange: [0, 1, 1, 0],
-                                        }),
-                                    },
-                                ]}
-                            >
-                                <Text style={styles.sparkleText}>✦</Text>
-                            </Animated.View>
-                        );
-                    })}
-                </>
-            )}
+                {emoji}
+            </Animated.Text>
         </View>
     );
 };
 
+// ─── Damage Number ────────────────────────────────────────────────────────────
+interface DamageNumberProps {
+    visible: boolean;
+    damage: number;
+    onComplete?: () => void;
+}
+
+export const DamageNumberAnimation: React.FC<DamageNumberProps> = ({ visible, damage, onComplete }) => {
+    const translateY = useRef(new Animated.Value(0)).current;
+    const scale = useRef(new Animated.Value(0)).current;
+    const opacity = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (!visible) return;
+        translateY.setValue(0);
+        scale.setValue(0);
+        opacity.setValue(0);
+
+        Animated.sequence([
+            Animated.parallel([
+                Animated.spring(scale, { toValue: 1.4, friction: 3, tension: 400, useNativeDriver: true }),
+                Animated.timing(opacity, { toValue: 1, duration: 80, useNativeDriver: true }),
+            ]),
+            Animated.spring(scale, { toValue: 1, friction: 8, useNativeDriver: true }),
+            Animated.delay(400),
+            Animated.parallel([
+                Animated.timing(translateY, { toValue: -50, duration: 400, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+                Animated.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+            ]),
+        ]).start(() => {
+            opacity.setValue(0);
+            scale.setValue(0);
+            onComplete?.();
+        });
+    }, [visible]);
+
+    if (!visible) return null;
+
+    const isBig = damage >= 100;
+    const color = damage >= 200 ? '#FF2244' : damage >= 100 ? '#FF6600' : '#FFDD00';
+
+    return (
+        <View style={styles.damageContainer} pointerEvents="none">
+            <Animated.Text
+                style={[
+                    styles.damageText,
+                    {
+                        color,
+                        fontSize: isBig ? 52 : 40,
+                        transform: [{ translateY }, { scale }],
+                        opacity,
+                        textShadowColor: '#000',
+                        textShadowOffset: { width: 2, height: 2 },
+                        textShadowRadius: 4,
+                    },
+                ]}
+            >
+                -{damage}
+            </Animated.Text>
+        </View>
+    );
+};
+
+// ─── Energy Attachment ────────────────────────────────────────────────────────
+interface EnergyAttachmentProps {
+    visible: boolean;
+    energyType?: string;
+    onComplete?: () => void;
+}
+
+export const EnergyAttachmentAnimation: React.FC<EnergyAttachmentProps> = ({ visible, energyType = 'colorless', onComplete }) => {
+    const particles = [0, 1, 2, 3, 4, 5].map(() => ({
+        x: useRef(new Animated.Value(0)).current,
+        y: useRef(new Animated.Value(0)).current,
+        opacity: useRef(new Animated.Value(0)).current,
+        scale: useRef(new Animated.Value(0.3)).current,
+    }));
+    const glow = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (!visible) return;
+        particles.forEach(p => { p.x.setValue(0); p.y.setValue(0); p.opacity.setValue(0); p.scale.setValue(0.3); });
+        glow.setValue(0);
+
+        const color = Colors.energy[energyType as keyof typeof Colors.energy] || '#FFD700';
+        const angles = particles.map((_, i) => (i * Math.PI * 2) / particles.length);
+
+        Animated.parallel([
+            // Glow pulse
+            Animated.sequence([
+                Animated.timing(glow, { toValue: 1, duration: 300, useNativeDriver: true }),
+                Animated.timing(glow, { toValue: 0, duration: 300, useNativeDriver: true }),
+            ]),
+            // Particles spiral in
+            ...particles.map((p, i) => {
+                const r = 60;
+                return Animated.sequence([
+                    Animated.delay(i * 30),
+                    Animated.parallel([
+                        Animated.timing(p.opacity, { toValue: 1, duration: 80, useNativeDriver: true }),
+                        Animated.timing(p.x, { toValue: Math.cos(angles[i]) * r, duration: 80, useNativeDriver: true }),
+                        Animated.timing(p.y, { toValue: Math.sin(angles[i]) * r, duration: 80, useNativeDriver: true }),
+                        Animated.timing(p.scale, { toValue: 1, duration: 80, useNativeDriver: true }),
+                    ]),
+                    Animated.parallel([
+                        Animated.timing(p.x, { toValue: 0, duration: 250, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+                        Animated.timing(p.y, { toValue: 0, duration: 250, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+                        Animated.timing(p.scale, { toValue: 0.1, duration: 250, useNativeDriver: true }),
+                        Animated.timing(p.opacity, { toValue: 0, duration: 250, useNativeDriver: true }),
+                    ]),
+                ]);
+            }),
+        ]).start(() => {
+            glow.setValue(0);
+            onComplete?.();
+        });
+    }, [visible]);
+
+    if (!visible) return null;
+
+    const color = Colors.energy[energyType as keyof typeof Colors.energy] || '#FFD700';
+
+    return (
+        <View style={styles.energyContainer} pointerEvents="none">
+            {/* Central glow */}
+            <Animated.View style={[styles.energyGlow, { backgroundColor: color + '88', opacity: glow, transform: [{ scale: glow.interpolate({ inputRange: [0, 1], outputRange: [0.5, 2] }) }] }]} />
+
+            {/* Particles */}
+            {particles.map((p, i) => (
+                <Animated.View
+                    key={i}
+                    style={[
+                        styles.energyParticle,
+                        {
+                            backgroundColor: color,
+                            transform: [{ translateX: p.x }, { translateY: p.y }, { scale: p.scale }],
+                            opacity: p.opacity,
+                        },
+                    ]}
+                />
+            ))}
+        </View>
+    );
+};
+
+// ─── Evolution Animation ──────────────────────────────────────────────────────
+interface EvolutionAnimationProps {
+    visible: boolean;
+    isMega?: boolean;
+    evolutionName?: string;
+    onComplete?: () => void;
+}
+
+export const EvolutionAnimation: React.FC<EvolutionAnimationProps> = ({ visible, isMega = false, evolutionName = '', onComplete }) => {
+    const flash = useRef(new Animated.Value(0)).current;
+    const pillarScale = useRef(new Animated.Value(0)).current;
+    const pillarOpacity = useRef(new Animated.Value(0)).current;
+    const textScale = useRef(new Animated.Value(0)).current;
+    const textOpacity = useRef(new Animated.Value(0)).current;
+    const rings = [0, 1, 2, 3].map(() => ({
+        scale: useRef(new Animated.Value(0)).current,
+        opacity: useRef(new Animated.Value(0)).current,
+    }));
+
+    useEffect(() => {
+        if (!visible) return;
+        flash.setValue(0); pillarScale.setValue(0); pillarOpacity.setValue(0);
+        textScale.setValue(0); textOpacity.setValue(0);
+        rings.forEach(r => { r.scale.setValue(0); r.opacity.setValue(0); });
+
+        const duration = isMega ? 2800 : 2000;
+
+        Animated.sequence([
+            // Initial bright flash
+            Animated.parallel([
+                Animated.sequence([
+                    Animated.timing(flash, { toValue: 0.9, duration: 150, useNativeDriver: true }),
+                    Animated.timing(flash, { toValue: 0.3, duration: 300, useNativeDriver: true }),
+                ]),
+                // Light pillar rises
+                Animated.parallel([
+                    Animated.timing(pillarOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+                    Animated.timing(pillarScale, { toValue: 1, duration: 400, easing: Easing.out(Easing.back(1.5)), useNativeDriver: true }),
+                ]),
+                // Expanding rings
+                ...rings.map((r, i) =>
+                    Animated.sequence([
+                        Animated.delay(i * 120),
+                        Animated.parallel([
+                            Animated.timing(r.scale, { toValue: 4 + i, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+                            Animated.timing(r.opacity, { toValue: 0, duration: 700, useNativeDriver: true }),
+                        ]),
+                    ])
+                ),
+            ]),
+            // Name reveal
+            Animated.parallel([
+                Animated.spring(textScale, { toValue: 1, friction: 4, tension: 300, useNativeDriver: true }),
+                Animated.timing(textOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+            ]),
+            Animated.delay(isMega ? 1200 : 800),
+            // Fade everything
+            Animated.parallel([
+                Animated.timing(flash, { toValue: 0, duration: 400, useNativeDriver: true }),
+                Animated.timing(pillarOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+                Animated.timing(textOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+            ]),
+        ]).start(() => {
+            flash.setValue(0); pillarOpacity.setValue(0); textOpacity.setValue(0);
+            onComplete?.();
+        });
+    }, [visible]);
+
+    if (!visible) return null;
+
+    const accentColor = isMega ? '#FF6B35' : '#7CB9E8';
+
+    return (
+        <View style={styles.evolutionContainer} pointerEvents="none">
+            {/* White flash overlay */}
+            <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF', opacity: flash }]} />
+
+            {/* Expanding rings */}
+            {rings.map((r, i) => (
+                <Animated.View
+                    key={i}
+                    style={[
+                        styles.evolutionRing,
+                        { borderColor: accentColor, transform: [{ scale: r.scale }], opacity: r.opacity },
+                    ]}
+                />
+            ))}
+
+            {/* Light pillar */}
+            <Animated.View
+                style={[
+                    styles.evolutionPillar,
+                    {
+                        backgroundColor: accentColor,
+                        transform: [{ scaleY: pillarScale }],
+                        opacity: pillarOpacity,
+                    },
+                ]}
+            />
+
+            {/* Evolution name */}
+            <Animated.View style={{ transform: [{ scale: textScale }], opacity: textOpacity, alignItems: 'center' }}>
+                {isMega && <Text style={styles.megaLabel}>MEGA EVOLUTION</Text>}
+                <Text style={[styles.evolutionName, isMega && styles.evolutionNameMega]}>
+                    {evolutionName}
+                </Text>
+            </Animated.View>
+        </View>
+    );
+};
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-    container: {
-        position: 'absolute',
-        zIndex: 1000,
-        pointerEvents: 'none',
+    // Shuffle
+    shuffleContainer: {
+        position: 'absolute', top: 80, right: 60,
+        width: 80, height: 100, alignItems: 'center', justifyContent: 'center', zIndex: 50,
     },
-    cardStack: {
+    shuffleCard: {
         position: 'absolute',
-        width: 40,
-        height: 56,
-        backgroundColor: '#2A2A4E',
+        width: 50, height: 70,
+        backgroundColor: '#1A4A8A',
         borderRadius: 6,
-        borderWidth: 2,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
+        borderWidth: 2, borderColor: '#FFD700',
+    },
+
+    // Draw
+    drawContainer: {
+        position: 'absolute', top: 100, right: 60,
+        width: 60, height: 80, zIndex: 50,
     },
     drawCard: {
-        width: 40,
-        height: 56,
-    },
-    cardBack: {
-        width: 40,
-        height: 56,
-        backgroundColor: Colors.card.back,
+        width: 50, height: 70,
+        backgroundColor: '#1A4A8A',
         borderRadius: 6,
-        padding: 3,
+        borderWidth: 2, borderColor: '#4A90E2',
     },
-    cardBackInner: {
-        flex: 1,
-        backgroundColor: '#2A2A4E',
-        borderRadius: 4,
+
+    // Attack
+    attackContainer: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center', justifyContent: 'center', zIndex: 100,
+    },
+    flashOverlay: {
+        ...StyleSheet.absoluteFillObject,
     },
     attackRing: {
         position: 'absolute',
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 120, height: 120,
+        borderRadius: 60,
         borderWidth: 4,
-        borderStyle: 'dashed',
     },
+    attackEmoji: {
+        fontSize: 72,
+        textAlign: 'center',
+    },
+
+    // Damage number
     damageContainer: {
         position: 'absolute',
-        alignItems: 'center',
-        justifyContent: 'center',
+        top: '35%', left: 0, right: 0,
+        alignItems: 'center', zIndex: 110,
     },
     damageText: {
-        fontSize: 36,
         fontWeight: 'bold',
-        textShadowColor: '#000',
-        textShadowOffset: { width: 2, height: 2 },
-        textShadowRadius: 4,
+        letterSpacing: 1,
     },
-    energyOrb: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 8,
-    },
-    energyInner: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        backgroundColor: '#FFF',
-    },
-    // Evolution animation styles
-    evoRing: {
+
+    // Energy
+    energyContainer: {
         position: 'absolute',
-        width: 150,
-        height: 150,
-        borderRadius: 75,
+        top: '30%', left: 0, right: 0,
+        alignItems: 'center', justifyContent: 'center',
+        height: 160, zIndex: 90,
+    },
+    energyGlow: {
+        position: 'absolute',
+        width: 80, height: 80, borderRadius: 40,
+    },
+    energyParticle: {
+        position: 'absolute',
+        width: 12, height: 12, borderRadius: 6,
+    },
+
+    // Evolution
+    evolutionContainer: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center', justifyContent: 'center', zIndex: 120,
+    },
+    evolutionRing: {
+        position: 'absolute',
+        width: 100, height: 100, borderRadius: 50,
         borderWidth: 3,
-        borderStyle: 'solid',
     },
-    evoGlow: {
-        position: 'absolute',
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-    },
-    evoCore: {
+    evolutionPillar: {
         position: 'absolute',
         width: 60,
-        height: 60,
-        borderRadius: 30,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 1,
-        shadowRadius: 20,
-        elevation: 10,
+        top: 0, bottom: 0,
+        opacity: 0.6,
     },
-    evoTextContainer: {
-        position: 'absolute',
-        top: 170,
-        alignItems: 'center',
-    },
-    evoText: {
-        fontSize: 24,
+    megaLabel: {
+        color: '#FF6B35',
+        fontSize: 14,
         fontWeight: 'bold',
-        color: '#FFFFFF',
-        textShadowColor: '#000',
-        textShadowOffset: { width: 2, height: 2 },
-        textShadowRadius: 8,
-        letterSpacing: 2,
+        letterSpacing: 4,
+        marginBottom: 4,
+        textShadowColor: '#000', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 4,
     },
-    evoTextMega: {
+    evolutionName: {
+        color: '#FFFFFF',
         fontSize: 28,
-        color: '#FFD700',
-        textShadowColor: '#0000FF',
-        textShadowOffset: { width: 3, height: 3 },
-        textShadowRadius: 10,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        textShadowColor: '#000', textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 6,
     },
-    evoSubText: {
-        fontSize: 16,
-        color: '#FFFFFF',
-        marginTop: 4,
-        textShadowColor: '#000',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 4,
-    },
-    sparkle: {
-        position: 'absolute',
-        width: 20,
-        height: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    sparkleText: {
-        fontSize: 20,
-        color: '#FFD700',
-        textShadowColor: '#000',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
+    evolutionNameMega: {
+        fontSize: 36,
+        color: '#FF6B35',
     },
 });
-
-export default {
-    ShuffleAnimation,
-    DrawAnimation,
-    AttackAnimation,
-    DamageNumberAnimation,
-    EnergyAttachmentAnimation,
-    EvolutionAnimation,
-};

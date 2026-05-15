@@ -26,6 +26,7 @@ import {
     EvolutionAnimation,
 } from './Animations';
 import { TouchableOpacity, Text } from 'react-native';
+import { playSound, preloadEssentialSounds, attackSoundForType, setMuted } from '../services/soundService';
 
 interface GameBoardProps {
     gameState?: GameState;
@@ -91,6 +92,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const [showEvolution, setShowEvolution] = useState(false);
     const [isMegaEvolution, setIsMegaEvolution] = useState(false);
     const [evolutionName, setEvolutionName] = useState<string>('');
+    const [soundMuted, setSoundMuted] = useState(false);
 
     // Update game state when external state changes
     const updateGameStateRef = useRef(updateGameState);
@@ -101,6 +103,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             updateGameStateRef.current(externalGameState);
         }
     }, [externalGameState]);
+
+    // Preload essential sounds on mount
+    useEffect(() => {
+        preloadEssentialSounds();
+    }, []);
 
     // Reset turn-based state when turn changes; auto-draw for player on turn 3+ (skip turn 1)
     const prevTurnPlayerRef = useRef<number>(-1);
@@ -119,65 +126,83 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         }
     }, [gameState?.turn, gameState?.currentPlayer]);
 
-    // Trigger animations based on game state messages
+    // Trigger animations + sounds based on game state messages
     useEffect(() => {
         if (!gameState?.message) return;
 
         const msg = gameState.message.toLowerCase();
 
-        // Shuffle animation
+        // Shuffle
         if (msg.includes('shuffled') || msg.includes('shuffle')) {
             setShowShuffle(true);
+            playSound('card_draw', 0.6);
         }
 
-        // Draw animation
+        // Draw
         if (msg.includes('drew') || msg.includes('draw')) {
             setShowDraw(true);
+            playSound('card_draw');
         }
 
-        // Attack animation
-        if (msg.includes('used') && msg.includes('attack')) {
-            // Determine attack type based on attacker's energy type
+        // Attack (player attacked)
+        if (msg.includes('used') && !msg.includes('opponent')) {
             const attacker = gameState.player.activePokemon;
-            if (attacker?.energyType) {
-                const typeMap: Record<string, typeof attackType> = {
-                    fire: 'fire',
-                    water: 'water',
-                    lightning: 'electric',
-                    psychic: 'psychic',
-                };
-                setAttackType(typeMap[attacker.energyType] || 'physical');
-            }
+            const typeMap: Record<string, typeof attackType> = {
+                fire: 'fire', water: 'water', lightning: 'electric', psychic: 'psychic',
+            };
+            const etype = attacker?.energyType || '';
+            setAttackType(typeMap[etype] || 'physical');
             setShowAttack(true);
+            playSound(attackSoundForType(etype));
         }
 
-        // Damage number animation
+        // Opponent attacked
+        if (msg.includes('opponent used')) {
+            const etype = gameState.opponent?.activePokemon?.energyType || '';
+            playSound(attackSoundForType(etype), 0.7);
+        }
+
+        // Damage number
         if (msg.includes('dealt') && msg.includes('damage')) {
-            const damageMatch = gameState.message.match(/(\d+)\s+damage/);
-            if (damageMatch) {
-                setDamageNum(parseInt(damageMatch[1]));
+            const m = gameState.message.match(/(\d+)\s+damage/);
+            if (m) {
+                setDamageNum(parseInt(m[1]));
                 setTimeout(() => setShowDamage(true), 500);
             }
         }
 
-        // Evolution animation
-        if (msg.includes('evolved')) {
-            // Check if it's a mega evolution
-            const isMega = msg.includes('mega') || gameState.message.includes('Mega');
-            // Extract the evolved Pokemon name
-            const evoMatch = gameState.message.match(/evolved into (.+?)!/);
-            const evoName = evoMatch ? evoMatch[1] : '';
-            setIsMegaEvolution(isMega);
-            setEvolutionName(evoName);
-            setTimeout(() => setShowEvolution(true), 200);
+        // Knockout
+        if (msg.includes('knocked out') || msg.includes('knocked out')) {
+            playSound('knockout', 0.9);
         }
+
+        // Prize card
+        if (msg.includes('prize')) {
+            setTimeout(() => playSound('prize_card'), 800);
+        }
+
+        // Evolution
+        if (msg.includes('evolved')) {
+            const isMega = msg.includes('mega');
+            const evoMatch = gameState.message.match(/evolved into (.+?)!/);
+            setIsMegaEvolution(isMega);
+            setEvolutionName(evoMatch ? evoMatch[1] : '');
+            setTimeout(() => setShowEvolution(true), 200);
+            playSound(isMega ? 'evolve_mega' : 'evolve');
+        }
+
+        // Game over
+        if (msg.includes('you win') || msg.includes('won the game')) playSound('win');
+        if (msg.includes('you lose') || msg.includes('lost the game')) playSound('lose');
+
     }, [gameState?.message, gameState?.player.activePokemon?.id]);
 
-    // Energy attachment animation
+    // Energy attachment animation + sound
     useEffect(() => {
         if (logicState.message.includes('attached') && pendingEnergyCard) {
             setAttachEnergyType(pendingEnergyCard.energyType || 'colorless');
             setShowEnergyAttach(true);
+            playSound('energy_attach');
         }
     }, [logicState.message, pendingEnergyCard]);
 
@@ -370,16 +395,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const handlePlayToBench = useCallback(() => {
         if (!selectedHandCard) return;
         playPokemonToBench(selectedHandCard.id);
+        playSound('card_play');
         setSelectedHandCard(null);
     }, [selectedHandCard, playPokemonToBench]);
 
     const handleAttachEnergy = useCallback(() => {
         if (!selectedHandCard) return;
         setPendingEnergyCard(selectedHandCard);
-        // Don't close menu - keep it visible for cancel option
-        // setShowActionMenu(false);
-
-        // Set action mode for targeting
         setLogicState(prev => ({
             ...prev,
             actionMode: 'attach_energy',
@@ -390,10 +412,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const handleEvolve = useCallback(() => {
         if (!selectedHandCard) return;
         setPendingEvolveCard(selectedHandCard);
-        // Don't close menu - keep it visible for cancel option
-        // setShowActionMenu(false);
-
-        // Set action mode for targeting
         setLogicState(prev => ({
             ...prev,
             actionMode: 'evolve',
@@ -404,11 +422,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const handlePlayTrainer = useCallback(() => {
         if (!selectedHandCard) return;
         const success = playTrainer(selectedHandCard.id);
+        playSound('card_play');
         setSelectedHandCard(null);
-        // Close the menu after playing trainer (modal will show if needed)
-        if (success) {
-            setShowActionMenu(false);
-        }
+        if (success) setShowActionMenu(false);
     }, [selectedHandCard, playTrainer]);
 
     const handleDrawCard = useCallback(() => {
@@ -419,6 +435,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         const success = drawCard();
         if (success) {
             setHasDrawnThisTurn(true);
+            playSound('card_draw');
             setShowDialog(true);
         }
     }, [drawCard, hasDrawnThisTurn]);
@@ -461,6 +478,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 opponentName={gameState.opponent.name}
                 turnNumber={gameState.turn}
             />
+            {/* Mute toggle */}
+            <TouchableOpacity
+                style={styles.muteButton}
+                onPress={() => {
+                    const next = !soundMuted;
+                    setSoundMuted(next);
+                    setMuted(next);
+                }}
+            >
+                <Text style={styles.muteIcon}>{soundMuted ? '🔇' : '🔊'}</Text>
+            </TouchableOpacity>
 
             {/* Opponent Area */}
             <OpponentArea
@@ -908,6 +936,21 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: Colors.ui.black,
+    },
+    muteButton: {
+        position: 'absolute',
+        top: 8,
+        right: 52,
+        zIndex: 200,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    muteIcon: {
+        fontSize: 18,
     },
     playMatContainer: {
         flex: 1,

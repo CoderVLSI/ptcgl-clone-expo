@@ -80,7 +80,6 @@ export const Card: React.FC<CardProps> = ({
                         style={styles.fullCardImage}
                         onError={() => setImageError(true)}
                     />
-                    )}
                     {/* Damage counters overlay */}
                     {(card.damageCounters && card.damageCounters > 0 || card.hp) && (
                         <View style={styles.damageCounterBadge}>
