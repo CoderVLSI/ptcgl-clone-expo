@@ -329,8 +329,8 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
             }
             return;
         }
-        if (STANDARD_PROXY_CARDS[name]) {
-            const proxy = STANDARD_PROXY_CARDS[name];
+        const proxy = ALL_PROXY_CARDS[name];
+        if (proxy) {
             for (let i = 0; i < count; i++) {
                 deck.push({
                     id: `proxy-${name.replace(/\s+/g, '-').toLowerCase()}-${cardIndex++}`,
@@ -1051,6 +1051,82 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         flavorText: 'Shuffle up to 3 Pokémon and/or basic Energy cards from your discard pile into your deck.',
         imageUrl: 'https://images.pokemontcg.io/sv5/188.png',
         imageUrlLarge: 'https://images.pokemontcg.io/sv5/188_hires.png',
+    },
+
+    // ─── Basic Energy cards ───────────────────────────────────────────────────
+    // These appear in every set but may not be fetched if offline. Proxy ensures
+    // they always have type:'energy' instead of falling to the 'pokemon' placeholder.
+    'Fighting Energy': {
+        name: 'Fighting Energy',
+        type: 'energy',
+        energyType: 'fighting',
+        subtypes: ['Basic Energy'],
+        imageUrl: 'https://images.pokemontcg.io/sv1/191.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/191_hires.png',
+    },
+    'Water Energy': {
+        name: 'Water Energy',
+        type: 'energy',
+        energyType: 'water',
+        subtypes: ['Basic Energy'],
+        imageUrl: 'https://images.pokemontcg.io/sv1/188.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/188_hires.png',
+    },
+    'Grass Energy': {
+        name: 'Grass Energy',
+        type: 'energy',
+        energyType: 'grass',
+        subtypes: ['Basic Energy'],
+        imageUrl: 'https://images.pokemontcg.io/sv1/186.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/186_hires.png',
+    },
+    'Lightning Energy': {
+        name: 'Lightning Energy',
+        type: 'energy',
+        energyType: 'lightning',
+        subtypes: ['Basic Energy'],
+        imageUrl: 'https://images.pokemontcg.io/sv1/189.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/189_hires.png',
+    },
+    'Psychic Energy': {
+        name: 'Psychic Energy',
+        type: 'energy',
+        energyType: 'psychic',
+        subtypes: ['Basic Energy'],
+        imageUrl: 'https://images.pokemontcg.io/sv1/190.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/190_hires.png',
+    },
+    'Fire Energy': {
+        name: 'Fire Energy',
+        type: 'energy',
+        energyType: 'fire',
+        subtypes: ['Basic Energy'],
+        imageUrl: 'https://images.pokemontcg.io/sv1/187.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/187_hires.png',
+    },
+    'Darkness Energy': {
+        name: 'Darkness Energy',
+        type: 'energy',
+        energyType: 'darkness',
+        subtypes: ['Basic Energy'],
+        imageUrl: 'https://images.pokemontcg.io/sv1/192.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/192_hires.png',
+    },
+    'Metal Energy': {
+        name: 'Metal Energy',
+        type: 'energy',
+        energyType: 'metal',
+        subtypes: ['Basic Energy'],
+        imageUrl: 'https://images.pokemontcg.io/sv1/193.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/193_hires.png',
+    },
+    'Colorless Energy': {
+        name: 'Colorless Energy',
+        type: 'energy',
+        energyType: 'colorless',
+        subtypes: ['Basic Energy'],
+        imageUrl: 'https://images.pokemontcg.io/sv1/194.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/194_hires.png',
     },
 };
 
