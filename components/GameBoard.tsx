@@ -102,12 +102,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         }
     }, [externalGameState]);
 
-    // Reset turn-based state when turn changes
+    // Reset turn-based state when turn changes; auto-draw for player on turn 3+ (skip turn 1)
+    const prevTurnPlayerRef = useRef<number>(-1);
     useEffect(() => {
         if (gameState?.currentPlayer === 'player') {
             setHasDrawnThisTurn(false);
+            // Auto-draw at start of player's turn (not on very first turn of the game)
+            if (gameState.turn > 1 && prevTurnPlayerRef.current !== gameState.turn) {
+                prevTurnPlayerRef.current = gameState.turn;
+                // Small delay so state settles before drawing
+                setTimeout(() => {
+                    const success = drawCard();
+                    if (success) setHasDrawnThisTurn(true);
+                }, 400);
+            }
         }
-    }, [gameState?.turn]);
+    }, [gameState?.turn, gameState?.currentPlayer]);
 
     // Trigger animations based on game state messages
     useEffect(() => {
@@ -403,7 +413,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
 
     const handleDrawCard = useCallback(() => {
         if (hasDrawnThisTurn) {
-            Alert.alert('Already Drew', 'You can only draw one card per turn at the start.');
+            Alert.alert('Already Drew', 'You already drew a card this turn (auto-drawn at turn start).');
             return;
         }
         const success = drawCard();
@@ -549,6 +559,34 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                         }));
                     }
                 }}
+            />
+
+            {/* Promote Pokémon Modal — shown when player's active is KO'd by opponent */}
+            <CardSelectorModal
+                visible={!!gameState?.pendingPlayerPromotion && gameState.player.bench.length > 0}
+                title="Your Pokémon was Knocked Out!"
+                subtitle="Choose a Benched Pokémon to become your new Active Pokémon"
+                cards={gameState?.player.bench || []}
+                minSelection={1}
+                maxSelection={1}
+                onConfirm={(ids) => {
+                    if (!gameState) return;
+                    const promoted = gameState.player.bench.find(c => c.id === ids[0]);
+                    if (!promoted) return;
+                    updateGameState({
+                        ...gameState,
+                        pendingPlayerPromotion: false,
+                        player: {
+                            ...gameState.player,
+                            activePokemon: promoted,
+                            bench: gameState.player.bench.filter(c => c.id !== ids[0]),
+                        },
+                        message: `${promoted.name} is now your Active Pokémon!`,
+                    });
+                }}
+                onCancel={() => {}} // Cannot cancel — must promote
+                confirmText="Promote"
+                hideCancel
             />
 
             {/* Card Selector Modals (Ultra Ball, etc) */}

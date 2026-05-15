@@ -99,6 +99,7 @@ export interface GameState {
     timeRemaining: number;
     message?: string;
     isLoading?: boolean;
+    pendingPlayerPromotion?: boolean; // Player must choose which bench Pokemon to promote after KO
 }
 
 export interface Position {
@@ -115,7 +116,7 @@ export interface GameLogicState {
     abilitiesUsed: string[]; // Track card IDs that used abilities this turn
     coinFlipResult: 'heads' | 'tails' | null;
     selectedCard: Card | null;
-    actionMode: 'none' | 'attach_energy' | 'evolve' | 'select_target' | 'discard_from_hand' | 'search_deck' | 'search_deck_basic' | 'switch_opponent_active' | 'search_deck_fighting' | 'attach_energy_from_discard' | 'distribute_energy_from_discard' | 'retreat_select_bench' | 'select_from_discard' | 'search_deck_multiple' | 'select_discard_multiple';
+    actionMode: 'none' | 'attach_energy' | 'evolve' | 'select_target' | 'discard_from_hand' | 'search_deck' | 'search_deck_basic' | 'switch_opponent_active' | 'search_deck_fighting' | 'attach_energy_from_discard' | 'distribute_energy_from_discard' | 'retreat_select_bench' | 'select_from_discard' | 'search_deck_multiple' | 'select_discard_multiple' | 'promote_active';
     message: string;
     activeCardId?: string;
     discardCount: number;

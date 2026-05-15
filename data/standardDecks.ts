@@ -575,11 +575,12 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         energyType: 'water',
         subtypes: ['Basic'],
         retreatCost: 1,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
         attacks: [
             { name: 'Bubble', damage: 10, energyCost: ['colorless'], description: 'Flip a coin. If heads, your opponent\'s Active Pokémon is now Paralyzed.' },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me4/16.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me4/16_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/56.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/56_hires.png',
     },
 
     'Frogadier': {
@@ -590,6 +591,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         subtypes: ['Stage 1'],
         evolvesFrom: 'Froakie',
         retreatCost: 1,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
         attacks: [
             {
                 name: 'Water Shuriken',
@@ -598,8 +600,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'Flip 2 coins. This attack does 30 more damage for each heads.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me4/17.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me4/17_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/57.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/57_hires.png',
     },
 
     'Mega Greninja ex': {
@@ -630,8 +632,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'This attack also does 30 damage to each of your opponent\'s Benched Pokémon.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me4/188.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me4/188_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/57.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/57_hires.png',
     },
 
     'Greninja': {
@@ -642,6 +644,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         subtypes: ['Stage 2'],
         evolvesFrom: 'Frogadier',
         retreatCost: 1,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
         abilities: [{
             name: 'Smokescreen Veil',
             type: 'Ability',
@@ -655,8 +658,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'Flip a coin. If heads, switch this Pokémon with 1 of your Benched Pokémon.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me4/18.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me4/18_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/56.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/56_hires.png',
     },
 
     'Tatsugiri': {

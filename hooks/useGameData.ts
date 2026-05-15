@@ -30,7 +30,7 @@ export function useGameData() {
     const [playerDeck, setPlayerDeck] = useState<Card[]>([]);
     const [activeDeckName, setActiveDeckName] = useState("Mega Lucario ex Battle Deck");
     const [opponentDeck, setOpponentDeck] = useState<Card[]>([]);
-    const [availableDecks, setAvailableDecks] = useState<{ id: string, name: string, cards: Card[], type: string }[]>([]);
+    const [availableDecks, setAvailableDecks] = useState<{ id: string, name: string, cards: Card[], type: string, mainCard: string }[]>([]);
 
     // For active selection
     const [playerHand, setPlayerHand] = useState<Card[]>([]);
@@ -62,11 +62,11 @@ export function useGameData() {
             console.log(`Lucario: ${megaLucarioDeck.length} | Dragapult: ${dragapultDeck.length} | Raging Bolt: ${ragingBoltDeck.length} | Greninja: ${megaGreninajaDeck.length} | Zygarde: ${megaZygardeDeck.length}`);
 
             const decks = [
-                { id: 'deck-lucario',   name: 'Mega Lucario ex',   cards: megaLucarioDeck,    type: 'fighting'   },
-                { id: 'deck-dragapult', name: 'Dragapult ex',       cards: dragapultDeck,      type: 'psychic'    },
-                { id: 'deck-bolt',      name: 'Raging Bolt ex',     cards: ragingBoltDeck,     type: 'lightning'  },
-                { id: 'deck-greninja',  name: 'Mega Greninja ex',   cards: megaGreninajaDeck,  type: 'water'      },
-                { id: 'deck-zygarde',   name: 'Mega Zygarde ex',    cards: megaZygardeDeck,    type: 'fighting'   },
+                { id: 'deck-lucario',   name: 'Mega Lucario ex',   cards: megaLucarioDeck,    type: 'fighting',   mainCard: 'Mega Lucario ex'  },
+                { id: 'deck-dragapult', name: 'Dragapult ex',       cards: dragapultDeck,      type: 'psychic',    mainCard: 'Dragapult ex'     },
+                { id: 'deck-bolt',      name: 'Raging Bolt ex',     cards: ragingBoltDeck,     type: 'lightning',  mainCard: 'Raging Bolt ex'   },
+                { id: 'deck-greninja',  name: 'Mega Greninja ex',   cards: megaGreninajaDeck,  type: 'water',      mainCard: 'Mega Greninja ex' },
+                { id: 'deck-zygarde',   name: 'Mega Zygarde ex',    cards: megaZygardeDeck,    type: 'fighting',   mainCard: 'Mega Zygarde ex'  },
             ];
             setAvailableDecks(decks);
 

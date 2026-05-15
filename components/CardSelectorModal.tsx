@@ -23,6 +23,7 @@ interface CardSelectorModalProps {
     onCancel: () => void;
     confirmText?: string;
     eligibleCardIds?: string[]; // Cards that can be selected (others will be greyed out)
+    hideCancel?: boolean; // Hide cancel button (for forced selections like post-KO promotion)
 }
 
 const CardSelectorModal: React.FC<CardSelectorModalProps> = ({
@@ -36,6 +37,7 @@ const CardSelectorModal: React.FC<CardSelectorModalProps> = ({
     onCancel,
     confirmText = 'Confirm',
     eligibleCardIds,
+    hideCancel = false,
 }) => {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -150,12 +152,14 @@ const CardSelectorModal: React.FC<CardSelectorModalProps> = ({
 
                     {/* Footer Buttons */}
                     <View style={styles.footer}>
-                        <TouchableOpacity
-                            style={[styles.button, styles.cancelButton]}
-                            onPress={onCancel}
-                        >
-                            <Text style={styles.cancelText}>Cancel</Text>
-                        </TouchableOpacity>
+                        {!hideCancel && (
+                            <TouchableOpacity
+                                style={[styles.button, styles.cancelButton]}
+                                onPress={onCancel}
+                            >
+                                <Text style={styles.cancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                        )}
 
                         <TouchableOpacity
                             style={[
