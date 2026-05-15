@@ -15,50 +15,96 @@ interface DeckSelectionScreenProps {
     availableDecks: { id: string, name: string, cards: Card[], type: string, mainCard?: string }[];
 }
 
+const TYPE_COLOR: Record<string, string> = {
+    fighting: '#C03028',
+    psychic: '#A040A0',
+    lightning: '#C8A000',
+    water: '#2060C0',
+    grass: '#3A8A30',
+    fire: '#C04808',
+    darkness: '#403830',
+    metal: '#6870A0',
+};
+
+const TYPE_FALLBACK_IMAGE: Record<string, string> = {
+    fighting: 'https://images.pokemontcg.io/sv5/118.png',
+    psychic: 'https://images.pokemontcg.io/sv6pt5/38.png',
+    lightning: 'https://images.pokemontcg.io/sv5/123.png',
+    water: 'https://images.pokemontcg.io/sv6/56.png',
+};
+
+interface DeckDisplayItem {
+    id: string;
+    name: string;
+    type: string;
+    color: string;
+    valid: boolean;
+    image: string;
+    localImageSource?: number;
+    cards: Card[];
+}
+
+const DeckItem: React.FC<{
+    item: DeckDisplayItem;
+    isSelected: boolean;
+    onPress: (item: DeckDisplayItem) => void;
+}> = ({ item, isSelected, onPress }) => {
+    const [imgError, setImgError] = useState(false);
+    const showLocal = !!item.localImageSource;
+    const showUri = !showLocal && !imgError && !!item.image;
+
+    return (
+        <TouchableOpacity
+            style={[styles.deckItem, isSelected && styles.selectedDeckItem]}
+            onPress={() => onPress(item)}
+            activeOpacity={0.8}
+        >
+            <View style={styles.deckBoxVisual}>
+                <View style={styles.deckBoxDepth} />
+                {showLocal ? (
+                    <Image source={item.localImageSource} style={styles.deckBoxCover} resizeMode="cover" />
+                ) : showUri ? (
+                    <Image
+                        source={{ uri: item.image }}
+                        style={styles.deckBoxCover}
+                        resizeMode="cover"
+                        onError={() => setImgError(true)}
+                    />
+                ) : (
+                    <View style={[styles.deckBoxCover, styles.deckBoxFallback, { backgroundColor: item.color }]}>
+                        <Text style={styles.deckBoxFallbackText}>{item.name.split(' ')[0]}</Text>
+                    </View>
+                )}
+                <View style={styles.deckTypeBadge}>
+                    <View style={[styles.typeIcon, { backgroundColor: item.color }]} />
+                </View>
+                {!item.valid && (
+                    <View style={styles.invalidOverlay}>
+                        <Text style={styles.invalidText}>⚠️</Text>
+                    </View>
+                )}
+            </View>
+            <Text style={styles.deckName} numberOfLines={2}>{item.name}</Text>
+            {isSelected && <View style={styles.selectionBorder} />}
+        </TouchableOpacity>
+    );
+};
+
 const DeckSelectionScreen: React.FC<DeckSelectionScreenProps> = ({ onBack, playerDeck, onSelectDeck, onEditDeck, onCreateDeck, onUpdateDeck, availableDecks }) => {
     const [selectedTab, setSelectedTab] = useState<'Recents' | 'Favorites' | 'All'>('Recents');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
     const [showDeckManager, setShowDeckManager] = useState(false);
 
-    // Prepare deck list for display. We map available decks to the visual format.
-    // If availableDecks is empty (loading/error), we might want to show a placeholder or keep current behavior.
-    const displayDecks = availableDecks.map(d => {
-        // Find the main/featured card for the deck cover
-        // Priority: mainCard name match → any ex/MEGA → first pokemon
-        let coverCard = d.mainCard
-            ? d.cards.find(c => c.name === d.mainCard)
-            : undefined;
-
+    const displayDecks: DeckDisplayItem[] = availableDecks.map(d => {
+        let coverCard = d.mainCard ? d.cards.find(c => c.name === d.mainCard) : undefined;
         if (!coverCard) {
             coverCard = d.cards.find(c =>
                 c.name.includes(' ex') || c.name.includes('Mega ') ||
                 c.name.includes(' VMAX') || c.name.includes(' VSTAR')
             );
         }
-
-        if (!coverCard) {
-            coverCard = d.cards.find(c => c.type === 'pokemon');
-        }
-
-        const TYPE_FALLBACK_IMAGE: Record<string, string> = {
-            fighting: 'https://images.pokemontcg.io/sv5/118.png',
-            psychic: 'https://images.pokemontcg.io/sv6pt5/38.png',
-            lightning: 'https://images.pokemontcg.io/sv5/123.png',
-            water: 'https://images.pokemontcg.io/sv6/56.png',
-        };
-        const coverImage = coverCard?.imageUrl || TYPE_FALLBACK_IMAGE[d.type] || 'https://images.pokemontcg.io/sv5/118.png';
-
-        const TYPE_COLOR: Record<string, string> = {
-            fighting: '#C03028',
-            psychic: '#A040A0',
-            lightning: '#C8A000',
-            water: '#2060C0',
-            grass: '#3A8A30',
-            fire: '#C04808',
-            darkness: '#403830',
-            metal: '#6870A0',
-        };
+        if (!coverCard) coverCard = d.cards.find(c => c.type === 'pokemon');
 
         return {
             id: d.id,
@@ -66,52 +112,20 @@ const DeckSelectionScreen: React.FC<DeckSelectionScreenProps> = ({ onBack, playe
             type: d.type,
             color: TYPE_COLOR[d.type] || '#888',
             valid: d.cards.length === 60,
-            image: coverImage,
-            cards: d.cards
+            image: coverCard?.imageUrl || TYPE_FALLBACK_IMAGE[d.type] || 'https://images.pokemontcg.io/sv5/118.png',
+            localImageSource: coverCard?.localImageSource,
+            cards: d.cards,
         };
     });
 
-    const handleDeckPress = (deck: any) => {
+    const handleDeckPress = (deck: DeckDisplayItem) => {
         setSelectedDeckId(deck.id);
         setShowDeckManager(true);
     };
 
-    const renderDeckItem = ({ item }: { item: any }) => {
-        const [imgError, setImgError] = useState(false);
-        return (
-            <TouchableOpacity
-                style={[styles.deckItem, selectedDeckId === item.id && styles.selectedDeckItem]}
-                onPress={() => handleDeckPress(item)}
-                activeOpacity={0.8}
-            >
-                <View style={styles.deckBoxVisual}>
-                    <View style={styles.deckBoxDepth} />
-                    {!imgError && item.image ? (
-                        <Image
-                            source={{ uri: item.image }}
-                            style={styles.deckBoxCover}
-                            resizeMode="cover"
-                            onError={() => setImgError(true)}
-                        />
-                    ) : (
-                        <View style={[styles.deckBoxCover, styles.deckBoxFallback, { backgroundColor: item.color }]}>
-                            <Text style={styles.deckBoxFallbackText}>{item.name.split(' ')[0]}</Text>
-                        </View>
-                    )}
-                    <View style={styles.deckTypeBadge}>
-                        <View style={[styles.typeIcon, { backgroundColor: item.color }]} />
-                    </View>
-                    {!item.valid && (
-                        <View style={styles.invalidOverlay}>
-                            <Text style={styles.invalidText}>⚠️</Text>
-                        </View>
-                    )}
-                </View>
-                <Text style={styles.deckName} numberOfLines={2}>{item.name}</Text>
-                {selectedDeckId === item.id && <View style={styles.selectionBorder} />}
-            </TouchableOpacity>
-        );
-    };
+    const renderDeckItem = ({ item }: { item: DeckDisplayItem }) => (
+        <DeckItem item={item} isSelected={selectedDeckId === item.id} onPress={handleDeckPress} />
+    );
 
     const renderHeader = () => (
         <View style={styles.gridHeader}>

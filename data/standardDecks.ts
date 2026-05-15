@@ -1015,6 +1015,46 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
     },
 
     // ─── Shared trainers (if not already in STANDARD_PROXY_CARDS) ────────────
+    "Professor's Research": {
+        name: "Professor's Research",
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Discard your hand and draw 7 cards.',
+        imageUrl: 'https://images.pokemontcg.io/sv5/190.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv5/190_hires.png',
+    },
+    'Nest Ball': {
+        name: 'Nest Ball',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Search your deck for a Basic Pokémon, reveal it, and put it into your hand. Then, shuffle your deck.',
+        imageUrl: 'https://images.pokemontcg.io/sv5/181.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv5/181_hires.png',
+    },
+    'Iono': {
+        name: 'Iono',
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Each player shuffles their hand and puts it on the bottom of their deck. Then, each player draws a card for each of their remaining Prize cards.',
+        imageUrl: 'https://images.pokemontcg.io/sv6/185.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/185_hires.png',
+    },
+    'Ultra Ball': {
+        name: 'Ultra Ball',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Discard 2 cards from your hand. Then, search your deck for a Pokémon, reveal it, and put it into your hand. Then, shuffle your deck.',
+        imageUrl: 'https://images.pokemontcg.io/sv5/196.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv5/196_hires.png',
+    },
+    "Boss's Orders": {
+        name: "Boss's Orders",
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: "Switch 1 of your opponent's Benched Pokémon with their Active Pokémon.",
+        imageUrl: 'https://images.pokemontcg.io/sv7/154.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv7/154_hires.png',
+    },
     'Energy Retrieval': {
         name: 'Energy Retrieval',
         type: 'trainer',
