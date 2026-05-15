@@ -205,13 +205,15 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
         hp: 210,
         energyType: 'darkness',
         subtypes: ['Basic', 'ex'],
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        retreatCost: 1,
         abilities: [{
             name: 'Flip the Script',
             type: 'Ability',
-            text: 'Once during your turn, if any of your Pokémon were Knocked Out during your opponent\'s last turn, you may use this Ability. Each player shuffles their hand into their deck. You draw 7 cards; your opponent draws 4 cards.',
+            text: 'Once during your turn, if any of your Pokémon were Knocked Out during your opponent\'s last turn, you may draw 3 cards. You can\'t use more than 1 Flip the Script Ability each turn.',
         }],
         attacks: [
-            { name: 'Feather Storm', damage: 60, energyCost: ['darkness', 'colorless'], description: 'This attack does 60 damage to 2 of your opponent\'s Pokémon (don\'t apply Weakness and Resistance for Benched Pokémon).' },
+            { name: 'Cruel Arrow', damage: 100, energyCost: ['colorless', 'colorless', 'colorless'], description: 'This attack does 100 damage to 1 of your opponent\'s Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)' },
         ],
         imageUrl: 'https://images.pokemontcg.io/sv6pt5/38.png',
         imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/38_hires.png',
@@ -397,7 +399,7 @@ export async function createDragapultExDeck(): Promise<Card[]> {
     addCard('Duskull', 2);                 // sv6 — Dusknoir base
     addCard('Dusclops', 1);               // sv6 — Stage 1 bridge
     addCard('Dusknoir', 1);               // sv6 — Sinister Hand: move all bench counters to active
-    addCard('Budew', 2);                   // sv7 — Thorn Pollen: 1 counter on all Pokémon with Abilities
+    addCard('Budew', 2);                   // sv8pt5 — Itchy Pollen: opponent can't play Items next turn
     addCard('Hawlucha', 1);               // sv5 — Flying Entry: 2 counters on bench when played
     addCard('Bloodmoon Ursaluna ex', 1);  // sv6pt5 — Crescent Moon 190dmg, ignores Abilities
 
@@ -437,31 +439,30 @@ export async function createDragapultExDeck(): Promise<Card[]> {
 // Merge with existing STANDARD_PROXY_CARDS by extending the declaration
 const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
 
-    // ─── Raging Bolt ex line (sv7 — Stellar Crown) ───────────────────────────
+    // ─── Raging Bolt ex line (sv5 — Temporal Forces) ─────────────────────────
     'Raging Bolt ex': {
         name: 'Raging Bolt ex',
         type: 'pokemon',
-        hp: 230,
+        hp: 240,
         energyType: 'lightning',
         subtypes: ['Basic', 'ex', 'Ancient'],
-        weaknesses: [{ type: 'fighting', value: '×2' }],
         retreatCost: 3,
         attacks: [
             {
-                name: 'Claw Slash',
-                damage: 30,
+                name: 'Burst Roar',
+                damage: 0,
                 energyCost: ['colorless'],
-                description: '',
+                description: 'Discard your hand and draw 6 cards.',
             },
             {
-                name: 'Raging Thunder',
-                damage: 280,
-                energyCost: ['lightning', 'lightning', 'lightning', 'grass'],
-                description: 'Discard 2 Lightning Energy from this Pokémon.',
+                name: 'Bellowing Thunder',
+                damage: 70,
+                energyCost: ['lightning', 'fighting'],
+                description: 'You may discard any amount of Basic Energy from your Pokémon. This attack does 70 damage for each card you discarded in this way.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv7/57.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv7/57_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv5/123.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv5/123_hires.png',
     },
 
     'Regieleki ex': {
@@ -518,21 +519,22 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
     'Flutter Mane': {
         name: 'Flutter Mane',
         type: 'pokemon',
-        hp: 80,
+        hp: 90,
         energyType: 'psychic',
         subtypes: ['Basic', 'Ancient'],
-        retreatCost: 0,
+        retreatCost: 1,
+        weaknesses: [{ type: 'metal', value: '×2' }],
         abilities: [{
-            name: 'Reactive Pulse',
+            name: 'Midnight Fluttering',
             type: 'Ability',
-            text: 'Once during your turn, you may draw 2 cards.',
+            text: 'As long as this Pokémon is in the Active Spot, your opponent\'s Active Pokémon has no Abilities, except for Midnight Fluttering.',
         }],
         attacks: [
             {
-                name: 'Psychic Burst',
-                damage: 70,
-                energyCost: ['psychic', 'psychic'],
-                description: 'This attack does 20 more damage for each damage counter on your opponent\'s Active Pokémon.',
+                name: 'Hex Hurl',
+                damage: 90,
+                energyCost: ['colorless', 'colorless', 'colorless'],
+                description: 'Put 2 damage counters on your opponent\'s Benched Pokémon in any way you like.',
             },
         ],
         imageUrl: 'https://images.pokemontcg.io/sv5/78.png',
@@ -664,41 +666,49 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         energyType: 'water',
         subtypes: ['Basic'],
         retreatCost: 1,
-        abilities: [{
-            name: 'Commander',
-            type: 'Ability',
-            text: 'Once during your turn, if this Pokémon is in the Active Spot, you may draw 2 cards.',
-        }],
+        weaknesses: [{ type: 'lightning', value: '×2' }],
         attacks: [
-            { name: 'Spiral Wave', damage: 20, energyCost: ['water'], description: '' },
+            {
+                name: 'Mise en Place',
+                damage: 0,
+                energyCost: ['water'],
+                description: 'Search your deck for up to 2 Basic Water Energy cards and attach them to 1 of your Basic Pokémon. Then, shuffle your deck.',
+            },
+            {
+                name: 'Curl Up',
+                damage: 30,
+                energyCost: ['water'],
+                description: 'Put this Pokémon and all attached cards into your hand.',
+            },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv7/45.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv7/45_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv1/62.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/62_hires.png',
     },
 
     'Dondozo': {
         name: 'Dondozo',
         type: 'pokemon',
-        hp: 170,
+        hp: 160,
         energyType: 'water',
         subtypes: ['Basic'],
         retreatCost: 4,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
         attacks: [
             {
-                name: 'Thrash',
+                name: 'Release Rage',
                 damage: 50,
                 energyCost: ['colorless', 'colorless'],
-                description: 'Flip 2 coins. This attack does 50 more damage for each heads.',
+                description: 'This attack does 50 damage for each Tatsugiri in your discard pile.',
             },
             {
-                name: 'Aqua Crush',
-                damage: 130,
-                energyCost: ['water', 'water', 'colorless'],
-                description: 'Heal 30 damage from this Pokémon.',
+                name: 'Heavy Splash',
+                damage: 120,
+                energyCost: ['water', 'water', 'colorless', 'colorless'],
+                description: '',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv7/44.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv7/44_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv1/61.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/61_hires.png',
     },
 
     // ─── Raging Bolt ex support ──────────────────────────────────────────────
@@ -725,13 +735,14 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
     'Hoothoot': {
         name: 'Hoothoot',
         type: 'pokemon',
-        hp: 60,
+        hp: 70,
         energyType: 'colorless',
         subtypes: ['Basic'],
         retreatCost: 1,
-        attacks: [{ name: 'Peck', damage: 20, energyCost: ['colorless'] }],
-        imageUrl: 'https://images.pokemontcg.io/sv7/130.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv7/130_hires.png',
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        attacks: [{ name: 'Triple Stab', damage: 10, energyCost: ['colorless'], description: 'Flip 3 coins. This attack does 10 damage for each heads.' }],
+        imageUrl: 'https://images.pokemontcg.io/sv7/114.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv7/114_hires.png',
     },
 
     'Noctowl': {
@@ -742,49 +753,47 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         subtypes: ['Stage 1'],
         evolvesFrom: 'Hoothoot',
         retreatCost: 1,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
         abilities: [{
-            name: 'Night Shift',
+            name: 'Jewel Seeker',
             type: 'Ability',
-            text: 'Once during your turn, look at the top 3 cards of your deck. Choose 1 and put it in your hand. Put the other cards on the bottom of your deck in any order.',
+            text: 'Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, if you have any Tera Pokémon in play, you may search your deck for up to 2 Trainer cards, reveal them, and put them into your hand. Then, shuffle your deck.',
         }],
-        attacks: [{ name: 'Gust', damage: 30, energyCost: ['colorless'] }],
-        imageUrl: 'https://images.pokemontcg.io/sv7/131.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv7/131_hires.png',
+        attacks: [{ name: 'Speed Wing', damage: 60, energyCost: ['colorless', 'colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/sv7/115.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv7/115_hires.png',
     },
 
     'Fan Rotom': {
         name: 'Fan Rotom',
         type: 'pokemon',
         hp: 70,
-        energyType: 'lightning',
+        energyType: 'colorless',
         subtypes: ['Basic'],
         retreatCost: 1,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
         abilities: [{
-            name: 'Fan Spinning',
+            name: 'Fan Call',
             type: 'Ability',
-            text: 'Once during your turn, you may look at the top 5 cards of your deck. Reveal a Pokémon you find there and put it into your hand. Shuffle the other cards back into your deck.',
+            text: 'Once during your first turn, you may search your deck for up to 3 Colorless Pokémon with 100 HP or less, reveal them, and put them into your hand. Then, shuffle your deck. You can\'t use more than 1 Fan Call Ability during your turn.',
         }],
-        attacks: [{ name: 'Air Slash', damage: 40, energyCost: ['lightning', 'colorless'] }],
-        imageUrl: 'https://images.pokemontcg.io/sv8pt5/62.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv8pt5/62_hires.png',
+        attacks: [{ name: 'Assault Landing', damage: 70, energyCost: ['colorless'], description: 'If there is no Stadium in play, this attack does nothing.' }],
+        imageUrl: 'https://images.pokemontcg.io/sv8pt5/85.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv8pt5/85_hires.png',
     },
 
     // ─── Dragapult ex / Dusknoir support ────────────────────────────────────
     'Budew': {
         name: 'Budew',
         type: 'pokemon',
-        hp: 40,
+        hp: 30,
         energyType: 'grass',
         subtypes: ['Basic'],
         retreatCost: 0,
-        abilities: [{
-            name: 'Irritating Pollen',
-            type: 'Ability',
-            text: 'Once during your turn, if this Pokémon is in the Active Spot, your opponent can\'t play any Supporter cards from their hand during their next turn.',
-        }],
-        attacks: [{ name: 'Ram', damage: 10, energyCost: ['colorless'] }],
-        imageUrl: 'https://images.pokemontcg.io/sv7/5.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv7/5_hires.png',
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [{ name: 'Itchy Pollen', damage: 10, energyCost: [], description: 'During your opponent\'s next turn, they can\'t play any Item cards from their hand.' }],
+        imageUrl: 'https://images.pokemontcg.io/sv8pt5/4.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv8pt5/4_hires.png',
     },
 
     'Hawlucha': {
@@ -821,6 +830,26 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         ],
         imageUrl: 'https://images.pokemontcg.io/sv6pt5/141.png',
         imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/141_hires.png',
+    },
+
+    'Bloodmoon Ursaluna': {
+        name: 'Bloodmoon Ursaluna',
+        type: 'pokemon',
+        hp: 150,
+        energyType: 'fighting',
+        subtypes: ['Basic'],
+        retreatCost: 4,
+        weaknesses: [{ type: 'grass', value: '×2' }],
+        abilities: [{
+            name: 'Battle-Hardened',
+            type: 'Ability',
+            text: 'When you play this Pokémon from your hand onto your Bench during your turn, you may attach up to 2 Basic Fighting Energy cards from your hand to this Pokémon.',
+        }],
+        attacks: [
+            { name: 'Mad Bite', damage: 100, energyCost: ['fighting', 'fighting', 'colorless'], description: 'This attack does 30 more damage for each damage counter on your opponent\'s Active Pokémon.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/sv6pt5/25.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/25_hires.png',
     },
 
     'Jacq': {
@@ -1100,7 +1129,7 @@ export async function createRagingBoltExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
 
     // Pokémon (14)
-    addCard('Raging Bolt ex', 3);          // sv7 — Raging Thunder: LLLG → 280dmg, discard 2 Lightning
+    addCard('Raging Bolt ex', 3);          // sv5 — Bellowing Thunder: L+F → 70× per Energy discarded
     addCard('Teal Mask Ogerpon ex', 3);    // sv6pt5 — Teal Dance: attach Grass when played; Ivy Cudgel 80+
     addCard('Hoothoot', 3);               // sv7 — evolves into Noctowl
     addCard('Noctowl', 3);                // sv7 — Night Shift: look top 3, take 1 (key consistency engine)
@@ -1128,7 +1157,8 @@ export async function createRagingBoltExDeck(): Promise<Card[]> {
 
     // Energy (12)
     addCard('Lightning Energy', 9);
-    addCard('Grass Energy', 3);           // for Raging Thunder's 4th energy requirement + Ogerpon
+    addCard('Fighting Energy', 2);        // for Bellowing Thunder's L+F requirement
+    addCard('Grass Energy', 1);           // for Teal Mask Ogerpon ex (Teal Dance + Ivy Cudgel)
 
     console.log(`[2026 Standard] Raging Bolt ex deck: ${deck.length} cards`);
     return shuffle(deck);
