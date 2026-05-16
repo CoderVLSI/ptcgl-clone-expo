@@ -101,6 +101,9 @@ export interface GameState {
     message?: string;
     isLoading?: boolean;
     pendingPlayerPromotion?: boolean; // Player must choose which bench Pokemon to promote after KO
+    opponentItemLocked?: boolean; // Set by Itchy Pollen; opponent can't play Items next turn
+    playerItemLocked?: boolean;   // Set by opponent's Itchy Pollen
+    opponentSupporterLocked?: boolean; // Set by Irritating Pollen (Budew); opponent can't play Supporters
 }
 
 export interface Position {

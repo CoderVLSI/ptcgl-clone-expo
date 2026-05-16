@@ -349,6 +349,25 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
 
         const isSupporter = card.subtypes?.includes('Supporter');
         const isStadium = card.subtypes?.includes('Stadium');
+        const isItem = card.subtypes?.includes('Item');
+
+        // Opponent's Itchy Pollen lock — player can't use Items this turn
+        if (isItem && gameState.playerItemLocked) {
+            setLogicState(prev => ({
+                ...prev,
+                message: 'You cannot play Item cards this turn (Itchy Pollen)!',
+            }));
+            return false;
+        }
+
+        // Opponent's Irritating Pollen lock (Budew) — player can't use Supporters
+        if (isSupporter && gameState.opponentSupporterLocked) {
+            setLogicState(prev => ({
+                ...prev,
+                message: "You cannot play Supporter cards this turn (opponent's Budew — Irritating Pollen)!",
+            }));
+            return false;
+        }
 
         if (isSupporter) {
             if (logicState.hasPlayedSupporter) return false;
@@ -820,6 +839,184 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 activeCardId: 'buddy_poffin',
                 discardCount: Math.min(2, 5 - gameState.player.bench.length),
                 message: 'Buddy-Buddy Poffin: Select up to 2 Basic Pokémon (≤70 HP) to put on your Bench.',
+            }));
+            return true;
+        }
+
+        // Jacq — search deck for an Evolution Pokémon, put into hand
+        if (cardNameLower === 'jacq') {
+            const evolutionInDeck = gameState.player.deck.filter(
+                c => c.type === 'pokemon' && !c.subtypes?.includes('Basic')
+            );
+            if (evolutionInDeck.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Evolution Pokémon in deck!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck_multiple',
+                activeCardId: 'jacq_search',
+                discardCount: 1,
+                hasPlayedSupporter: true,
+                message: 'Jacq: Select an Evolution Pokémon from your deck to put into your hand.',
+            }));
+            return true;
+        }
+
+        // Tarragon — retrieve up to 4 Fighting Energy from discard to hand
+        if (cardNameLower === 'tarragon') {
+            const fightingInDiscard = gameState.player.discardPile.filter(
+                c => c.type === 'energy' && c.energyType === 'fighting'
+            );
+            if (fightingInDiscard.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Fighting Energy in discard pile!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                const toRetrieve = prev.player.discardPile
+                    .filter(c => c.type === 'energy' && c.energyType === 'fighting')
+                    .slice(0, 4);
+                const ids = toRetrieve.map(c => c.id);
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: [...prev.player.hand.filter(c => c.id !== cardId), ...toRetrieve],
+                        discardPile: [...prev.player.discardPile.filter(c => !ids.includes(c.id)), card],
+                    },
+                    message: `Tarragon: Retrieved ${toRetrieve.length} Fighting Energy from discard!`,
+                };
+            });
+            setLogicState(prev => ({ ...prev, hasPlayedSupporter: true, message: 'Retrieved Fighting Energy!' }));
+            return true;
+        }
+
+        // Brock's Scouting — search deck for up to 2 Evolution Pokémon, put into hand
+        if (cardNameLower.includes("brock") && cardNameLower.includes("scouting")) {
+            const evolutionInDeck = gameState.player.deck.filter(
+                c => c.type === 'pokemon' && !c.subtypes?.includes('Basic')
+            );
+            if (evolutionInDeck.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Evolution Pokémon in deck!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck_multiple',
+                activeCardId: 'brocks_scouting',
+                discardCount: 2,
+                hasPlayedSupporter: true,
+                message: "Brock's Scouting: Select up to 2 Evolution Pokémon from your deck.",
+            }));
+            return true;
+        }
+
+        // Counter Catcher — if you have fewer Prize Cards remaining, switch opponent's active
+        if (cardNameLower.includes('counter catcher')) {
+            const playerPrizes = gameState.player.prizeCards.length;
+            const opponentPrizes = gameState.opponent.prizeCards.length;
+            if (playerPrizes >= opponentPrizes) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'Counter Catcher: You must have fewer Prize Cards remaining than your opponent!',
+                }));
+                return false;
+            }
+            if (gameState.opponent.bench.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'Opponent has no Benched Pokémon!' }));
+                return false;
+            }
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'switch_opponent_active',
+                activeCardId: cardId,
+                message: "Counter Catcher: Select a Pokémon from opponent's bench to switch with Active.",
+            }));
+            return true;
+        }
+
+        // Unfair Stamp — opponent shuffles hand, draws 3; only if you have taken 1–3 Prizes
+        if (cardNameLower.includes('unfair stamp')) {
+            const prizesTaken = 6 - gameState.player.prizeCards.length;
+            if (prizesTaken < 1 || prizesTaken > 3) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'Unfair Stamp: You must have taken 1–3 Prize Cards!',
+                }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                const oppDeck = [...prev.opponent.deck, ...prev.opponent.hand];
+                for (let i = oppDeck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [oppDeck[i], oppDeck[j]] = [oppDeck[j], oppDeck[i]];
+                }
+                const oppDrawn = oppDeck.splice(0, 3);
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                    opponent: { ...prev.opponent, hand: oppDrawn, deck: oppDeck },
+                    message: 'Unfair Stamp: Opponent shuffled hand and drew 3 cards!',
+                };
+            });
+            setLogicState(prev => ({ ...prev, message: 'Unfair Stamp played!' }));
+            return true;
+        }
+
+        // Poké Pad — search deck for a Pokémon Tool or basic Energy, put into hand
+        if (cardNameLower.includes('poké pad') || cardNameLower.includes('poke pad')) {
+            const toolOrEnergy = gameState.player.deck.filter(
+                c => c.type === 'energy' || (c.type === 'trainer' && c.subtypes?.includes('Pokémon Tool'))
+            );
+            if (toolOrEnergy.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Tool or Energy cards in deck!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck_multiple',
+                activeCardId: 'poke_pad',
+                discardCount: 1,
+                message: 'Poké Pad: Select a Pokémon Tool or Energy from your deck.',
             }));
             return true;
         }
@@ -1327,16 +1524,16 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         }));
     }, [gameState, logicState.activeCardId]);
 
-    /** Confirm multi-card deck search (Briar, Buddy-Buddy Poffin) */
+    /** Confirm multi-card deck search (Briar, Buddy-Buddy Poffin, Jewel Seeker, Night Shift, Fan Call) */
     const confirmMultiDeckSelection = useCallback((selectedCardIds: string[]) => {
         if (!gameState || selectedCardIds.length === 0) return;
-        const sourceAction = logicState.activeCardId;
+        const sourceAction = logicState.activeCardId || '';
 
         setGameState(prev => {
             if (!prev) return prev;
             const selectedCards = prev.player.deck.filter(c => selectedCardIds.includes(c.id));
             const newDeck = prev.player.deck.filter(c => !selectedCardIds.includes(c.id));
-            // Shuffle remaining deck
+            // Shuffle remaining deck (except for abilities that look at top 3 — still shuffle rest)
             for (let i = newDeck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
@@ -1477,10 +1674,22 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 ? `${baseMessage} ${statusMessages.join(' ')}`
                 : baseMessage;
 
+            // Swap item/supporter locks: what was opponent lock becomes player lock on their turn
+            const wasPlayerTurn = prev.currentPlayer === 'player';
+            const newPlayerItemLocked = wasPlayerTurn ? false : prev.opponentItemLocked;
+            const newOpponentItemLocked = wasPlayerTurn ? prev.opponentItemLocked : false;
+
+            // Irritating Pollen (Budew): if opponent's Budew is their active, lock player Supporters
+            const newOpponentBudewActive = wasPlayerTurn
+                ? (newOpponentActive?.name === 'Budew')
+                : false;
+            const newPlayerSupporterLocked = !wasPlayerTurn ? (newPlayerActive?.name === 'Budew') : false;
+            const newOpponentSupporterLocked = wasPlayerTurn ? newOpponentBudewActive : false;
+
             return {
                 ...prev,
                 turn: prev.turn + 1,
-                currentPlayer: prev.currentPlayer === 'player' ? 'opponent' : 'player',
+                currentPlayer: wasPlayerTurn ? 'opponent' : 'player',
                 player: {
                     ...prev.player,
                     activePokemon: newPlayerActive,
@@ -1499,6 +1708,9 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 },
                 message: fullMessage,
                 timeRemaining: 60,
+                playerItemLocked: newPlayerItemLocked,
+                opponentItemLocked: newOpponentItemLocked,
+                opponentSupporterLocked: newOpponentSupporterLocked,
             };
         });
 
@@ -1801,6 +2013,234 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
+        // Flip the Script (Fezandipiti ex): both shuffle hands; player draws 7, opponent draws 4
+        if (ability.name === 'Flip the Script') {
+            setGameState(prev => {
+                if (!prev) return prev;
+                const playerDeck = [...prev.player.deck, ...prev.player.hand.filter(c => c.id !== cardId)];
+                for (let i = playerDeck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [playerDeck[i], playerDeck[j]] = [playerDeck[j], playerDeck[i]];
+                }
+                const playerDrawn = playerDeck.splice(0, 7);
+
+                const oppDeck = [...prev.opponent.deck, ...prev.opponent.hand];
+                for (let i = oppDeck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [oppDeck[i], oppDeck[j]] = [oppDeck[j], oppDeck[i]];
+                }
+                const oppDrawn = oppDeck.splice(0, 4);
+
+                return {
+                    ...prev,
+                    player: { ...prev.player, hand: playerDrawn, deck: playerDeck },
+                    opponent: { ...prev.opponent, hand: oppDrawn, deck: oppDeck },
+                    message: 'Flip the Script: Both shuffled hands! You drew 7, opponent drew 4!',
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: 'Flip the Script used!',
+            }));
+            return true;
+        }
+
+        // Mortal Shuriken (Mega Greninja ex): put 3 damage counters on opponent's Active
+        if (ability.name === 'Mortal Shuriken') {
+            if (!gameState.opponent.activePokemon) return false;
+            setGameState(prev => {
+                if (!prev || !prev.opponent.activePokemon) return prev;
+                return {
+                    ...prev,
+                    opponent: {
+                        ...prev.opponent,
+                        activePokemon: {
+                            ...prev.opponent.activePokemon,
+                            damageCounters: (prev.opponent.activePokemon.damageCounters || 0) + 30,
+                        },
+                    },
+                    message: `Mortal Shuriken: Put 3 damage counters on ${prev.opponent.activePokemon.name}!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: 'Mortal Shuriken: 30 damage to opponent\'s Active!',
+            }));
+            return true;
+        }
+
+        // Jewel Seeker (Noctowl): look at top 3, put 1 into hand (only if fewer prizes than opponent)
+        if (ability.name === 'Jewel Seeker') {
+            const playerPrizes = gameState.player.prizeCards.length;
+            const opponentPrizes = gameState.opponent.prizeCards.length;
+            if (playerPrizes >= opponentPrizes) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'Jewel Seeker: You must have fewer Prize Cards remaining than your opponent!',
+                }));
+                return false;
+            }
+            if (gameState.player.deck.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No cards in deck!' }));
+                return false;
+            }
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck_multiple',
+                activeCardId: 'jewel_seeker_' + cardId,
+                discardCount: 1,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: 'Jewel Seeker: Select 1 card from the top 3 of your deck to put into your hand.',
+            }));
+            return true;
+        }
+
+        // Fan Call (Fan Rotom) / Night Shift (Noctowl): look at top 3, put 1 into hand
+        if (ability.name === 'Fan Call' || ability.name === 'Night Shift') {
+            if (gameState.player.deck.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No cards in deck!' }));
+                return false;
+            }
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck_multiple',
+                activeCardId: ability.name + '_' + cardId,
+                discardCount: 1,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: `${ability.name}: Select 1 card from the top 3 of your deck.`,
+            }));
+            return true;
+        }
+
+        // Flying Entry (Hawlucha): put 2 damage counters on opponent's Active Pokémon
+        if (ability.name === 'Flying Entry') {
+            if (!gameState.opponent.activePokemon) return false;
+            setGameState(prev => {
+                if (!prev || !prev.opponent.activePokemon) return prev;
+                return {
+                    ...prev,
+                    opponent: {
+                        ...prev.opponent,
+                        activePokemon: {
+                            ...prev.opponent.activePokemon,
+                            damageCounters: (prev.opponent.activePokemon.damageCounters || 0) + 20,
+                        },
+                    },
+                    message: `Flying Entry: Put 2 damage counters on ${prev.opponent.activePokemon.name}!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: "Flying Entry: 20 damage to opponent's Active!",
+            }));
+            return true;
+        }
+
+        // Teal Dance (Teal Mask Ogerpon ex): attach a Water Energy from hand to your Active
+        if (ability.name === 'Teal Dance') {
+            const waterInHand = gameState.player.hand.filter(
+                c => c.type === 'energy' && c.energyType === 'water'
+            );
+            if (waterInHand.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Water Energy in hand to attach!' }));
+                return false;
+            }
+            const energyCard = waterInHand[0];
+            setGameState(prev => {
+                if (!prev || !prev.player.activePokemon) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== energyCard.id),
+                        activePokemon: {
+                            ...prev.player.activePokemon,
+                            attachedEnergy: [...(prev.player.activePokemon.attachedEnergy || []), 'water'],
+                        },
+                    },
+                    message: `Teal Dance: Attached Water Energy to ${prev.player.activePokemon.name}!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: 'Teal Dance: Attached Water Energy!',
+            }));
+            return true;
+        }
+
+        // Adrena-Brain (Munkidori): if has Darkness Energy, move 3 damage counters from your Pokémon to opponent's Active
+        if (ability.name === 'Adrena-Brain') {
+            if (!card.attachedEnergy?.includes('darkness')) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'Adrena-Brain requires a Darkness Energy attached to Munkidori!',
+                }));
+                return false;
+            }
+            const playerActive = gameState.player.activePokemon;
+            if (!playerActive || !gameState.opponent.activePokemon) return false;
+            const fromCounters = Math.min(3, playerActive.damageCounters || 0);
+            if (fromCounters === 0) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'No damage counters on your Active Pokémon to move!',
+                }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev || !prev.player.activePokemon || !prev.opponent.activePokemon) return prev;
+                const moveable = Math.min(3, prev.player.activePokemon.damageCounters || 0);
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        activePokemon: {
+                            ...prev.player.activePokemon,
+                            damageCounters: (prev.player.activePokemon.damageCounters || 0) - moveable,
+                        },
+                    },
+                    opponent: {
+                        ...prev.opponent,
+                        activePokemon: {
+                            ...prev.opponent.activePokemon,
+                            damageCounters: (prev.opponent.activePokemon.damageCounters || 0) + moveable,
+                        },
+                    },
+                    message: `Adrena-Brain: Moved ${moveable} damage counter(s) to opponent's Active!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: 'Adrena-Brain used!',
+            }));
+            return true;
+        }
+
+        // Irritating Pollen (Budew): passive — while in Active Spot, opponent can't play Supporters
+        if (ability.name === 'Irritating Pollen') {
+            setLogicState(prev => ({
+                ...prev,
+                message: 'Irritating Pollen is a passive Ability — while Budew is your Active, your opponent cannot play Supporter cards.',
+            }));
+            return false;
+        }
+
+        // Passive abilities that are always active — no manual activation needed
+        if (['Battle-Hardened', 'Order Shield', 'Transistor', 'Lands Force',
+             'Stone Arms', 'Smokescreen Veil', 'Fallen Giant', 'Midnight Fluttering',
+             'Wave Veil', 'Sparkling Scales', 'Brilliant Scales'].includes(ability.name)) {
+            setLogicState(prev => ({
+                ...prev,
+                message: `${ability.name} is a passive Ability — it is always active and does not need to be used manually.`,
+            }));
+            return false;
+        }
+
         // If no specific handler matched, show generic message
         setLogicState(prev => ({
             ...prev,
@@ -2009,8 +2449,71 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             }
         }
 
-        // Premium Power Pro: Your Pokemon attacks do +30 damage per copy played this turn
-        if (logicState.premiumPowerProCount > 0) {
+        // Assault Landing (Fan Rotom): does nothing if no Stadium in play
+        if (selectedAttack.name === 'Assault Landing' && !gameState.stadium) {
+            setLogicState(prev => ({
+                ...prev,
+                message: 'Assault Landing does nothing — no Stadium is in play!',
+            }));
+            setTimeout(() => endTurn(), 1500);
+            return true;
+        }
+
+        // Mad Bite: +30 damage for each damage counter on opponent's Active
+        if (selectedAttack.name === 'Mad Bite') {
+            damage += defender.damageCounters || 0;
+        }
+
+        // Release Rage: +50 damage for each Tatsugiri in discard pile
+        if (selectedAttack.name === 'Release Rage') {
+            const tatsugiris = gameState.player.discardPile.filter(
+                c => c.name.toLowerCase().includes('tatsugiri')
+            ).length;
+            damage += tatsugiris * 50;
+        }
+
+        // Ninja Spinner (Mega Greninja ex): shuffle a Water Energy from hand into deck for +80 damage
+        const ninjaSpinnerWaterIds: string[] = [];
+        if (selectedAttack.name === 'Ninja Spinner') {
+            const waterInHand = gameState.player.hand.filter(
+                c => c.type === 'energy' && c.energyType === 'water'
+            );
+            if (waterInHand.length > 0) {
+                ninjaSpinnerWaterIds.push(waterInHand[0].id);
+                damage += 80;
+            }
+        }
+
+        // Burst Roar: discard entire hand, draw 6
+        const burstRoarActivated = selectedAttack.name === 'Burst Roar';
+
+        // Itchy Pollen: opponent can't play Items next turn
+        const itchyPollenActivated = selectedAttack.name === 'Itchy Pollen';
+
+        // Aura Jab: after attack, trigger Fighting Energy discard distribution
+        const auraJabActivated = selectedAttack.name === 'Aura Jab';
+
+        // Transistor (Regieleki ex): Lightning Pokémon do +30 damage
+        const hasTransistor = [gameState.player.activePokemon, ...gameState.player.bench].some(
+            p => p?.abilities?.some(a => a.name === 'Transistor')
+        );
+        if (hasTransistor && attacker.energyType === 'lightning') {
+            damage += 30;
+        }
+
+        // Lands Force (Mega Zygarde ex): if Lunatone + Solrock on your side, Fighting do +30
+        const hasLandsForce = [gameState.player.activePokemon, ...gameState.player.bench].some(
+            p => p?.abilities?.some(a => a.name === 'Lands Force')
+        );
+        if (hasLandsForce && attacker.energyType === 'fighting') {
+            const allPlayerPokemon = [gameState.player.activePokemon, ...gameState.player.bench].filter(Boolean);
+            const hasLunatoneLF = allPlayerPokemon.some(p => p?.name.includes('Lunatone'));
+            const hasSolrockLF = allPlayerPokemon.some(p => p?.name.includes('Solrock'));
+            if (hasLunatoneLF && hasSolrockLF) damage += 30;
+        }
+
+        // Premium Power Pro: Fighting Pokémon attacks do +30 damage per copy played this turn
+        if (logicState.premiumPowerProCount > 0 && attacker.energyType === 'fighting') {
             damage += logicState.premiumPowerProCount * 30;
         }
 
@@ -2036,6 +2539,29 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             }
         }
 
+        // Passive damage reductions on defender side
+
+        // Order Shield (Zygarde 50%): this Pokémon takes -20 damage from attacks
+        if (defender.abilities?.some(a => a.name === 'Order Shield')) {
+            damage = Math.max(0, damage - 20);
+        }
+
+        // Battle-Hardened (Bloodmoon Ursaluna): -20 from Rule Box Pokémon attacks
+        const attackerHasRuleBox = attacker.subtypes?.some(s =>
+            ['ex', 'gx', 'v', 'vmax', 'vstar', 'tera'].includes(s.toLowerCase())
+        );
+        if (defender.abilities?.some(a => a.name === 'Battle-Hardened') && attackerHasRuleBox) {
+            damage = Math.max(0, damage - 20);
+        }
+
+        // Pokémon League HQ stadium: Rule Box Pokémon defending take -20 damage
+        if (gameState.stadium?.name.toLowerCase().includes('league hq')) {
+            const defenderHasRuleBox = defender.subtypes?.some(s =>
+                ['ex', 'gx', 'v', 'vmax', 'vstar', 'tera'].includes(s.toLowerCase())
+            );
+            if (defenderHasRuleBox) damage = Math.max(0, damage - 20);
+        }
+
         // Parse attack description for effects (status, bench damage, heal, etc.)
         const attackEffects = parseAttackEffects(selectedAttack.description || '');
         const effectResults = applyAttackEffects(
@@ -2046,6 +2572,11 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             flipCoin,
         );
         damage += effectResults.bonusDamage;
+
+        // Snapshot water energy to shuffle for Ninja Spinner (read from current state)
+        const ninjaWaterCardToShuffle = ninjaSpinnerWaterIds.length > 0
+            ? gameState.player.hand.find(c => c.id === ninjaSpinnerWaterIds[0])
+            : undefined;
 
         setGameState(prev => {
             if (!prev) return prev;
@@ -2060,23 +2591,21 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             let remainingPrizes = [...prev.player.prizeCards];
 
             if (knockout) {
-                // ex Pokémon give 2 prize cards
+                // ex/MEGA Pokémon give 2 prize cards
                 const isEx = attacker.subtypes?.some(s => s.toLowerCase().includes('ex')) ||
                     newDefender.name.toLowerCase().includes(' ex') ||
-                    newDefender.subtypes?.some(s => s.toLowerCase().includes('ex'));
+                    newDefender.subtypes?.some(s => s.toLowerCase().includes('ex')) ||
+                    newDefender.subtypes?.some(s => s.toLowerCase() === 'mega');
                 const prizeCount = isEx ? 2 : 1;
                 drawnPrizes = remainingPrizes.splice(0, prizeCount);
             }
 
             let opponentBench = effectResults.opponentBench;
-            // Remove KO'd bench Pokémon
             const koedBench = opponentBench.filter(b => (b.damageCounters || 0) >= (b.hp || 1));
             opponentBench = opponentBench.filter(b => (b.damageCounters || 0) < (b.hp || 1));
-            // Add KO'd bench to opponent discard
             const opponentExtraDiscard = koedBench;
 
             let opponentActive = knockout ? undefined : newDefender;
-
             if (knockout && opponentBench.length > 0) {
                 opponentActive = opponentBench[0];
                 opponentBench = opponentBench.slice(1);
@@ -2090,6 +2619,27 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 b.id === attacker.id ? effectResults.attacker : b
             );
 
+            // Ninja Spinner: shuffle water energy card back into deck
+            let playerHand = [...prev.player.hand, ...drawnPrizes];
+            let playerDeck = [...prev.player.deck];
+            if (ninjaWaterCardToShuffle) {
+                playerHand = playerHand.filter(c => c.id !== ninjaWaterCardToShuffle.id);
+                playerDeck = [...playerDeck, ninjaWaterCardToShuffle];
+                for (let i = playerDeck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [playerDeck[i], playerDeck[j]] = [playerDeck[j], playerDeck[i]];
+                }
+            }
+
+            // Burst Roar: discard entire hand, draw 6
+            let playerDiscard = prev.player.discardPile;
+            if (burstRoarActivated) {
+                playerDiscard = [...playerDiscard, ...playerHand];
+                const drawn = playerDeck.slice(0, 6);
+                playerDeck = playerDeck.slice(6);
+                playerHand = drawn;
+            }
+
             const effectMessages = effectResults.messages.join(' ');
             return {
                 ...prev,
@@ -2097,7 +2647,9 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                     ...prev.player,
                     activePokemon: newPlayerActive,
                     bench: newPlayerBench,
-                    hand: [...prev.player.hand, ...drawnPrizes],
+                    hand: playerHand,
+                    deck: playerDeck,
+                    discardPile: playerDiscard,
                     prizeCards: remainingPrizes,
                 },
                 opponent: {
@@ -2110,15 +2662,28 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                         ...opponentExtraDiscard,
                     ],
                 },
+                opponentItemLocked: itchyPollenActivated ? true : prev.opponentItemLocked,
                 message: `Used ${selectedAttack.name}! Dealt ${damage} damage.${knockout ? ' KNOCKOUT!' : ''} ${effectMessages}`.trim(),
             };
         });
 
-        // ONLY end turn if we are NOT in a selection mode
-        if (selectedAttack.name !== 'Ora Jab') {
-            setTimeout(() => {
-                endTurn();
-            }, 1500);
+        // End turn unless in a selection mode (Ora Jab / Aura Jab)
+        const skipAutoEndTurn = selectedAttack.name === 'Ora Jab' || auraJabActivated;
+        if (auraJabActivated) {
+            const fightingInDiscard = gameState.player.discardPile.filter(
+                c => c.type === 'energy' && c.energyType === 'fighting'
+            );
+            if (fightingInDiscard.length > 0) {
+                setLogicState(prev => ({
+                    ...prev,
+                    actionMode: 'attach_energy_from_discard',
+                    message: 'Aura Jab: Select up to 3 Fighting Energy from your discard to attach to your Pokémon.',
+                    discardCount: Math.min(3, fightingInDiscard.length),
+                }));
+            }
+        }
+        if (!skipAutoEndTurn) {
+            setTimeout(() => endTurn(), 1500);
         }
 
         return true;
