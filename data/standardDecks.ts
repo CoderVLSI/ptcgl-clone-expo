@@ -724,7 +724,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         abilities: [{
             name: 'Teal Dance',
             type: 'Ability',
-            text: 'When you play this Pokémon from your hand onto your Bench during your turn, you may attach a basic Grass Energy card from your hand to 1 of your Pokémon.',
+            text: 'Once during your turn, you may attach a Basic Grass Energy card from your hand to this Pokémon. If you attached Energy to a Pokémon in this way, draw a card.',
         }],
         attacks: [
             { name: 'Ivy Cudgel', damage: 80, energyCost: ['grass', 'colorless'], description: 'If your opponent\'s Active Pokémon has a Rule Box, this attack does 80 more damage.' },
@@ -758,7 +758,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         abilities: [{
             name: 'Jewel Seeker',
             type: 'Ability',
-            text: 'Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, if you have any Tera Pokémon in play, you may search your deck for up to 2 Trainer cards, reveal them, and put them into your hand. Then, shuffle your deck.',
+            text: 'Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, if you have any Tera Pokémon ex in play, you may search your deck for up to 2 Trainer cards, reveal them, and put them into your hand. Then, shuffle your deck.',
         }],
         attacks: [{ name: 'Speed Wing', damage: 60, energyCost: ['colorless', 'colorless'] }],
         imageUrl: 'https://images.pokemontcg.io/sv7/115.png',
@@ -807,7 +807,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         abilities: [{
             name: 'Flying Entry',
             type: 'Ability',
-            text: 'When you play this Pokémon from your hand onto your Bench during your turn, you may put 2 damage counters on 1 of your opponent\'s Pokémon.',
+            text: 'When you play this Pokémon from your hand onto your Bench during your turn, you may choose 2 of your opponent\'s Benched Pokémon and put 1 damage counter on each of them.',
         }],
         attacks: [{ name: 'Cross Chop', damage: 60, energyCost: ['fighting', 'colorless'] }],
         imageUrl: 'https://images.pokemontcg.io/sv5/118.png',

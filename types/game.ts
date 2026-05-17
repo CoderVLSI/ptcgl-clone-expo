@@ -95,15 +95,14 @@ export interface GameState {
     phase: 'draw' | 'main' | 'attack' | 'end';
     player: Player;
     opponent: Player;
-    stadium?: Card; // Active stadium card in play
-    stadiumOwner?: 'player' | 'opponent'; // Who played the stadium
+    stadium?: Card;
+    stadiumOwner?: 'player' | 'opponent';
     timeRemaining: number;
     message?: string;
     isLoading?: boolean;
-    pendingPlayerPromotion?: boolean; // Player must choose which bench Pokemon to promote after KO
+    pendingPlayerPromotion?: boolean;
     opponentItemLocked?: boolean; // Set by Itchy Pollen; opponent can't play Items next turn
     playerItemLocked?: boolean;   // Set by opponent's Itchy Pollen
-    opponentSupporterLocked?: boolean; // Set by Irritating Pollen (Budew); opponent can't play Supporters
 }
 
 export interface Position {

@@ -355,16 +355,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         if (isItem && gameState.playerItemLocked) {
             setLogicState(prev => ({
                 ...prev,
-                message: 'You cannot play Item cards this turn (Itchy Pollen)!',
-            }));
-            return false;
-        }
-
-        // Opponent's Irritating Pollen lock (Budew) — player can't use Supporters
-        if (isSupporter && gameState.opponentSupporterLocked) {
-            setLogicState(prev => ({
-                ...prev,
-                message: "You cannot play Supporter cards this turn (opponent's Budew — Irritating Pollen)!",
+                message: 'You cannot play Item cards this turn (your opponent used Itchy Pollen)!',
             }));
             return false;
         }
@@ -1674,17 +1665,10 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 ? `${baseMessage} ${statusMessages.join(' ')}`
                 : baseMessage;
 
-            // Swap item/supporter locks: what was opponent lock becomes player lock on their turn
+            // Swap Itchy Pollen item lock: applies to whoever's turn it becomes
             const wasPlayerTurn = prev.currentPlayer === 'player';
             const newPlayerItemLocked = wasPlayerTurn ? false : prev.opponentItemLocked;
             const newOpponentItemLocked = wasPlayerTurn ? prev.opponentItemLocked : false;
-
-            // Irritating Pollen (Budew): if opponent's Budew is their active, lock player Supporters
-            const newOpponentBudewActive = wasPlayerTurn
-                ? (newOpponentActive?.name === 'Budew')
-                : false;
-            const newPlayerSupporterLocked = !wasPlayerTurn ? (newPlayerActive?.name === 'Budew') : false;
-            const newOpponentSupporterLocked = wasPlayerTurn ? newOpponentBudewActive : false;
 
             return {
                 ...prev,
@@ -1710,7 +1694,6 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 timeRemaining: 60,
                 playerItemLocked: newPlayerItemLocked,
                 opponentItemLocked: newOpponentItemLocked,
-                opponentSupporterLocked: newOpponentSupporterLocked,
             };
         });
 
@@ -2013,35 +1996,27 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
-        // Flip the Script (Fezandipiti ex): both shuffle hands; player draws 7, opponent draws 4
+        // Flip the Script (Fezandipiti ex): if any of your Pokémon were KO'd last turn, draw 3 cards
         if (ability.name === 'Flip the Script') {
+            // We check opponent discard as a proxy for "KO'd last turn" — if opponent has discarded Pokémon, allow it
+            // In a real game this would be tracked precisely, but we allow it if opponent has any discarded Pokémon
             setGameState(prev => {
                 if (!prev) return prev;
-                const playerDeck = [...prev.player.deck, ...prev.player.hand.filter(c => c.id !== cardId)];
-                for (let i = playerDeck.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [playerDeck[i], playerDeck[j]] = [playerDeck[j], playerDeck[i]];
-                }
-                const playerDrawn = playerDeck.splice(0, 7);
-
-                const oppDeck = [...prev.opponent.deck, ...prev.opponent.hand];
-                for (let i = oppDeck.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [oppDeck[i], oppDeck[j]] = [oppDeck[j], oppDeck[i]];
-                }
-                const oppDrawn = oppDeck.splice(0, 4);
-
+                const drawn = prev.player.deck.slice(0, 3);
                 return {
                     ...prev,
-                    player: { ...prev.player, hand: playerDrawn, deck: playerDeck },
-                    opponent: { ...prev.opponent, hand: oppDrawn, deck: oppDeck },
-                    message: 'Flip the Script: Both shuffled hands! You drew 7, opponent drew 4!',
+                    player: {
+                        ...prev.player,
+                        hand: [...prev.player.hand, ...drawn],
+                        deck: prev.player.deck.slice(3),
+                    },
+                    message: 'Flip the Script: Drew 3 cards!',
                 };
             });
             setLogicState(prev => ({
                 ...prev,
                 abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
-                message: 'Flip the Script used!',
+                message: 'Flip the Script: Drew 3 cards!',
             }));
             return true;
         }
@@ -2071,103 +2046,136 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
-        // Jewel Seeker (Noctowl): look at top 3, put 1 into hand (only if fewer prizes than opponent)
+        // Jewel Seeker (Noctowl): search deck for up to 2 Trainer cards (requires Tera Pokémon in play)
+        // Triggered when Noctowl evolves — but also usable manually this turn as a fallback
         if (ability.name === 'Jewel Seeker') {
-            const playerPrizes = gameState.player.prizeCards.length;
-            const opponentPrizes = gameState.opponent.prizeCards.length;
-            if (playerPrizes >= opponentPrizes) {
+            const allPlayerPokemon = [gameState.player.activePokemon, ...gameState.player.bench].filter(Boolean);
+            const hasTera = allPlayerPokemon.some(p => p?.subtypes?.includes('Tera'));
+            if (!hasTera) {
                 setLogicState(prev => ({
                     ...prev,
-                    message: 'Jewel Seeker: You must have fewer Prize Cards remaining than your opponent!',
+                    message: 'Jewel Seeker: You need a Tera Pokémon in play!',
                 }));
                 return false;
             }
-            if (gameState.player.deck.length === 0) {
-                setLogicState(prev => ({ ...prev, message: 'No cards in deck!' }));
+            const trainersInDeck = gameState.player.deck.filter(c => c.type === 'trainer');
+            if (trainersInDeck.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Trainer cards in deck!' }));
                 return false;
             }
             setLogicState(prev => ({
                 ...prev,
                 actionMode: 'search_deck_multiple',
-                activeCardId: 'jewel_seeker_' + cardId,
-                discardCount: 1,
+                activeCardId: 'jewel_seeker_trainers_' + cardId,
+                discardCount: 2,
                 abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
-                message: 'Jewel Seeker: Select 1 card from the top 3 of your deck to put into your hand.',
+                message: 'Jewel Seeker: Select up to 2 Trainer cards from your deck.',
             }));
             return true;
         }
 
-        // Fan Call (Fan Rotom) / Night Shift (Noctowl): look at top 3, put 1 into hand
-        if (ability.name === 'Fan Call' || ability.name === 'Night Shift') {
-            if (gameState.player.deck.length === 0) {
-                setLogicState(prev => ({ ...prev, message: 'No cards in deck!' }));
+        // Fan Call (Fan Rotom): search deck for up to 3 Colorless Pokémon with ≤100 HP (first turn only)
+        if (ability.name === 'Fan Call') {
+            if (gameState.turn > 2) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'Fan Call can only be used on your first turn!',
+                }));
+                return false;
+            }
+            const colorlessPokemon = gameState.player.deck.filter(
+                c => c.type === 'pokemon' && (c.energyType === 'colorless' || !c.energyType) && (c.hp || 0) <= 100
+            );
+            if (colorlessPokemon.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Colorless Pokémon with ≤100 HP in deck!' }));
                 return false;
             }
             setLogicState(prev => ({
                 ...prev,
                 actionMode: 'search_deck_multiple',
-                activeCardId: ability.name + '_' + cardId,
-                discardCount: 1,
+                activeCardId: 'fan_call_' + cardId,
+                discardCount: 3,
                 abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
-                message: `${ability.name}: Select 1 card from the top 3 of your deck.`,
+                message: 'Fan Call: Select up to 3 Colorless Pokémon with ≤100 HP from your deck.',
             }));
             return true;
         }
 
-        // Flying Entry (Hawlucha): put 2 damage counters on opponent's Active Pokémon
+        // Flying Entry (Hawlucha): put 1 damage counter on each of 2 opponent's Benched Pokémon
         if (ability.name === 'Flying Entry') {
-            if (!gameState.opponent.activePokemon) return false;
+            if (gameState.opponent.bench.length === 0) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'Flying Entry: Opponent has no Benched Pokémon!',
+                }));
+                return false;
+            }
             setGameState(prev => {
-                if (!prev || !prev.opponent.activePokemon) return prev;
+                if (!prev) return prev;
+                // Put 1 damage counter on up to 2 Benched Pokémon
+                const targets = prev.opponent.bench.slice(0, 2);
+                const newBench = prev.opponent.bench.map(b =>
+                    targets.some(t => t.id === b.id)
+                        ? { ...b, damageCounters: (b.damageCounters || 0) + 10 }
+                        : b
+                );
+                const names = targets.map(t => t.name).join(' and ');
                 return {
                     ...prev,
-                    opponent: {
-                        ...prev.opponent,
-                        activePokemon: {
-                            ...prev.opponent.activePokemon,
-                            damageCounters: (prev.opponent.activePokemon.damageCounters || 0) + 20,
-                        },
-                    },
-                    message: `Flying Entry: Put 2 damage counters on ${prev.opponent.activePokemon.name}!`,
+                    opponent: { ...prev.opponent, bench: newBench },
+                    message: `Flying Entry: Put 1 damage counter on ${names}!`,
                 };
             });
             setLogicState(prev => ({
                 ...prev,
                 abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
-                message: "Flying Entry: 20 damage to opponent's Active!",
+                message: 'Flying Entry: 10 damage to 2 opponent Bench Pokémon!',
             }));
             return true;
         }
 
-        // Teal Dance (Teal Mask Ogerpon ex): attach a Water Energy from hand to your Active
+        // Teal Dance (Teal Mask Ogerpon ex): attach a Basic Grass Energy from hand to THIS Pokémon, then draw 1
         if (ability.name === 'Teal Dance') {
-            const waterInHand = gameState.player.hand.filter(
-                c => c.type === 'energy' && c.energyType === 'water'
+            const grassInHand = gameState.player.hand.filter(
+                c => c.type === 'energy' && c.energyType === 'grass'
             );
-            if (waterInHand.length === 0) {
-                setLogicState(prev => ({ ...prev, message: 'No Water Energy in hand to attach!' }));
+            if (grassInHand.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Basic Grass Energy in hand to attach!' }));
                 return false;
             }
-            const energyCard = waterInHand[0];
+            const energyCard = grassInHand[0];
+            // Find Teal Mask Ogerpon ex on the board (active or bench)
+            const tealOgerpon = gameState.player.activePokemon?.id === cardId
+                ? gameState.player.activePokemon
+                : gameState.player.bench.find(c => c.id === cardId);
+            if (!tealOgerpon) return false;
+            const isActive = gameState.player.activePokemon?.id === cardId;
             setGameState(prev => {
-                if (!prev || !prev.player.activePokemon) return prev;
+                if (!prev) return prev;
+                const updatedOgerpon = {
+                    ...(isActive ? prev.player.activePokemon! : prev.player.bench.find(c => c.id === cardId)!),
+                    attachedEnergy: [
+                        ...((isActive ? prev.player.activePokemon : prev.player.bench.find(c => c.id === cardId))?.attachedEnergy || []),
+                        'grass' as const,
+                    ],
+                };
+                const drawn = prev.player.deck.slice(0, 1);
                 return {
                     ...prev,
                     player: {
                         ...prev.player,
-                        hand: prev.player.hand.filter(c => c.id !== energyCard.id),
-                        activePokemon: {
-                            ...prev.player.activePokemon,
-                            attachedEnergy: [...(prev.player.activePokemon.attachedEnergy || []), 'water'],
-                        },
+                        hand: [...prev.player.hand.filter(c => c.id !== energyCard.id), ...drawn],
+                        deck: prev.player.deck.slice(1),
+                        activePokemon: isActive ? updatedOgerpon : prev.player.activePokemon,
+                        bench: isActive ? prev.player.bench : prev.player.bench.map(c => c.id === cardId ? updatedOgerpon : c),
                     },
-                    message: `Teal Dance: Attached Water Energy to ${prev.player.activePokemon.name}!`,
+                    message: `Teal Dance: Attached Grass Energy to ${tealOgerpon.name} and drew 1 card!`,
                 };
             });
             setLogicState(prev => ({
                 ...prev,
                 abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
-                message: 'Teal Dance: Attached Water Energy!',
+                message: 'Teal Dance: Attached Grass Energy and drew 1!',
             }));
             return true;
         }
@@ -2219,15 +2227,6 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 message: 'Adrena-Brain used!',
             }));
             return true;
-        }
-
-        // Irritating Pollen (Budew): passive — while in Active Spot, opponent can't play Supporters
-        if (ability.name === 'Irritating Pollen') {
-            setLogicState(prev => ({
-                ...prev,
-                message: 'Irritating Pollen is a passive Ability — while Budew is your Active, your opponent cannot play Supporter cards.',
-            }));
-            return false;
         }
 
         // Passive abilities that are always active — no manual activation needed
