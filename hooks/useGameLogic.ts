@@ -2021,27 +2021,52 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
-        // Mortal Shuriken (Mega Greninja ex): put 3 damage counters on opponent's Active
+        // Mortal Shuriken (Mega Greninja ex): discard a Water Energy from hand, place 6 damage counters on any opponent's Pokémon
         if (ability.name === 'Mortal Shuriken') {
+            // Must be in the Active Spot
+            if (gameState.player.activePokemon?.id !== cardId) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'Mortal Shuriken: This Pokémon must be in the Active Spot!',
+                }));
+                return false;
+            }
+            // Must have a Basic Water Energy in hand to discard
+            const waterInHand = gameState.player.hand.filter(
+                c => c.type === 'energy' && c.energyType === 'water'
+            );
+            if (waterInHand.length === 0) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'Mortal Shuriken: You need a Basic Water Energy in your hand to discard!',
+                }));
+                return false;
+            }
             if (!gameState.opponent.activePokemon) return false;
+            const energyToDiscard = waterInHand[0];
             setGameState(prev => {
                 if (!prev || !prev.opponent.activePokemon) return prev;
                 return {
                     ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== energyToDiscard.id),
+                        discardPile: [...prev.player.discardPile, energyToDiscard],
+                    },
                     opponent: {
                         ...prev.opponent,
                         activePokemon: {
                             ...prev.opponent.activePokemon,
-                            damageCounters: (prev.opponent.activePokemon.damageCounters || 0) + 30,
+                            damageCounters: (prev.opponent.activePokemon.damageCounters || 0) + 60,
                         },
                     },
-                    message: `Mortal Shuriken: Put 3 damage counters on ${prev.opponent.activePokemon.name}!`,
+                    message: `Mortal Shuriken: Discarded Water Energy, placed 6 damage counters on ${prev.opponent.activePokemon.name}!`,
                 };
             });
             setLogicState(prev => ({
                 ...prev,
                 abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
-                message: 'Mortal Shuriken: 30 damage to opponent\'s Active!',
+                message: 'Mortal Shuriken: 60 damage to opponent\'s Active!',
             }));
             return true;
         }
@@ -2471,14 +2496,12 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             damage += tatsugiris * 50;
         }
 
-        // Ninja Spinner (Mega Greninja ex): shuffle a Water Energy from hand into deck for +80 damage
-        const ninjaSpinnerWaterIds: string[] = [];
+        // Ninja Spinner (Mega Greninja ex): put a Water Energy attached to THIS Pokémon back into hand for +80 damage
+        let ninjaSpinnerBounceAttachedWater = false;
         if (selectedAttack.name === 'Ninja Spinner') {
-            const waterInHand = gameState.player.hand.filter(
-                c => c.type === 'energy' && c.energyType === 'water'
-            );
-            if (waterInHand.length > 0) {
-                ninjaSpinnerWaterIds.push(waterInHand[0].id);
+            const attachedWater = attacker.attachedEnergy?.includes('water');
+            if (attachedWater) {
+                ninjaSpinnerBounceAttachedWater = true;
                 damage += 80;
             }
         }
@@ -2572,9 +2595,11 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         );
         damage += effectResults.bonusDamage;
 
-        // Snapshot water energy to shuffle for Ninja Spinner (read from current state)
-        const ninjaWaterCardToShuffle = ninjaSpinnerWaterIds.length > 0
-            ? gameState.player.hand.find(c => c.id === ninjaSpinnerWaterIds[0])
+        // Find a Water Energy card in discard to return to hand for Ninja Spinner bounce
+        // (We return a water energy card object from discard/deck to represent the bounced attached energy)
+        const ninjaSpinnerWaterCardToReturn = ninjaSpinnerBounceAttachedWater
+            ? (gameState.player.discardPile.find(c => c.type === 'energy' && c.energyType === 'water')
+               ?? gameState.player.deck.find(c => c.type === 'energy' && c.energyType === 'water'))
             : undefined;
 
         setGameState(prev => {
@@ -2590,12 +2615,12 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             let remainingPrizes = [...prev.player.prizeCards];
 
             if (knockout) {
-                // ex/MEGA Pokémon give 2 prize cards
-                const isEx = attacker.subtypes?.some(s => s.toLowerCase().includes('ex')) ||
-                    newDefender.name.toLowerCase().includes(' ex') ||
-                    newDefender.subtypes?.some(s => s.toLowerCase().includes('ex')) ||
-                    newDefender.subtypes?.some(s => s.toLowerCase() === 'mega');
-                const prizeCount = isEx ? 2 : 1;
+                // Mega Evolution ex give 3 prize cards; regular ex give 2; others give 1
+                const defenderSubtypes = newDefender.subtypes?.map(s => s.toLowerCase()) || [];
+                const isMegaEx = defenderSubtypes.includes('mega') && defenderSubtypes.includes('ex');
+                const isEx = isMegaEx || defenderSubtypes.includes('ex') ||
+                    newDefender.name.toLowerCase().includes(' ex');
+                const prizeCount = isMegaEx ? 3 : isEx ? 2 : 1;
                 drawnPrizes = remainingPrizes.splice(0, prizeCount);
             }
 
@@ -2618,20 +2643,32 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 b.id === attacker.id ? effectResults.attacker : b
             );
 
-            // Ninja Spinner: shuffle water energy card back into deck
+            // Ninja Spinner: remove one Water Energy from attacker's attachedEnergy, put it into hand
             let playerHand = [...prev.player.hand, ...drawnPrizes];
             let playerDeck = [...prev.player.deck];
-            if (ninjaWaterCardToShuffle) {
-                playerHand = playerHand.filter(c => c.id !== ninjaWaterCardToShuffle.id);
-                playerDeck = [...playerDeck, ninjaWaterCardToShuffle];
-                for (let i = playerDeck.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [playerDeck[i], playerDeck[j]] = [playerDeck[j], playerDeck[i]];
+            let playerDiscard2 = prev.player.discardPile;
+            if (ninjaSpinnerBounceAttachedWater) {
+                // Remove one 'water' from the attacker's attachedEnergy (handled via effectResults.attacker)
+                // Return a water energy card to hand (pull from discard if possible, else create inline)
+                if (ninjaSpinnerWaterCardToReturn) {
+                    const isFromDiscard = prev.player.discardPile.some(c => c.id === ninjaSpinnerWaterCardToReturn.id);
+                    if (isFromDiscard) {
+                        playerDiscard2 = prev.player.discardPile.filter(c => c.id !== ninjaSpinnerWaterCardToReturn.id);
+                        playerDeck = prev.player.deck.filter(c => c.id !== ninjaSpinnerWaterCardToReturn.id);
+                    } else {
+                        playerDeck = prev.player.deck.filter(c => c.id !== ninjaSpinnerWaterCardToReturn.id);
+                    }
+                    playerHand = [...playerHand, ninjaSpinnerWaterCardToReturn];
                 }
+                // Remove one Water from attacker's attached energy
+                const updatedAttackerEnergy = [...(effectResults.attacker.attachedEnergy || [])];
+                const wIdx = updatedAttackerEnergy.indexOf('water');
+                if (wIdx !== -1) updatedAttackerEnergy.splice(wIdx, 1);
+                effectResults.attacker = { ...effectResults.attacker, attachedEnergy: updatedAttackerEnergy };
             }
 
             // Burst Roar: discard entire hand, draw 6
-            let playerDiscard = prev.player.discardPile;
+            let playerDiscard = playerDiscard2;
             if (burstRoarActivated) {
                 playerDiscard = [...playerDiscard, ...playerHand];
                 const drawn = playerDeck.slice(0, 6);
