@@ -203,10 +203,34 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             };
         });
 
-        setLogicState(prev => ({
-            ...prev,
-            message: `${card.name} was placed on the bench!`,
-        }));
+        // Auto-trigger "when played to bench" abilities
+        const flyingEntry = card.abilities?.find(a => a.name === 'Flying Entry');
+        if (flyingEntry && gameState.opponent.bench.length > 0) {
+            const targets = gameState.opponent.bench.slice(0, 2);
+            setGameState(prev => {
+                if (!prev) return prev;
+                const newBench = prev.opponent.bench.map(b =>
+                    targets.some(t => t.id === b.id)
+                        ? { ...b, damageCounters: (b.damageCounters || 0) + 10 }
+                        : b
+                );
+                const names = targets.map(t => t.name).join(' and ');
+                return {
+                    ...prev,
+                    opponent: { ...prev.opponent, bench: newBench },
+                    message: `Flying Entry: Put 1 damage counter on ${names}!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                message: `${card.name} played! Flying Entry: 10 damage to ${targets.length === 1 ? targets[0].name : '2 Benched Pokémon'}!`,
+            }));
+        } else {
+            setLogicState(prev => ({
+                ...prev,
+                message: `${card.name} was placed on the bench!`,
+            }));
+        }
 
         return true;
     }, [gameState]);
@@ -325,17 +349,42 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
 
         const prevOppBenchSize = gameState.opponent.bench.length;
 
-        const isHariyamaAbility = evolvedCard.name === 'Hariyama' && (prevOppBenchSize > 0);
+        const isHariyamaAbility = evolvedCard.name === 'Hariyama' && prevOppBenchSize > 0;
 
-        setLogicState(prev => ({
-            ...prev,
-            actionMode: isHariyamaAbility ? 'switch_opponent_active' : 'none',
-            activeCardId: isHariyamaAbility ? evolvedCard.id : undefined,
-            selectedCard: null,
-            message: isHariyamaAbility
-                ? `${targetCard!.name} evolved into ${evolutionCard.name}! Select a Pokémon from opponent bench to switch.`
-                : `${targetCard!.name} evolved into ${evolutionCard.name}!`,
-        }));
+        // Jewel Seeker (Noctowl): auto-trigger on evolve if Tera Pokémon in play
+        const hasJewelSeeker = evolvedCard.abilities?.some(a => a.name === 'Jewel Seeker');
+        const allPlayerPokemon = [gameState.player.activePokemon, ...gameState.player.bench].filter(Boolean);
+        const hasTera = allPlayerPokemon.some(p => p?.subtypes?.includes('Tera'));
+        const trainersInDeck = gameState.player.deck.filter(c => c.type === 'trainer');
+        const isJewelSeekerActive = hasJewelSeeker && hasTera && trainersInDeck.length > 0;
+
+        if (isHariyamaAbility) {
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'switch_opponent_active',
+                activeCardId: evolvedCard.id,
+                selectedCard: null,
+                message: `${targetCard!.name} evolved into ${evolutionCard.name}! Select a Pokémon from opponent bench to switch.`,
+            }));
+        } else if (isJewelSeekerActive) {
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck_multiple',
+                activeCardId: 'jewel_seeker_trainers_' + evolvedCard.id,
+                discardCount: 2,
+                abilitiesUsed: [...prev.abilitiesUsed, evolvedCard.id, 'Jewel Seeker'],
+                selectedCard: null,
+                message: `${evolutionCard.name} evolved! Jewel Seeker: Select up to 2 Trainer cards from your deck.`,
+            }));
+        } else {
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'none',
+                activeCardId: undefined,
+                selectedCard: null,
+                message: `${targetCard!.name} evolved into ${evolutionCard.name}!`,
+            }));
+        }
 
         return true;
     }, [gameState]);
