@@ -623,12 +623,6 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         }],
         attacks: [
             {
-                name: 'Mortal Shuriken',
-                damage: 220,
-                energyCost: ['water', 'water', 'colorless'],
-                description: '',
-            },
-            {
                 name: 'Ninja Spinner',
                 damage: 120,
                 energyCost: ['water'],
