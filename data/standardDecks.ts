@@ -1821,13 +1821,15 @@ const PB_PROXY_CARDS: Record<string, Partial<Card>> = {
     'Lurantis ex': {
         name: 'Lurantis ex',
         type: 'pokemon',
-        hp: 180,
+        hp: 260,
         energyType: 'grass',
-        subtypes: ['Basic', 'ex'],
+        subtypes: ['Stage 1', 'ex'],
+        evolvesFrom: 'Fomantis',
         retreatCost: 1,
         weaknesses: [{ type: 'fire', value: '×2' }],
         attacks: [
             { name: 'Lively Cutter', damage: 60, energyCost: ['grass'], description: 'If you healed any damage from any of your Pokémon this turn, this attack does 200 more damage.' },
+            { name: 'Leaf Guard', damage: 140, energyCost: ['grass', 'colorless'], description: 'During your opponent\'s next turn, this Pokémon takes 30 less damage from attacks.' },
         ],
         imageUrl: 'https://images.pokemontcg.io/me5/4.png',
         imageUrlLarge: 'https://images.pokemontcg.io/me5/4_hires.png',
@@ -2093,8 +2095,8 @@ const PB_PROXY_CARDS: Record<string, Partial<Card>> = {
         retreatCost: 1,
         weaknesses: [{ type: 'fighting', value: '×2' }],
         attacks: [
-            { name: 'Thunder Fist', damage: 60, energyCost: ['lightning', 'lightning'], description: 'This attack does 60 damage for each Energy attached to this Pokémon.' },
-            { name: 'Zepto Turn', damage: 150, energyCost: ['lightning', 'lightning', 'colorless'], description: 'Switch this Pokémon with 1 of your Benched Pokémon.' },
+            { name: 'Thunder Fist', damage: 60, energyCost: ['lightning'], description: 'This attack does 60 damage for each Energy attached to this Pokémon.' },
+            { name: 'Zepto Turn', damage: 150, energyCost: ['lightning', 'lightning', 'lightning'], description: 'Switch this Pokémon with 1 of your Benched Pokémon.' },
         ],
         imageUrl: 'https://images.pokemontcg.io/me5/26.png',
         imageUrlLarge: 'https://images.pokemontcg.io/me5/26_hires.png',
@@ -2280,15 +2282,16 @@ const PB_PROXY_CARDS: Record<string, Partial<Card>> = {
         evolvesFrom: 'Lampent',
         retreatCost: 2,
         weaknesses: [{ type: 'darkness', value: '×2' }],
+        resistances: [{ type: 'fighting', value: '-30' }],
         abilities: [{
             name: 'Cursed Flame',
             type: 'Ability',
-            text: 'As long as this Pokémon is in the Active Spot, your opponent\'s Pokémon\'s Retreat Costs are increased by [C][C].',
+            text: 'As long as this Pokémon is in the Active Spot, your opponent\'s Pokémon\'s Retreat Costs are increased by [C].',
         }],
         attacks: [{
             name: 'Phantom Maze',
             damage: 130,
-            energyCost: ['psychic', 'psychic', 'colorless'],
+            energyCost: ['psychic', 'psychic'],
             description: 'This attack does 50 more damage for each [C] in your opponent\'s Active Pokémon\'s Retreat Cost.',
         }],
         imageUrl: 'https://images.pokemontcg.io/me5/36.png',
@@ -2360,7 +2363,7 @@ const PB_PROXY_CARDS: Record<string, Partial<Card>> = {
         energyType: 'darkness',
         subtypes: ['Basic', 'MEGA', 'ex'],
         retreatCost: 2,
-        weaknesses: [{ type: 'fighting', value: '×2' }],
+        weaknesses: [{ type: 'grass', value: '×2' }],
         attacks: [
             { name: 'Night Raid', damage: 110, energyCost: ['darkness', 'darkness'], description: 'If any of your Benched Pokémon have any damage counters on them, this attack does 110 more damage.' },
             { name: 'Abyss Eye', damage: 0, energyCost: ['darkness', 'darkness', 'darkness'], description: 'If your opponent\'s Active Pokémon is affected by any Special Condition, it is Knocked Out.' },
@@ -2477,18 +2480,18 @@ const PB_PROXY_CARDS: Record<string, Partial<Card>> = {
     'Rampardos ex': {
         name: 'Rampardos ex',
         type: 'pokemon',
-        hp: 240,
+        hp: 330,
         energyType: 'fighting',
-        subtypes: ['Stage 1', 'ex'],
+        subtypes: ['Stage 2', 'ex'],
         evolvesFrom: 'Cranidos',
-        retreatCost: 3,
+        retreatCost: 2,
         weaknesses: [{ type: 'grass', value: '×2' }],
         abilities: [{
             name: 'Destructive Headbutt',
             type: 'Ability',
-            text: 'Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, you may discard an Energy from your opponent\'s Active Pokémon.',
+            text: 'Once during your turn, if this Pokémon is your Active Pokémon, you may flip a coin. If heads, discard an Energy from your opponent\'s Active Pokémon.',
         }],
-        attacks: [{ name: 'Rampaging Hammer', damage: 150, energyCost: ['fighting', 'fighting', 'colorless'] }],
+        attacks: [{ name: 'Rampaging Hammer', damage: 150, energyCost: ['fighting', 'fighting'] }],
         imageUrl: 'https://images.pokemontcg.io/me5/62.png',
         imageUrlLarge: 'https://images.pokemontcg.io/me5/62_hires.png',
     },
@@ -2619,6 +2622,14 @@ const PB_PROXY_CARDS: Record<string, Partial<Card>> = {
         imageUrl: 'https://images.pokemontcg.io/me5/80.png',
         imageUrlLarge: 'https://images.pokemontcg.io/me5/80_hires.png',
     },
+};
+
+/** Combined proxy card lookup: STANDARD + EXTRA + CRI + PB */
+const ALL_PROXY_CARDS: Record<string, Partial<Card>> = {
+    ...STANDARD_PROXY_CARDS,
+    ...EXTRA_PROXY_CARDS,
+    ...CRI_PROXY_CARDS,
+    ...PB_PROXY_CARDS,
 };
 
 /** Shared deck builder helper — fetches sets and creates an addCard function */

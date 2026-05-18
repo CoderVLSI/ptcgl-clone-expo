@@ -375,23 +375,6 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             });
         }
 
-        // Destructive Headbutt (Rampardos ex): on evolve, discard an Energy from opponent's Active
-        const hasDestructiveHeadbut = evolvedCard.abilities?.some(a => a.name === 'Destructive Headbutt');
-        if (hasDestructiveHeadbut && gameState.opponent.activePokemon?.attachedEnergy?.length) {
-            setGameState(prev => {
-                if (!prev?.opponent.activePokemon?.attachedEnergy?.length) return prev;
-                const newEnergy = [...prev.opponent.activePokemon.attachedEnergy];
-                newEnergy.splice(0, 1);
-                return {
-                    ...prev,
-                    opponent: {
-                        ...prev.opponent,
-                        activePokemon: { ...prev.opponent.activePokemon, attachedEnergy: newEnergy },
-                    },
-                    message: `${evolutionCard.name} evolved! Destructive Headbutt: Discarded 1 Energy from opponent's Active!`,
-                };
-            });
-        }
 
         // Call for Family (Mega Excadrill ex): on evolve, search deck for up to 2 Basic Pokémon onto bench
         const hasCallForFamily = evolvedCard.abilities?.some(a => a.name === 'Call for Family');
@@ -2592,6 +2575,38 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
+        // Destructive Headbutt (Rampardos ex): manual coin flip when Active; heads = discard 1 Energy from opponent's Active
+        if (ability.name === 'Destructive Headbutt') {
+            const card = gameState.player.activePokemon;
+            if (!card || card.id !== abilityCardId) {
+                setLogicState(prev => ({ ...prev, message: 'Destructive Headbutt: This Pokémon must be your Active Pokémon!' }));
+                return false;
+            }
+            if (!gameState.opponent.activePokemon?.attachedEnergy?.length) {
+                setLogicState(prev => ({ ...prev, message: 'Destructive Headbutt: Opponent\'s Active has no Energy to discard!' }));
+                return false;
+            }
+            const heads = Math.random() < 0.5;
+            if (heads) {
+                setGameState(prev => {
+                    if (!prev?.opponent.activePokemon?.attachedEnergy?.length) return prev;
+                    const newEnergy = [...prev.opponent.activePokemon.attachedEnergy];
+                    newEnergy.splice(0, 1);
+                    return {
+                        ...prev,
+                        opponent: {
+                            ...prev.opponent,
+                            activePokemon: { ...prev.opponent.activePokemon, attachedEnergy: newEnergy },
+                        },
+                        message: 'Destructive Headbutt: Heads! Discarded 1 Energy from opponent\'s Active!',
+                    };
+                });
+            } else {
+                setLogicState(prev => ({ ...prev, message: 'Destructive Headbutt: Tails! Nothing happened.' }));
+            }
+            return true;
+        }
+
         // Passive abilities that are always active — no manual activation needed
         if (['Battle-Hardened', 'Order Shield', 'Transistor', 'Lands Force',
              'Stone Arms', 'Smokescreen Veil', 'Fallen Giant', 'Midnight Fluttering',
@@ -2600,7 +2615,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
              'Ferocious Bellow',
              // PB passives
              'Ghost Veil', 'Cursed Flame', 'Living Fossil', 'Ancient Bulwark', 'Spooky Binding',
-             'Rage Fist', 'Destructive Headbutt', 'Call for Family',
+             'Rage Fist', 'Call for Family',
         ].includes(ability.name)) {
             setLogicState(prev => ({
                 ...prev,
