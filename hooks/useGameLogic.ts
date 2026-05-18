@@ -375,6 +375,40 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             });
         }
 
+        // Destructive Headbutt (Rampardos ex): on evolve, discard an Energy from opponent's Active
+        const hasDestructiveHeadbut = evolvedCard.abilities?.some(a => a.name === 'Destructive Headbutt');
+        if (hasDestructiveHeadbut && gameState.opponent.activePokemon?.attachedEnergy?.length) {
+            setGameState(prev => {
+                if (!prev?.opponent.activePokemon?.attachedEnergy?.length) return prev;
+                const newEnergy = [...prev.opponent.activePokemon.attachedEnergy];
+                newEnergy.splice(0, 1);
+                return {
+                    ...prev,
+                    opponent: {
+                        ...prev.opponent,
+                        activePokemon: { ...prev.opponent.activePokemon, attachedEnergy: newEnergy },
+                    },
+                    message: `${evolutionCard.name} evolved! Destructive Headbutt: Discarded 1 Energy from opponent's Active!`,
+                };
+            });
+        }
+
+        // Call for Family (Mega Excadrill ex): on evolve, search deck for up to 2 Basic Pokémon onto bench
+        const hasCallForFamily = evolvedCard.abilities?.some(a => a.name === 'Call for Family');
+        const basicInDeck = gameState.player.deck.filter(c => c.type === 'pokemon' && c.subtypes?.includes('Basic'));
+        if (hasCallForFamily && basicInDeck.length > 0 && gameState.player.bench.length < 5) {
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck_basic',
+                activeCardId: 'call_for_family_' + evolvedCard.id,
+                discardCount: 2,
+                abilitiesUsed: [...prev.abilitiesUsed, evolvedCard.id, 'Call for Family'],
+                selectedCard: null,
+                message: `${evolutionCard.name} evolved! Call for Family: Select up to 2 Basic Pokémon from your deck for your Bench.`,
+            }));
+            return true;
+        }
+
         if (isHariyamaAbility) {
             setLogicState(prev => ({
                 ...prev,
@@ -1075,6 +1109,104 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 discardCount: 1,
                 message: 'Poké Pad: Select a Pokémon Tool or Energy from your deck.',
             }));
+            return true;
+        }
+
+        // ── Pitch Black trainers ──────────────────────────────────────────────
+
+        // Gwynn: discard up to 2 non-Rule-Box Pokémon from hand, draw 3 per discarded
+        if (card.name === 'Gwynn') {
+            const pokemonInHand = gameState.player.hand.filter(
+                c => c.id !== cardId && c.type === 'pokemon' && !c.subtypes?.some(s => ['ex', 'Mega', 'GX', 'V', 'VMAX', 'VSTAR'].includes(s))
+            );
+            const toDiscard = pokemonInHand.slice(0, 2);
+            const drawCount = toDiscard.length * 3;
+            setGameState(prev => {
+                if (!prev) return prev;
+                const idsToDiscard = new Set(toDiscard.map(c => c.id));
+                const newHand = prev.player.hand.filter(c => c.id !== cardId && !idsToDiscard.has(c.id));
+                const drawn = prev.player.deck.slice(0, drawCount);
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: [...newHand, ...drawn],
+                        deck: prev.player.deck.slice(drawCount),
+                        discardPile: [...prev.player.discardPile, card, ...toDiscard],
+                    },
+                    message: `Gwynn: Discarded ${toDiscard.length} Pokémon and drew ${drawCount} cards!`,
+                };
+            });
+            setLogicState(prev => ({ ...prev, hasPlayedSupporter: true, hasTakenAction: true, message: `Gwynn: drew ${drawCount} cards!` }));
+            return true;
+        }
+
+        // Dark Bell: Confuse both Active Pokémon except Darkness types
+        if (card.name === 'Dark Bell') {
+            setGameState(prev => {
+                if (!prev) return prev;
+                const playerNotDark = prev.player.activePokemon?.energyType !== 'darkness';
+                const oppNotDark = prev.opponent.activePokemon?.energyType !== 'darkness';
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                        activePokemon: (prev.player.activePokemon && playerNotDark)
+                            ? { ...prev.player.activePokemon, statusCondition: 'confused' }
+                            : prev.player.activePokemon,
+                    },
+                    opponent: {
+                        ...prev.opponent,
+                        activePokemon: (prev.opponent.activePokemon && oppNotDark)
+                            ? { ...prev.opponent.activePokemon, statusCondition: 'confused' }
+                            : prev.opponent.activePokemon,
+                    },
+                    message: 'Dark Bell: Both Active Pokémon (non-Darkness) are now Confused!',
+                };
+            });
+            setLogicState(prev => ({ ...prev, hasTakenAction: true, message: 'Dark Bell: both Active Pokémon Confused!' }));
+            return true;
+        }
+
+        // Misty's Spirit: attach up to 4 Basic Water Energy from deck to 1 Pokémon, then end turn
+        if (card.name === "Misty's Spirit") {
+            const waterInDeck = gameState.player.deck.filter(c => c.type === 'energy' && c.energyType === 'water');
+            const toAttach = waterInDeck.slice(0, 4);
+            if (toAttach.length === 0) {
+                setLogicState(prev => ({ ...prev, message: "Misty's Spirit: No Basic Water Energy in deck!" }));
+                return false;
+            }
+            const allMyPokemon = [gameState.player.activePokemon, ...gameState.player.bench].filter(Boolean);
+            if (allMyPokemon.length === 0) return false;
+            const target = allMyPokemon[0]!;
+            const isActive = gameState.player.activePokemon?.id === target.id;
+            setGameState(prev => {
+                if (!prev) return prev;
+                const attachIds = new Set(toAttach.map(c => c.id));
+                const updatedTarget = {
+                    ...target,
+                    attachedEnergy: [
+                        ...(target.attachedEnergy || []),
+                        ...toAttach.map(() => 'water' as const),
+                    ],
+                };
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        deck: prev.player.deck.filter(c => !attachIds.has(c.id)),
+                        discardPile: [...prev.player.discardPile, card],
+                        activePokemon: isActive ? updatedTarget : prev.player.activePokemon,
+                        bench: isActive ? prev.player.bench : prev.player.bench.map(c => c.id === target.id ? updatedTarget : c),
+                    },
+                    message: `Misty's Spirit: Attached ${toAttach.length} Water Energy to ${target.name}! Turn ends.`,
+                };
+            });
+            setLogicState(prev => ({ ...prev, hasPlayedSupporter: true, hasTakenAction: true, message: "Misty's Spirit used — turn ending." }));
+            setTimeout(() => endTurn(), 1000);
             return true;
         }
 
@@ -2407,12 +2539,69 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
+        // Doll Catch (Banette): search deck for any 1 card
+        if (ability.name === 'Doll Catch') {
+            if (gameState.player.deck.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'Doll Catch: Deck is empty!' }));
+                return false;
+            }
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck',
+                activeCardId: 'doll_catch_' + cardId,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: 'Doll Catch: Select any 1 card from your deck.',
+            }));
+            return true;
+        }
+
+        // Tapu Koko ex — Electric Terrain: attach Lightning Energy from hand to Lightning Pokémon
+        if (ability.name === 'Electric Terrain') {
+            const lightningInHand = gameState.player.hand.filter(c => c.type === 'energy' && c.energyType === 'lightning');
+            if (lightningInHand.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'Electric Terrain: No Basic Lightning Energy in hand!' }));
+                return false;
+            }
+            const lightningPokemon = [gameState.player.activePokemon, ...gameState.player.bench].filter(p => p?.energyType === 'lightning');
+            if (lightningPokemon.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'Electric Terrain: No Lightning Pokémon in play!' }));
+                return false;
+            }
+            const energyCard = lightningInHand[0];
+            const target = lightningPokemon[0]!;
+            const isActive = gameState.player.activePokemon?.id === target.id;
+            setGameState(prev => {
+                if (!prev) return prev;
+                const updated = { ...target, attachedEnergy: [...(target.attachedEnergy || []), 'lightning' as const] };
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== energyCard.id),
+                        activePokemon: isActive ? updated : prev.player.activePokemon,
+                        bench: isActive ? prev.player.bench : prev.player.bench.map(c => c.id === target.id ? updated : c),
+                    },
+                    message: `Electric Terrain: Attached Lightning Energy to ${target.name}!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: 'Electric Terrain used!',
+            }));
+            return true;
+        }
+
         // Passive abilities that are always active — no manual activation needed
         if (['Battle-Hardened', 'Order Shield', 'Transistor', 'Lands Force',
              'Stone Arms', 'Smokescreen Veil', 'Fallen Giant', 'Midnight Fluttering',
              'Wave Veil', 'Sparkling Scales', 'Brilliant Scales',
              'Intimidation', 'Fluffy', 'Psychic Barrier', 'Slippery Goo', 'Pernicious Poison',
-             'Ferocious Bellow'].includes(ability.name)) {
+             'Ferocious Bellow',
+             // PB passives
+             'Ghost Veil', 'Cursed Flame', 'Living Fossil', 'Ancient Bulwark', 'Spooky Binding',
+             'Rage Fist', 'Destructive Headbutt', 'Call for Family',
+        ].includes(ability.name)) {
             setLogicState(prev => ({
                 ...prev,
                 message: `${ability.name} is a passive Ability — it is always active and does not need to be used manually.`,
@@ -2699,6 +2888,54 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         // Acid Splash (Mega Dragalge ex): poison the opponent's Active Pokémon
         const acidSplashActivated = selectedAttack.name === 'Acid Splash';
 
+        // ── Pitch Black attack effects ────────────────────────────────────────
+
+        // Night Raid (Mega Darkrai ex): +110 if any benched Pokémon have damage counters
+        if (selectedAttack.name === 'Night Raid') {
+            const benchHasDamage = gameState.player.bench.some(p => (p.damageCounters || 0) > 0);
+            if (benchHasDamage) damage += 110;
+        }
+
+        // Abyss Eye (Mega Darkrai ex): instant KO if opponent's Active has any Special Condition
+        const abyssEyeActivated = selectedAttack.name === 'Abyss Eye' && !!defender.statusCondition;
+
+        // Thunder Fist (Mega Zeraora ex): 60× total energy attached to this Pokémon
+        if (selectedAttack.name === 'Thunder Fist') {
+            const energyCount = (attacker.attachedEnergy?.length || 0);
+            damage = 60 * energyCount;
+        }
+
+        // Zepto Turn (Mega Zeraora ex): switch this Pokémon with bench after attack
+        const zeptoTurnActivated = selectedAttack.name === 'Zepto Turn';
+
+        // Phantom Maze (Mega Chandelure ex): +50 per C in opponent's retreat cost
+        if (selectedAttack.name === 'Phantom Maze') {
+            damage += (defender.retreatCost || 0) * 50;
+        }
+
+        // Brain Crush (Malamar): only usable if opponent is Confused — block if not
+        if (selectedAttack.name === 'Brain Crush' && defender.statusCondition !== 'confused') {
+            setLogicState(prev => ({ ...prev, message: 'Brain Crush: opponent\'s Active must be Confused!' }));
+            return false;
+        }
+
+        // Maximum Drill (Mega Excadrill ex): +130 if 2+ extra Energy beyond the [M][M][M] base cost
+        if (selectedAttack.name === 'Maximum Drill') {
+            const extraEnergy = (attacker.attachedEnergy?.length || 0) - 3;
+            if (extraEnergy >= 2) damage += 130;
+        }
+
+        // Chi-Yu — Whirling Envy: +30 per damage counter on itself
+        if (selectedAttack.name === 'Whirling Envy') {
+            damage += (attacker.damageCounters || 0);
+        }
+
+        // Rage Fist (Annihilape): +30 per damage counter on itself
+        const hasRageFist = attacker.abilities?.some(a => a.name === 'Rage Fist');
+        if (hasRageFist) {
+            damage += (attacker.damageCounters || 0);
+        }
+
         // Transistor (Regieleki ex): Lightning Pokémon do +30 damage
         const hasTransistor = [gameState.player.activePokemon, ...gameState.player.bench].some(
             p => p?.abilities?.some(a => a.name === 'Transistor')
@@ -2878,6 +3115,10 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                         ? {
                             ...opponentActive,
                             statusCondition: acidSplashActivated ? 'poisoned' : opponentActive.statusCondition,
+                            // Abyss Eye: instant KO if status condition present
+                            damageCounters: abyssEyeActivated
+                                ? (opponentActive.hp || 999)
+                                : opponentActive.damageCounters,
                         }
                         : opponentActive,
                     bench: opponentBench,
@@ -2888,7 +3129,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                     ],
                 },
                 opponentItemLocked: itchyPollenActivated ? true : prev.opponentItemLocked,
-                message: `Used ${selectedAttack.name}! Dealt ${damage} damage.${knockout ? ' KNOCKOUT!' : ''}${acidSplashActivated ? ' Opponent is Poisoned!' : ''} ${effectMessages}`.trim(),
+                message: `Used ${selectedAttack.name}! Dealt ${damage} damage.${knockout ? ' KNOCKOUT!' : ''}${abyssEyeActivated ? ' ABYSS EYE KNOCKOUT!' : ''}${acidSplashActivated ? ' Opponent is Poisoned!' : ''} ${effectMessages}`.trim(),
             };
         });
 
@@ -2906,6 +3147,22 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                     discardCount: Math.min(3, fightingInDiscard.length),
                 }));
             }
+        }
+        // Zepto Turn (Mega Zeraora ex): switch attacker with a benched Pokémon after attacking
+        if (zeptoTurnActivated && gameState.player.bench.length > 0) {
+            setGameState(prev => {
+                if (!prev || prev.player.bench.length === 0) return prev;
+                const benched = prev.player.bench[0];
+                const newBench = [
+                    ...(prev.player.activePokemon ? [prev.player.activePokemon] : []),
+                    ...prev.player.bench.slice(1),
+                ];
+                return {
+                    ...prev,
+                    player: { ...prev.player, activePokemon: benched, bench: newBench },
+                    message: `Zepto Turn: Switched ${benched.name} to Active!`,
+                };
+            });
         }
         if (!skipAutoEndTurn) {
             setTimeout(() => endTurn(), 1500);

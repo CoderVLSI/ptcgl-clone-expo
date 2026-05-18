@@ -1770,15 +1770,860 @@ const CRI_PROXY_CARDS: Record<string, Partial<Card>> = {
 };
 
 // Merge all proxies
-const ALL_PROXY_CARDS: Record<string, Partial<Card>> = {
-    ...STANDARD_PROXY_CARDS,
-    ...EXTRA_PROXY_CARDS,
-    ...CRI_PROXY_CARDS,
+// ============================================
+// PITCH BLACK (ME5) PROXY CARDS
+// English release: 2026-07-17 | Japanese "Abyss Eye" (M5): 2026-05-22
+// Set code: me5 / pb
+// Darkness strategy + Ghost sub-theme + Fossil sub-theme
+// ============================================
+const PB_PROXY_CARDS: Record<string, Partial<Card>> = {
+
+    // ─── Grass ────────────────────────────────────────────────────────────────
+    'Tropius': {
+        name: 'Tropius',
+        type: 'pokemon',
+        hp: 100,
+        energyType: 'grass',
+        subtypes: ['Basic'],
+        retreatCost: 2,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [
+            { name: 'Razor Leaf', damage: 30, energyCost: ['grass'] },
+            { name: 'Fly', damage: 80, energyCost: ['grass', 'colorless', 'colorless'] },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/1.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/1_hires.png',
+    },
+    'Grubbin': {
+        name: 'Grubbin',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'grass',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [{ name: 'Bite', damage: 20, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/2.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/2_hires.png',
+    },
+    'Fomantis': {
+        name: 'Fomantis',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'grass',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [{ name: 'Synthesis', damage: 0, energyCost: ['grass'], description: 'Attach a Basic Grass Energy card from your discard pile to this Pokémon.' }],
+        imageUrl: 'https://images.pokemontcg.io/me5/3.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/3_hires.png',
+    },
+    'Lurantis ex': {
+        name: 'Lurantis ex',
+        type: 'pokemon',
+        hp: 180,
+        energyType: 'grass',
+        subtypes: ['Basic', 'ex'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [
+            { name: 'Lively Cutter', damage: 60, energyCost: ['grass'], description: 'If you healed any damage from any of your Pokémon this turn, this attack does 200 more damage.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/4.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/4_hires.png',
+    },
+    'Poltchageist': {
+        name: 'Poltchageist',
+        type: 'pokemon',
+        hp: 30,
+        energyType: 'grass',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        abilities: [{
+            name: 'Ghost Veil',
+            type: 'Ability',
+            text: 'This Pokémon is not affected by any effects from your opponent\'s Pokémon\'s attacks.',
+        }],
+        attacks: [{ name: 'Matcha Spray', damage: 10, energyCost: ['grass'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/5.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/5_hires.png',
+    },
+    'Sinistcha': {
+        name: 'Sinistcha',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'grass',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Poltchageist',
+        retreatCost: 1,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        abilities: [{
+            name: 'Ghost Veil',
+            type: 'Ability',
+            text: 'This Pokémon is not affected by any effects from your opponent\'s Pokémon\'s attacks.',
+        }],
+        attacks: [{
+            name: 'Matcha Spin',
+            damage: 0,
+            energyCost: ['grass'],
+            description: 'If you have 6 Pokémon with Ghost Veil in your discard pile, put 4 damage counters on each of your opponent\'s Pokémon.',
+        }],
+        imageUrl: 'https://images.pokemontcg.io/me5/6.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/6_hires.png',
+    },
+
+    // ─── Fire ─────────────────────────────────────────────────────────────────
+    'Heatran': {
+        name: 'Heatran',
+        type: 'pokemon',
+        hp: 130,
+        energyType: 'fire',
+        subtypes: ['Basic'],
+        retreatCost: 3,
+        weaknesses: [{ type: 'water', value: '×2' }],
+        attacks: [
+            { name: 'Heat Blast', damage: 30, energyCost: ['fire'] },
+            { name: 'Lava Plume', damage: 100, energyCost: ['fire', 'fire', 'colorless'], description: 'This attack also does 30 damage to each of your Benched Pokémon.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/7.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/7_hires.png',
+    },
+    'Sizzlipede': {
+        name: 'Sizzlipede',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'fire',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'water', value: '×2' }],
+        attacks: [{ name: 'Ember', damage: 20, energyCost: ['fire'], description: 'Discard an Energy from this Pokémon.' }],
+        imageUrl: 'https://images.pokemontcg.io/me5/8.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/8_hires.png',
+    },
+    'Centiskorch': {
+        name: 'Centiskorch',
+        type: 'pokemon',
+        hp: 120,
+        energyType: 'fire',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Sizzlipede',
+        retreatCost: 2,
+        weaknesses: [{ type: 'water', value: '×2' }],
+        attacks: [
+            { name: 'Scorching Sands', damage: 60, energyCost: ['fire', 'colorless'] },
+            { name: 'Burning Coil', damage: 140, energyCost: ['fire', 'fire', 'colorless'], description: 'Your opponent\'s Active Pokémon is now Burned.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/9.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/9_hires.png',
+    },
+    'Charcadet': {
+        name: 'Charcadet',
+        type: 'pokemon',
+        hp: 50,
+        energyType: 'fire',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'water', value: '×2' }],
+        attacks: [{ name: 'Ember', damage: 10, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/10.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/10_hires.png',
+    },
+    'Armarouge': {
+        name: 'Armarouge',
+        type: 'pokemon',
+        hp: 130,
+        energyType: 'fire',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Charcadet',
+        retreatCost: 2,
+        weaknesses: [{ type: 'water', value: '×2' }],
+        abilities: [{
+            name: 'Armor Canon',
+            type: 'Ability',
+            text: 'Once during your turn, you may discard a Fire Energy from this Pokémon. If you do, prevent all damage done to this Pokémon by attacks during your opponent\'s next turn.',
+        }],
+        attacks: [{ name: 'Psyshock', damage: 90, energyCost: ['fire', 'psychic', 'colorless'], description: 'Your opponent\'s Active Pokémon is now Paralyzed.' }],
+        imageUrl: 'https://images.pokemontcg.io/me5/11.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/11_hires.png',
+    },
+
+    // ─── Water ────────────────────────────────────────────────────────────────
+    'Goldeen': {
+        name: 'Goldeen',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'water',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        attacks: [{ name: 'Horn Attack', damage: 20, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/12.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/12_hires.png',
+    },
+    'Seaking': {
+        name: 'Seaking',
+        type: 'pokemon',
+        hp: 100,
+        energyType: 'water',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Goldeen',
+        retreatCost: 1,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        attacks: [
+            { name: 'Waterfall', damage: 60, energyCost: ['water', 'colorless'] },
+            { name: 'Megahorn', damage: 120, energyCost: ['water', 'water', 'colorless'] },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/13.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/13_hires.png',
+    },
+    'Wailmer': {
+        name: 'Wailmer',
+        type: 'pokemon',
+        hp: 100,
+        energyType: 'water',
+        subtypes: ['Basic'],
+        retreatCost: 3,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        attacks: [{ name: 'Splash', damage: 0, energyCost: ['water'], description: 'Does nothing.' }],
+        imageUrl: 'https://images.pokemontcg.io/me5/14.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/14_hires.png',
+    },
+    'Wailord ex': {
+        name: 'Wailord ex',
+        type: 'pokemon',
+        hp: 380,
+        energyType: 'water',
+        subtypes: ['Basic', 'ex'],
+        retreatCost: 4,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        attacks: [
+            { name: 'Giant Wave', damage: 100, energyCost: ['water', 'colorless', 'colorless'], description: 'This attack also does 30 damage to each of your opponent\'s Benched Pokémon.' },
+            { name: 'Tsunami', damage: 200, energyCost: ['water', 'water', 'water', 'colorless'], description: 'This attack also does 30 damage to each of your Benched Pokémon.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/15.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/15_hires.png',
+    },
+    'Relicanth': {
+        name: 'Relicanth',
+        type: 'pokemon',
+        hp: 90,
+        energyType: 'water',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        abilities: [{
+            name: 'Living Fossil',
+            type: 'Ability',
+            text: 'Prevent all damage done to this Pokémon by attacks from Pokémon ex and Pokémon with a Rule Box.',
+        }],
+        attacks: [{ name: 'Ancient Power', damage: 70, energyCost: ['water', 'colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/16.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/16_hires.png',
+    },
+    'Finizen': {
+        name: 'Finizen',
+        type: 'pokemon',
+        hp: 70,
+        energyType: 'water',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        attacks: [{ name: 'Aqua Jet', damage: 20, energyCost: ['water'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/19.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/19_hires.png',
+    },
+    'Palafin': {
+        name: 'Palafin',
+        type: 'pokemon',
+        hp: 120,
+        energyType: 'water',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Finizen',
+        retreatCost: 1,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        attacks: [
+            { name: 'Helping Hand', damage: 0, energyCost: ['colorless'], description: 'Heal 30 damage from each of your Pokémon.' },
+            { name: 'Jet Punch', damage: 80, energyCost: ['water', 'colorless'] },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/20.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/20_hires.png',
+    },
+
+    // ─── Lightning ────────────────────────────────────────────────────────────
+    'Zeraora': {
+        name: 'Zeraora',
+        type: 'pokemon',
+        hp: 110,
+        energyType: 'lightning',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        attacks: [
+            { name: 'Plasma Fists', damage: 80, energyCost: ['lightning', 'colorless'] },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/22.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/22_hires.png',
+    },
+    'Tapu Koko ex': {
+        name: 'Tapu Koko ex',
+        type: 'pokemon',
+        hp: 210,
+        energyType: 'lightning',
+        subtypes: ['Basic', 'ex'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        abilities: [{
+            name: 'Electric Terrain',
+            type: 'Ability',
+            text: 'Once during your turn, you may attach a Basic Lightning Energy card from your hand to 1 of your Lightning Pokémon.',
+        }],
+        attacks: [
+            { name: 'Tapu Thunder', damage: 150, energyCost: ['lightning', 'lightning', 'colorless'], description: 'This attack also does 30 damage to each of your Benched Pokémon.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/25.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/25_hires.png',
+    },
+    'Mega Zeraora ex': {
+        name: 'Mega Zeraora ex',
+        type: 'pokemon',
+        hp: 270,
+        energyType: 'lightning',
+        subtypes: ['Basic', 'MEGA', 'ex'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        attacks: [
+            { name: 'Thunder Fist', damage: 60, energyCost: ['lightning', 'lightning'], description: 'This attack does 60 damage for each Energy attached to this Pokémon.' },
+            { name: 'Zepto Turn', damage: 150, energyCost: ['lightning', 'lightning', 'colorless'], description: 'Switch this Pokémon with 1 of your Benched Pokémon.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/26.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/26_hires.png',
+    },
+
+    // ─── Psychic ──────────────────────────────────────────────────────────────
+    'Slowpoke': {
+        name: 'Slowpoke',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 2,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        attacks: [{ name: 'Amnesia', damage: 0, energyCost: ['colorless'], description: 'Choose 1 of your opponent\'s Active Pokémon\'s attacks. That Pokémon can\'t use that attack during your opponent\'s next turn.' }],
+        imageUrl: 'https://images.pokemontcg.io/me5/27.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/27_hires.png',
+    },
+    'Slowbro': {
+        name: 'Slowbro',
+        type: 'pokemon',
+        hp: 120,
+        energyType: 'psychic',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Slowpoke',
+        retreatCost: 2,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        abilities: [{
+            name: 'Dopey',
+            type: 'Ability',
+            text: 'Once during your turn, you may heal 30 damage from this Pokémon.',
+        }],
+        attacks: [{ name: 'Psychic', damage: 80, energyCost: ['psychic', 'colorless'], description: 'This attack does 20 more damage for each Energy attached to your opponent\'s Active Pokémon.' }],
+        imageUrl: 'https://images.pokemontcg.io/me5/28.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/28_hires.png',
+    },
+    'Jynx': {
+        name: 'Jynx',
+        type: 'pokemon',
+        hp: 70,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        attacks: [
+            { name: 'Lovely Kiss', damage: 0, energyCost: ['psychic'], description: 'Your opponent\'s Active Pokémon is now Asleep.' },
+            { name: 'Blizzard', damage: 60, energyCost: ['psychic', 'colorless', 'colorless'], description: 'This attack also does 10 damage to each Benched Pokémon (both yours and your opponent\'s).' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/29.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/29_hires.png',
+    },
+    'Shuppet': {
+        name: 'Shuppet',
+        type: 'pokemon',
+        hp: 50,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        abilities: [{
+            name: 'Ghost Veil',
+            type: 'Ability',
+            text: 'This Pokémon is not affected by any effects from your opponent\'s Pokémon\'s attacks.',
+        }],
+        attacks: [{ name: 'Night Shade', damage: 10, energyCost: ['psychic'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/30.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/30_hires.png',
+    },
+    'Banette': {
+        name: 'Banette',
+        type: 'pokemon',
+        hp: 80,
+        energyType: 'psychic',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Shuppet',
+        retreatCost: 1,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        abilities: [
+            {
+                name: 'Ghost Veil',
+                type: 'Ability',
+                text: 'This Pokémon is not affected by any effects from your opponent\'s Pokémon\'s attacks.',
+            },
+            {
+                name: 'Doll Catch',
+                type: 'Ability',
+                text: 'Once during your turn, you may search your deck for any 1 card, reveal it, and put it into your hand. Then, shuffle your deck.',
+            },
+        ],
+        attacks: [{ name: 'Shadow Ball', damage: 80, energyCost: ['psychic', 'psychic'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/31.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/31_hires.png',
+    },
+    'Spiritomb': {
+        name: 'Spiritomb',
+        type: 'pokemon',
+        hp: 70,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        abilities: [{
+            name: 'Spooky Binding',
+            type: 'Ability',
+            text: 'As long as this Pokémon is in the Active Spot, your opponent\'s Pokémon can\'t retreat.',
+        }],
+        attacks: [{ name: 'Ominous Wind', damage: 40, energyCost: ['psychic', 'colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/32.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/32_hires.png',
+    },
+    'Marshadow': {
+        name: 'Marshadow',
+        type: 'pokemon',
+        hp: 70,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        attacks: [
+            { name: 'Copycat Strike', damage: 0, energyCost: ['psychic'], description: 'Use the same attack as your opponent\'s Active Pokémon. (You still need the required Energy to use that attack.)' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/33.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/33_hires.png',
+    },
+    'Sinistea': {
+        name: 'Sinistea',
+        type: 'pokemon',
+        hp: 40,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        attacks: [{ name: 'Astonish', damage: 10, energyCost: ['psychic'], description: 'Your opponent\'s Active Pokémon is now Confused.' }],
+        imageUrl: 'https://images.pokemontcg.io/me5/34.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/34_hires.png',
+    },
+    'Polteageist': {
+        name: 'Polteageist',
+        type: 'pokemon',
+        hp: 70,
+        energyType: 'psychic',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Sinistea',
+        retreatCost: 1,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        attacks: [
+            { name: 'Strange Steam', damage: 60, energyCost: ['psychic', 'colorless'], description: 'Your opponent\'s Active Pokémon is now Confused.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/35.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/35_hires.png',
+    },
+    'Litwick': {
+        name: 'Litwick',
+        type: 'pokemon',
+        hp: 40,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        attacks: [{ name: 'Astonish', damage: 10, energyCost: ['psychic'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/37.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/37_hires.png',
+    },
+    'Lampent': {
+        name: 'Lampent',
+        type: 'pokemon',
+        hp: 80,
+        energyType: 'psychic',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Litwick',
+        retreatCost: 2,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        attacks: [{ name: 'Hex', damage: 50, energyCost: ['psychic', 'colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/38.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/38_hires.png',
+    },
+    'Mega Chandelure ex': {
+        name: 'Mega Chandelure ex',
+        type: 'pokemon',
+        hp: 350,
+        energyType: 'psychic',
+        subtypes: ['Stage 2', 'MEGA', 'ex'],
+        evolvesFrom: 'Lampent',
+        retreatCost: 2,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        abilities: [{
+            name: 'Cursed Flame',
+            type: 'Ability',
+            text: 'As long as this Pokémon is in the Active Spot, your opponent\'s Pokémon\'s Retreat Costs are increased by [C][C].',
+        }],
+        attacks: [{
+            name: 'Phantom Maze',
+            damage: 130,
+            energyCost: ['psychic', 'psychic', 'colorless'],
+            description: 'This attack does 50 more damage for each [C] in your opponent\'s Active Pokémon\'s Retreat Cost.',
+        }],
+        imageUrl: 'https://images.pokemontcg.io/me5/36.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/36_hires.png',
+    },
+
+    // ─── Darkness ─────────────────────────────────────────────────────────────
+    'Inkay': {
+        name: 'Inkay',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'darkness',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        attacks: [{ name: 'Procurement', damage: 0, energyCost: ['darkness'], description: 'Search your deck for 1 Item card, reveal it, and put it into your hand. Then, shuffle your deck.' }],
+        imageUrl: 'https://images.pokemontcg.io/me5/40.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/40_hires.png',
+    },
+    'Malamar': {
+        name: 'Malamar',
+        type: 'pokemon',
+        hp: 120,
+        energyType: 'darkness',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Inkay',
+        retreatCost: 2,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        attacks: [
+            { name: 'Perplex', damage: 0, energyCost: ['darkness'], description: 'Your opponent\'s Active Pokémon is now Confused.' },
+            { name: 'Brain Crush', damage: 130, energyCost: ['darkness', 'darkness'], description: 'This attack can only be used if your opponent\'s Active Pokémon is Confused.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/41.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/41_hires.png',
+    },
+    'Zarude': {
+        name: 'Zarude',
+        type: 'pokemon',
+        hp: 130,
+        energyType: 'darkness',
+        subtypes: ['Basic'],
+        retreatCost: 2,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        attacks: [
+            { name: 'Overhead Throw', damage: 30, energyCost: ['darkness'], description: 'This attack also does 30 damage to 1 of your Benched Pokémon.' },
+            { name: 'Shadow Whip', damage: 170, energyCost: ['darkness', 'darkness', 'darkness'] },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/42.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/42_hires.png',
+    },
+    'Chi-Yu': {
+        name: 'Chi-Yu',
+        type: 'pokemon',
+        hp: 80,
+        energyType: 'darkness',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        attacks: [
+            { name: 'Whirling Envy', damage: 30, energyCost: ['darkness'], description: 'This attack does 30 more damage for each damage counter on this Pokémon.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/43.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/43_hires.png',
+    },
+    'Mega Darkrai ex': {
+        name: 'Mega Darkrai ex',
+        type: 'pokemon',
+        hp: 280,
+        energyType: 'darkness',
+        subtypes: ['Basic', 'MEGA', 'ex'],
+        retreatCost: 2,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        attacks: [
+            { name: 'Night Raid', damage: 110, energyCost: ['darkness', 'darkness'], description: 'If any of your Benched Pokémon have any damage counters on them, this attack does 110 more damage.' },
+            { name: 'Abyss Eye', damage: 0, energyCost: ['darkness', 'darkness', 'darkness'], description: 'If your opponent\'s Active Pokémon is affected by any Special Condition, it is Knocked Out.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/46.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/46_hires.png',
+    },
+    'Morpeko ex': {
+        name: 'Morpeko ex',
+        type: 'pokemon',
+        hp: 190,
+        energyType: 'darkness',
+        subtypes: ['Basic', 'ex'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        attacks: [
+            { name: 'Gnaw', damage: 30, energyCost: ['darkness'] },
+            { name: 'Hunger Switch', damage: 80, energyCost: ['darkness', 'colorless'], description: 'Switch this Pokémon with 1 of your Benched Pokémon.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/54.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/54_hires.png',
+    },
+    'Thievul': {
+        name: 'Thievul',
+        type: 'pokemon',
+        hp: 90,
+        energyType: 'darkness',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        abilities: [{
+            name: 'Stakeout',
+            type: 'Ability',
+            text: 'Once during your turn, you may look at the top 4 cards of your opponent\'s deck. Put 1 of them at the bottom of their deck and the rest back in any order.',
+        }],
+        attacks: [{ name: 'Night Slash', damage: 70, energyCost: ['darkness', 'colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/55.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/55_hires.png',
+    },
+
+    // ─── Fighting / Fossil ────────────────────────────────────────────────────
+    'Mankey': {
+        name: 'Mankey',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'fighting',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'psychic', value: '×2' }],
+        attacks: [{ name: 'Scratch', damage: 20, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/57.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/57_hires.png',
+    },
+    'Primeape': {
+        name: 'Primeape',
+        type: 'pokemon',
+        hp: 90,
+        energyType: 'fighting',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Mankey',
+        retreatCost: 1,
+        weaknesses: [{ type: 'psychic', value: '×2' }],
+        attacks: [{ name: 'Rage', damage: 40, energyCost: ['fighting'], description: 'This attack does 10 more damage for each damage counter on this Pokémon.' }],
+        imageUrl: 'https://images.pokemontcg.io/me5/58.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/58_hires.png',
+    },
+    'Annihilape': {
+        name: 'Annihilape',
+        type: 'pokemon',
+        hp: 150,
+        energyType: 'fighting',
+        subtypes: ['Stage 2'],
+        evolvesFrom: 'Primeape',
+        retreatCost: 2,
+        weaknesses: [{ type: 'psychic', value: '×2' }],
+        abilities: [{
+            name: 'Rage Fist',
+            type: 'Ability',
+            text: 'This Pokémon\'s attacks do 30 more damage for each damage counter on it (before applying Weakness and Resistance).',
+        }],
+        attacks: [{ name: 'Final Gambit', damage: 150, energyCost: ['fighting', 'fighting', 'colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/59.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/59_hires.png',
+    },
+    'Koraidon': {
+        name: 'Koraidon',
+        type: 'pokemon',
+        hp: 130,
+        energyType: 'fighting',
+        subtypes: ['Basic'],
+        retreatCost: 2,
+        weaknesses: [{ type: 'psychic', value: '×2' }],
+        abilities: [{
+            name: 'Ride of the Ancients',
+            type: 'Ability',
+            text: 'Once during your turn, you may discard 1 card from your hand. If you do, search your deck for a Basic Fighting Pokémon and put it onto your Bench. Then, shuffle your deck.',
+        }],
+        attacks: [{ name: 'Collision Course', damage: 120, energyCost: ['fighting', 'fighting'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/60.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/60_hires.png',
+    },
+    'Cranidos': {
+        name: 'Cranidos',
+        type: 'pokemon',
+        hp: 80,
+        energyType: 'fighting',
+        subtypes: ['Basic'],
+        retreatCost: 2,
+        weaknesses: [{ type: 'grass', value: '×2' }],
+        attacks: [{ name: 'Headbutt', damage: 30, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/61.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/61_hires.png',
+    },
+    'Rampardos ex': {
+        name: 'Rampardos ex',
+        type: 'pokemon',
+        hp: 240,
+        energyType: 'fighting',
+        subtypes: ['Stage 1', 'ex'],
+        evolvesFrom: 'Cranidos',
+        retreatCost: 3,
+        weaknesses: [{ type: 'grass', value: '×2' }],
+        abilities: [{
+            name: 'Destructive Headbutt',
+            type: 'Ability',
+            text: 'Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, you may discard an Energy from your opponent\'s Active Pokémon.',
+        }],
+        attacks: [{ name: 'Rampaging Hammer', damage: 150, energyCost: ['fighting', 'fighting', 'colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/62.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/62_hires.png',
+    },
+
+    // ─── Metal / Fossil ───────────────────────────────────────────────────────
+    'Drilbur': {
+        name: 'Drilbur',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'metal',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [{ name: 'Scratch', damage: 20, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/me5/63.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/63_hires.png',
+    },
+    'Mega Excadrill ex': {
+        name: 'Mega Excadrill ex',
+        type: 'pokemon',
+        hp: 340,
+        energyType: 'metal',
+        subtypes: ['Stage 1', 'MEGA', 'ex'],
+        evolvesFrom: 'Drilbur',
+        retreatCost: 4,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        resistances: [{ type: 'grass', value: '-30' }],
+        abilities: [{
+            name: 'Call for Family',
+            type: 'Ability',
+            text: 'Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, you may search your deck for up to 2 Basic Pokémon and put them onto your Bench. Then, shuffle your deck.',
+        }],
+        attacks: [
+            { name: 'Dig and Break', damage: 90, energyCost: ['metal', 'metal'], description: 'Discard the top 2 cards of your opponent\'s deck.' },
+            { name: 'Maximum Drill', damage: 200, energyCost: ['metal', 'metal', 'metal'], description: 'If this Pokémon has at least 2 extra Energy attached beyond this attack\'s cost, this attack does 130 more damage.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/me5/64.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/64_hires.png',
+    },
+    'Shieldon': {
+        name: 'Shieldon',
+        type: 'pokemon',
+        hp: 70,
+        energyType: 'metal',
+        subtypes: ['Basic'],
+        retreatCost: 2,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [{ name: 'Iron Defense', damage: 0, energyCost: ['metal'], description: 'During your opponent\'s next turn, this Pokémon takes 30 less damage from attacks.' }],
+        imageUrl: 'https://images.pokemontcg.io/me5/65.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/65_hires.png',
+    },
+    'Bastiodon': {
+        name: 'Bastiodon',
+        type: 'pokemon',
+        hp: 160,
+        energyType: 'metal',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Shieldon',
+        retreatCost: 3,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        abilities: [{
+            name: 'Ancient Bulwark',
+            type: 'Ability',
+            text: 'As long as this Pokémon is on your Bench, prevent all damage done to this Pokémon by attacks from Pokémon that have 2 or fewer Energy attached to them.',
+        }],
+        attacks: [{ name: 'Mirror Attack', damage: 10, energyCost: ['metal', 'colorless'], description: 'This attack does 30 more damage if your opponent\'s Active Pokémon is a Metal-type Pokémon.' }],
+        imageUrl: 'https://images.pokemontcg.io/me5/66.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/66_hires.png',
+    },
+
+    // ─── PB Trainers ──────────────────────────────────────────────────────────
+    'Gwynn': {
+        name: 'Gwynn',
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Discard up to 2 Pokémon from your hand (not Pokémon with a Rule Box). For each Pokémon you discarded in this way, draw 3 cards.',
+        imageUrl: 'https://images.pokemontcg.io/me5/68.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/68_hires.png',
+    },
+    'Misty\'s Spirit': {
+        name: 'Misty\'s Spirit',
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Search your deck for up to 4 Basic Water Energy cards and attach them to 1 of your Pokémon. Then, shuffle your deck. Your turn ends.',
+        imageUrl: 'https://images.pokemontcg.io/me5/73.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/73_hires.png',
+    },
+    'Dark Bell': {
+        name: 'Dark Bell',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Both Active Pokémon are now Confused. This effect doesn\'t apply to Darkness-type Pokémon.',
+        imageUrl: 'https://images.pokemontcg.io/me5/70.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/70_hires.png',
+    },
+    'Antique Skull Fossil': {
+        name: 'Antique Skull Fossil',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Play this card as if it were a 40-HP Basic Pokémon. At any time during your turn, you may evolve this card into Cranidos.',
+        imageUrl: 'https://images.pokemontcg.io/me5/71.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/71_hires.png',
+    },
+    'Antique Armor Fossil': {
+        name: 'Antique Armor Fossil',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Play this card as if it were a 40-HP Basic Pokémon. At any time during your turn, you may evolve this card into Shieldon.',
+        imageUrl: 'https://images.pokemontcg.io/me5/72.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/72_hires.png',
+    },
+    'Fossil Excavation Site': {
+        name: 'Fossil Excavation Site',
+        type: 'trainer',
+        subtypes: ['Stadium'],
+        flavorText: 'Once during each player\'s turn, that player may search their deck for an Antique Fossil Item card, reveal it, and put it into their hand. Then, shuffle their deck.',
+        imageUrl: 'https://images.pokemontcg.io/me5/79.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/79_hires.png',
+    },
+
+    // ─── PB Special Energy ────────────────────────────────────────────────────
+    'Shadow Energy': {
+        name: 'Shadow Energy',
+        type: 'energy',
+        energyType: 'darkness',
+        subtypes: ['Special Energy'],
+        flavorText: 'Provides [D] Energy. As long as this card is attached to a Darkness-type Pokémon on your Bench, prevent all damage done to that Pokémon by your opponent\'s attacks.',
+        imageUrl: 'https://images.pokemontcg.io/me5/80.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me5/80_hires.png',
+    },
 };
 
 /** Shared deck builder helper — fetches sets and creates an addCard function */
 async function buildDeckHelper() {
-    const [sv5, sv6, sv6pt5, sv7, sv8, sv8pt5, sv9, me1, me2, me2pt5, me3, cri] = await Promise.all([
+    const [sv5, sv6, sv6pt5, sv7, sv8, sv8pt5, sv9, me1, me2, me2pt5, me3, cri, me5] = await Promise.all([
         fetchSet('sv5').catch(() => []),
         fetchSet('sv6').catch(() => []),
         fetchSet('sv6pt5').catch(() => []),
@@ -1790,11 +2635,12 @@ async function buildDeckHelper() {
         fetchSet('me2').catch(() => []),
         fetchSet('me2pt5').catch(() => []),
         fetchSet('me3').catch(() => []),
-        fetchSet('cri').catch(() => []),  // Chaos Rising (releases 2026-05-22)
+        fetchSet('cri').catch(() => []),  // Chaos Rising (2026-05-22)
+        fetchSet('me5').catch(() => []),  // Pitch Black (2026-07-17)
     ]);
 
     const allCards = [
-        ...cri, ...me3, ...me2pt5, ...me2, ...me1,
+        ...me5, ...cri, ...me3, ...me2pt5, ...me2, ...me1,
         ...sv9, ...sv8pt5, ...sv8,
         ...sv7, ...sv6pt5, ...sv6, ...sv5,
     ].filter(isStandardLegal);
@@ -2051,6 +2897,128 @@ export async function createMegaGalladeExDeck(): Promise<Card[]> {
     return shuffle(deck);
 }
 
+// ============================================
+// MEGA DARKRAI EX DECK — Pitch Black (ME5)
+// Darkness control — 60 cards: 14 Pokémon / 34 Trainers / 12 Energy
+// ============================================
+export async function createMegaDarkraiExDeck(): Promise<Card[]> {
+    const { deck, addCard } = await buildDeckHelper();
+
+    // Pokémon (14)
+    addCard('Mega Darkrai ex', 3);       // me5 046 — Night Raid 110/220, Abyss Eye instant KO
+    addCard('Inkay', 4);                 // me5 040 — Procurement: search Item
+    addCard('Malamar', 3);               // me5 041 — Perplex + Brain Crush
+    addCard('Spiritomb', 2);             // me5 032 — Spooky Binding: opponent can't retreat
+    addCard('Thievul', 2);               // me5 055 — Stakeout: peek top 4 opponent deck
+
+    // Trainers — Supporters (10)
+    addCard("Professor's Research", 3);
+    addCard('Iono', 3);
+    addCard("Boss's Orders", 2);
+    addCard('Gwynn', 2);                 // me5 — discard Pokémon, draw 3×
+
+    // Trainers — Items (22)
+    addCard('Dark Bell', 4);             // me5 — Confuse both Active (non-Darkness)
+    addCard('Ultra Ball', 4);
+    addCard('Nest Ball', 3);
+    addCard('Night Stretcher', 3);
+    addCard('Super Rod', 2);
+    addCard('Switch', 2);
+    addCard('Counter Catcher', 2);
+    addCard('Buddy-Buddy Poffin', 2);
+
+    // Trainers — Stadiums (2)
+    addCard('Pokémon League Headquarters', 2);
+
+    // Energy (12)
+    addCard('Darkness Energy', 12);
+
+    console.log(`[2026 Standard] Mega Darkrai ex deck: ${deck.length} cards`);
+    return shuffle(deck);
+}
+
+// ============================================
+// MEGA CHANDELURE EX DECK — Pitch Black (ME5)
+// Psychic lock + spread — 60 cards: 16 Pokémon / 32 Trainers / 12 Energy
+// ============================================
+export async function createMegaChandelureExDeck(): Promise<Card[]> {
+    const { deck, addCard } = await buildDeckHelper();
+
+    // Pokémon (16)
+    addCard('Litwick', 4);              // me5 037 — pre-evo
+    addCard('Lampent', 3);              // me5 038 — Stage 1 bridge
+    addCard('Mega Chandelure ex', 3);   // me5 036 — Cursed Flame, Phantom Maze 130+
+    addCard('Shuppet', 3);              // me5 030 — Ghost Veil
+    addCard('Banette', 2);              // me5 031 — Ghost Veil + Doll Catch
+    addCard('Spiritomb', 1);            // me5 032 — Spooky Binding
+
+    // Trainers — Supporters (10)
+    addCard("Professor's Research", 3);
+    addCard('Iono', 3);
+    addCard("Boss's Orders", 2);
+    addCard('Jacq', 1);
+    addCard('Briar', 1);
+
+    // Trainers — Items (20)
+    addCard('Rare Candy', 4);           // Litwick → Mega Chandelure ex skip
+    addCard('Ultra Ball', 4);
+    addCard('Nest Ball', 3);
+    addCard('Night Stretcher', 3);
+    addCard('Super Rod', 2);
+    addCard('Switch', 2);
+    addCard('Buddy-Buddy Poffin', 2);
+
+    // Trainers — Stadiums (2)
+    addCard('Pokémon League Headquarters', 2);
+
+    // Energy (12)
+    addCard('Psychic Energy', 12);
+
+    console.log(`[2026 Standard] Mega Chandelure ex deck: ${deck.length} cards`);
+    return shuffle(deck);
+}
+
+// ============================================
+// MEGA EXCADRILL EX DECK — Pitch Black (ME5)
+// Metal drill — 60 cards: 14 Pokémon / 34 Trainers / 12 Energy
+// ============================================
+export async function createMegaExcadrillExDeck(): Promise<Card[]> {
+    const { deck, addCard } = await buildDeckHelper();
+
+    // Pokémon (14)
+    addCard('Drilbur', 4);              // me5 — pre-evo
+    addCard('Mega Excadrill ex', 3);    // me5 064 — Call for Family, Dig and Break, Maximum Drill
+    addCard('Cobalion ex', 3);          // cri 063 — Metal Road energy acceleration
+    addCard('Bastiodon', 2);            // me5 066 — Ancient Bulwark (bench protection)
+    addCard('Shieldon', 2);             // me5 065 — pre-evo for Bastiodon
+
+    // Trainers — Supporters (10)
+    addCard("Professor's Research", 3);
+    addCard('Iono', 3);
+    addCard("Boss's Orders", 2);
+    addCard('Philippe', 2);             // cri — attach 2 Metal Energy from discard
+
+    // Trainers — Items (22)
+    addCard('Ultra Ball', 4);
+    addCard('Nest Ball', 4);
+    addCard('Night Stretcher', 3);
+    addCard('Super Rod', 2);
+    addCard('Switch', 2);
+    addCard('Buddy-Buddy Poffin', 2);
+    addCard('Adversity Policy', 2);     // cri — draw 3 when hit by weakness (Fire)
+    addCard('Tool Scrapper', 1);        // cri — discard up to 2 opponent Tools
+    addCard('Magnetic M Energy', 2);    // cri — Metal + retreat 0
+
+    // Trainers — Stadiums (2)
+    addCard('Pokémon League Headquarters', 2);
+
+    // Energy (10)
+    addCard('Metal Energy', 10);
+
+    console.log(`[2026 Standard] Mega Excadrill ex deck: ${deck.length} cards`);
+    return shuffle(deck);
+}
+
 export function shuffleDeck<T>(deck: T[]): T[] {
     return shuffle(deck);
 }
@@ -2063,4 +3031,7 @@ export const standardDecks = {
     megaZygardeEx: createMegaZygardeExDeck,
     megaPyroarEx: createMegaPyroarExDeck,
     megaGalladeEx: createMegaGalladeExDeck,
+    megaDarkraiEx: createMegaDarkraiExDeck,
+    megaChandelureEx: createMegaChandelureExDeck,
+    megaExcadrillEx: createMegaExcadrillExDeck,
 };

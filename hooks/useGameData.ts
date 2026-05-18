@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, GameState, Player } from '../types/game';
-import { createMegaLucarioExDeck, createDragapultExDeck, createRagingBoltExDeck, createMegaGreninjaExDeck, createMegaZygardeExDeck, createMegaPyroarExDeck, createMegaGalladeExDeck } from '../data/standardDecks';
+import { createMegaLucarioExDeck, createDragapultExDeck, createRagingBoltExDeck, createMegaGreninjaExDeck, createMegaZygardeExDeck, createMegaPyroarExDeck, createMegaGalladeExDeck, createMegaDarkraiExDeck, createMegaChandelureExDeck, createMegaExcadrillExDeck } from '../data/standardDecks';
 
 export interface GameSetupData {
     playerDeck: Card[];
@@ -50,8 +50,8 @@ export function useGameData() {
             setError(null);
             setSetupPhase('loading');
 
-            // Load all 7 competitive decks in parallel
-            const [megaLucarioDeck, dragapultDeck, ragingBoltDeck, megaGreninajaDeck, megaZygardeDeck, megaPyroarDeck, megaGalladeDeck] = await Promise.all([
+            // Load all 10 competitive decks in parallel
+            const [megaLucarioDeck, dragapultDeck, ragingBoltDeck, megaGreninajaDeck, megaZygardeDeck, megaPyroarDeck, megaGalladeDeck, megaDarkraiDeck, megaChandelureDeck, megaExcadrillDeck] = await Promise.all([
                 createMegaLucarioExDeck(),
                 createDragapultExDeck(),
                 createRagingBoltExDeck(),
@@ -59,18 +59,24 @@ export function useGameData() {
                 createMegaZygardeExDeck(),
                 createMegaPyroarExDeck(),
                 createMegaGalladeExDeck(),
+                createMegaDarkraiExDeck(),
+                createMegaChandelureExDeck(),
+                createMegaExcadrillExDeck(),
             ]);
 
-            console.log(`Lucario: ${megaLucarioDeck.length} | Dragapult: ${dragapultDeck.length} | Raging Bolt: ${ragingBoltDeck.length} | Greninja: ${megaGreninajaDeck.length} | Zygarde: ${megaZygardeDeck.length} | Pyroar: ${megaPyroarDeck.length} | Gallade: ${megaGalladeDeck.length}`);
+            console.log(`Lucario: ${megaLucarioDeck.length} | Dragapult: ${dragapultDeck.length} | Bolt: ${ragingBoltDeck.length} | Greninja: ${megaGreninajaDeck.length} | Zygarde: ${megaZygardeDeck.length} | Pyroar: ${megaPyroarDeck.length} | Gallade: ${megaGalladeDeck.length} | Darkrai: ${megaDarkraiDeck.length} | Chandelure: ${megaChandelureDeck.length} | Excadrill: ${megaExcadrillDeck.length}`);
 
             const decks = [
-                { id: 'deck-lucario',   name: 'Mega Lucario ex',   cards: megaLucarioDeck,    type: 'fighting',   mainCard: 'Mega Lucario ex'  },
-                { id: 'deck-dragapult', name: 'Dragapult ex',       cards: dragapultDeck,      type: 'psychic',    mainCard: 'Dragapult ex'     },
-                { id: 'deck-bolt',      name: 'Raging Bolt ex',     cards: ragingBoltDeck,     type: 'lightning',  mainCard: 'Raging Bolt ex'   },
-                { id: 'deck-greninja',  name: 'Mega Greninja ex',   cards: megaGreninajaDeck,  type: 'water',      mainCard: 'Mega Greninja ex' },
-                { id: 'deck-zygarde',   name: 'Mega Zygarde ex',    cards: megaZygardeDeck,    type: 'fighting',   mainCard: 'Mega Zygarde ex'  },
-                { id: 'deck-pyroar',    name: 'Mega Pyroar ex',     cards: megaPyroarDeck,     type: 'fire',       mainCard: 'Mega Pyroar ex'   },
-                { id: 'deck-gallade',   name: 'Mega Gallade ex',    cards: megaGalladeDeck,    type: 'fighting',   mainCard: 'Mega Gallade ex'  },
+                { id: 'deck-lucario',    name: 'Mega Lucario ex',    cards: megaLucarioDeck,    type: 'fighting',  mainCard: 'Mega Lucario ex'    },
+                { id: 'deck-dragapult',  name: 'Dragapult ex',        cards: dragapultDeck,      type: 'psychic',   mainCard: 'Dragapult ex'       },
+                { id: 'deck-bolt',       name: 'Raging Bolt ex',      cards: ragingBoltDeck,     type: 'lightning', mainCard: 'Raging Bolt ex'     },
+                { id: 'deck-greninja',   name: 'Mega Greninja ex',    cards: megaGreninajaDeck,  type: 'water',     mainCard: 'Mega Greninja ex'   },
+                { id: 'deck-zygarde',    name: 'Mega Zygarde ex',     cards: megaZygardeDeck,    type: 'fighting',  mainCard: 'Mega Zygarde ex'    },
+                { id: 'deck-pyroar',     name: 'Mega Pyroar ex',      cards: megaPyroarDeck,     type: 'fire',      mainCard: 'Mega Pyroar ex'     },
+                { id: 'deck-gallade',    name: 'Mega Gallade ex',     cards: megaGalladeDeck,    type: 'fighting',  mainCard: 'Mega Gallade ex'    },
+                { id: 'deck-darkrai',    name: 'Mega Darkrai ex',     cards: megaDarkraiDeck,    type: 'darkness',  mainCard: 'Mega Darkrai ex'    },
+                { id: 'deck-chandelure', name: 'Mega Chandelure ex',  cards: megaChandelureDeck, type: 'psychic',   mainCard: 'Mega Chandelure ex' },
+                { id: 'deck-excadrill',  name: 'Mega Excadrill ex',   cards: megaExcadrillDeck,  type: 'metal',     mainCard: 'Mega Excadrill ex'  },
             ];
             setAvailableDecks(decks);
 
