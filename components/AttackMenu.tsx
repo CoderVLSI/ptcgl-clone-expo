@@ -4,6 +4,13 @@ import { Card, EnergyType, Attack } from '../types/game';
 import Colors from '../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 
+type OpponentActive = {
+    hp?: number;
+    damageCounters?: number;
+    weaknesses?: { type: string; value: string }[];
+    resistances?: { type: string; value: string }[];
+} | null;
+
 interface AttackMenuProps {
     visible: boolean;
     card: Card | null;
@@ -11,6 +18,7 @@ interface AttackMenuProps {
     onAttack: (attackIndex: number) => void;
     onUseAbility?: (abilityIndex: number) => void;
     abilitiesUsed?: string[];
+    opponentActive?: OpponentActive;
 }
 
 const EnergyIcon = ({ type }: { type: EnergyType }) => {
@@ -61,7 +69,49 @@ const checkEnergyProps = (cost: EnergyType[], attached: EnergyType[] = []): bool
     return availableEnergy.length >= remainingCost.length;
 };
 
-export const AttackMenu: React.FC<AttackMenuProps> = ({ visible, card, onClose, onAttack, onUseAbility, abilitiesUsed = [] }) => {
+const calculatePreviewDamage = (
+    attack: Attack,
+    card: Card,
+    opponent: OpponentActive
+): { base: number; final: number; modifier: string } => {
+    const base = attack.damage;
+
+    if (opponent) {
+        const nonColorlessCosts = attack.energyCost.filter((e) => e !== 'colorless');
+
+        // Check weakness
+        if (opponent.weaknesses) {
+            const hasWeakness = nonColorlessCosts.some((energyType) =>
+                opponent.weaknesses!.some((w) => w.type === energyType)
+            );
+            if (hasWeakness) {
+                return { base, final: base * 2, modifier: '⚡ Weakness ×2' };
+            }
+        }
+
+        // Check resistance
+        if (opponent.resistances) {
+            const hasResistance = nonColorlessCosts.some((energyType) =>
+                opponent.resistances!.some((r) => r.type === energyType)
+            );
+            if (hasResistance) {
+                return { base, final: Math.max(0, base - 30), modifier: '🛡 Resistance -30' };
+            }
+        }
+    }
+
+    return { base, final: base, modifier: '' };
+};
+
+export const AttackMenu: React.FC<AttackMenuProps> = ({
+    visible,
+    card,
+    onClose,
+    onAttack,
+    onUseAbility,
+    abilitiesUsed = [],
+    opponentActive,
+}) => {
     if (!card) return null;
 
     const hasAbilities = card.abilities && card.abilities.length > 0;
@@ -132,6 +182,11 @@ export const AttackMenu: React.FC<AttackMenuProps> = ({ visible, card, onClose, 
                                 <Text style={styles.sectionTitle}>Attacks</Text>
                                 {card.attacks!.map((attack, index) => {
                                     const canUse = checkEnergyProps(attack.energyCost, card.attachedEnergy);
+                                    const preview = opponentActive != null
+                                        ? calculatePreviewDamage(attack, card, opponentActive)
+                                        : null;
+                                    const isWeakness = preview?.modifier.includes('Weakness');
+                                    const isResistance = preview?.modifier.includes('Resistance');
 
                                     return (
                                         <TouchableOpacity
@@ -160,8 +215,22 @@ export const AttackMenu: React.FC<AttackMenuProps> = ({ visible, card, onClose, 
 
                                                 <View style={styles.damageContainer}>
                                                     <Text style={[styles.damageText, !canUse && styles.disabledText]}>
-                                                        {attack.damage > 0 ? attack.damage : '-'}
+                                                        {preview != null
+                                                            ? (preview.final > 0 ? preview.final : '-')
+                                                            : (attack.damage > 0 ? attack.damage : '-')}
                                                     </Text>
+                                                    {preview?.modifier ? (
+                                                        <Text
+                                                            style={[
+                                                                styles.modifierText,
+                                                                isWeakness
+                                                                    ? styles.modifierWeakness
+                                                                    : styles.modifierResistance,
+                                                            ]}
+                                                        >
+                                                            {preview.modifier}
+                                                        </Text>
+                                                    ) : null}
                                                 </View>
                                             </View>
 
@@ -299,6 +368,17 @@ const styles = StyleSheet.create({
         color: Colors.ui.white,
         fontSize: 24,
         fontWeight: '900',
+    },
+    modifierText: {
+        fontSize: 9,
+        textAlign: 'right',
+        marginTop: 2,
+    },
+    modifierWeakness: {
+        color: '#FFD700',
+    },
+    modifierResistance: {
+        color: '#87CEEB',
     },
     descriptionContainer: {
         borderTopWidth: 1,

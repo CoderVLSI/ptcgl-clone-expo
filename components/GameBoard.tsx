@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
+import { View, StyleSheet, SafeAreaView, StatusBar, Alert, Modal, Animated } from 'react-native';
 import { GameState, Card as CardType, EnergyType } from '../types/game';
 import Colors from '../constants/colors';
 import useGameLogic from '../hooks/useGameLogic';
@@ -27,12 +27,14 @@ import {
 } from './Animations';
 import { TouchableOpacity, Text } from 'react-native';
 import { playSound, preloadEssentialSounds, attackSoundForType, setMuted } from '../services/soundService';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface GameBoardProps {
     gameState?: GameState;
+    onReturnToLobby?: () => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameState }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameState, onReturnToLobby }) => {
     const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useGameDimensions();
 
     const {
@@ -93,6 +95,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const [isMegaEvolution, setIsMegaEvolution] = useState(false);
     const [evolutionName, setEvolutionName] = useState<string>('');
     const [soundMuted, setSoundMuted] = useState(false);
+
+    // Victory/Defeat modal
+    const [showGameOver, setShowGameOver] = useState(false);
+    const [isVictory, setIsVictory] = useState(false);
+    const gameOverOpacity = useRef(new Animated.Value(0)).current;
+
+    // Your Turn banner
+    const [showTurnBanner, setShowTurnBanner] = useState(false);
+    const turnBannerOpacity = useRef(new Animated.Value(0)).current;
 
     // Update game state when external state changes
     const updateGameStateRef = useRef(updateGameState);
@@ -196,6 +207,47 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         if (msg.includes('you lose') || msg.includes('lost the game')) playSound('lose');
 
     }, [gameState?.message, gameState?.player.activePokemon?.id]);
+
+    // Game over detection
+    useEffect(() => {
+        if (!gameState?.message) return;
+        const msg = gameState.message.toLowerCase();
+        if (msg.includes('you win') || msg.includes('won the game')) {
+            setIsVictory(true);
+            setShowGameOver(true);
+            gameOverOpacity.setValue(0);
+            Animated.timing(gameOverOpacity, {
+                toValue: 1,
+                duration: 600,
+                useNativeDriver: true,
+            }).start();
+        } else if (msg.includes('you lose') || msg.includes('lost the game')) {
+            setIsVictory(false);
+            setShowGameOver(true);
+            gameOverOpacity.setValue(0);
+            Animated.timing(gameOverOpacity, {
+                toValue: 1,
+                duration: 600,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [gameState?.message]);
+
+    // "Your Turn" banner
+    const prevPlayerRef = useRef<string | undefined>(undefined);
+    useEffect(() => {
+        if (!gameState?.currentPlayer) return;
+        if (gameState.currentPlayer === 'player' && prevPlayerRef.current === 'opponent') {
+            setShowTurnBanner(true);
+            turnBannerOpacity.setValue(0);
+            Animated.sequence([
+                Animated.timing(turnBannerOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+                Animated.delay(1000),
+                Animated.timing(turnBannerOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+            ]).start(() => setShowTurnBanner(false));
+        }
+        prevPlayerRef.current = gameState.currentPlayer;
+    }, [gameState?.currentPlayer]);
 
     // Energy attachment animation + sound
     useEffect(() => {
@@ -477,6 +529,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             <HeaderBar
                 opponentName={gameState.opponent.name}
                 turnNumber={gameState.turn}
+                onMenuPress={() => onReturnToLobby?.()}
             />
             {/* Mute toggle */}
             <TouchableOpacity
@@ -928,6 +981,77 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 x={SCREEN_WIDTH * 0.5}
                 y={SCREEN_HEIGHT * 0.5}
             />
+
+            {/* "Your Turn" Banner */}
+            {showTurnBanner && (
+                <Animated.View
+                    style={[styles.turnBannerContainer, { opacity: turnBannerOpacity }]}
+                    pointerEvents="none"
+                >
+                    <LinearGradient
+                        colors={['rgba(255,215,0,0.9)', 'rgba(255,140,0,0.9)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.turnBannerGradient}
+                    >
+                        <Text style={styles.turnBannerText}>⚔ YOUR TURN</Text>
+                    </LinearGradient>
+                </Animated.View>
+            )}
+
+            {/* Victory / Defeat Modal */}
+            <Modal
+                visible={showGameOver}
+                transparent
+                animationType="fade"
+                onRequestClose={() => {}}
+            >
+                <View style={styles.gameOverOverlay}>
+                    <Animated.View style={[styles.gameOverCard, { opacity: gameOverOpacity, borderColor: isVictory ? '#FFD700' : '#FF4444' }]}>
+                        <Text style={[styles.gameOverTitle, { color: isVictory ? '#FFD700' : '#FF4444' }]}>
+                            {isVictory ? '✨ VICTORY!' : '💔 DEFEAT'}
+                        </Text>
+                        <Text style={styles.gameOverSubtitle}>
+                            {isVictory ? 'You collected all 6 prize cards!' : 'Your Pokémon have fainted.'}
+                        </Text>
+
+                        <View style={styles.gameOverStats}>
+                            <View style={styles.gameOverStatItem}>
+                                <Text style={styles.gameOverStatLabel}>TURN</Text>
+                                <Text style={styles.gameOverStatValue}>{gameState.turn}</Text>
+                            </View>
+                            <View style={styles.gameOverStatDivider} />
+                            <View style={styles.gameOverStatItem}>
+                                <Text style={styles.gameOverStatLabel}>PRIZES TAKEN</Text>
+                                <Text style={styles.gameOverStatValue}>
+                                    {6 - (gameState.player.prizeCards?.length ?? 0)}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.gameOverButtons}>
+                            <TouchableOpacity
+                                style={[styles.gameOverButton, styles.gameOverButtonPrimary]}
+                                onPress={() => {
+                                    setShowGameOver(false);
+                                    onReturnToLobby?.();
+                                }}
+                            >
+                                <Text style={styles.gameOverButtonTextPrimary}>PLAY AGAIN</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.gameOverButton, styles.gameOverButtonSecondary]}
+                                onPress={() => {
+                                    setShowGameOver(false);
+                                    onReturnToLobby?.();
+                                }}
+                            >
+                                <Text style={styles.gameOverButtonTextSecondary}>REMATCH</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -1001,6 +1125,134 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 18,
         letterSpacing: 1,
+    },
+
+    // Your Turn Banner
+    turnBannerContainer: {
+        position: 'absolute',
+        top: '40%',
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 100,
+    },
+    turnBannerGradient: {
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 12,
+    },
+    turnBannerText: {
+        color: '#1A1A1A',
+        fontWeight: 'bold',
+        fontSize: 22,
+        letterSpacing: 3,
+        textAlign: 'center',
+    },
+
+    // Game Over Modal
+    gameOverOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.75)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+    },
+    gameOverCard: {
+        backgroundColor: '#1A1A2E',
+        borderRadius: 20,
+        borderWidth: 2,
+        paddingVertical: 36,
+        paddingHorizontal: 28,
+        width: '100%',
+        maxWidth: 360,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.6,
+        shadowRadius: 16,
+        elevation: 20,
+    },
+    gameOverTitle: {
+        fontSize: 48,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    gameOverSubtitle: {
+        color: '#CCCCCC',
+        fontSize: 15,
+        textAlign: 'center',
+        marginBottom: 28,
+    },
+    gameOverStats: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 32,
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        borderRadius: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        width: '100%',
+    },
+    gameOverStatItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    gameOverStatLabel: {
+        color: '#888888',
+        fontSize: 11,
+        fontWeight: '600',
+        letterSpacing: 1.5,
+        marginBottom: 4,
+    },
+    gameOverStatValue: {
+        color: '#FFFFFF',
+        fontSize: 28,
+        fontWeight: 'bold',
+    },
+    gameOverStatDivider: {
+        width: 1,
+        height: 40,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        marginHorizontal: 16,
+    },
+    gameOverButtons: {
+        flexDirection: 'row',
+        gap: 12,
+        width: '100%',
+    },
+    gameOverButton: {
+        flex: 1,
+        borderRadius: 12,
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    gameOverButtonPrimary: {
+        backgroundColor: '#FFD700',
+    },
+    gameOverButtonSecondary: {
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        borderColor: '#FFD700',
+    },
+    gameOverButtonTextPrimary: {
+        color: '#1A1A1A',
+        fontWeight: 'bold',
+        fontSize: 14,
+        letterSpacing: 1.5,
+    },
+    gameOverButtonTextSecondary: {
+        color: '#FFD700',
+        fontWeight: 'bold',
+        fontSize: 14,
+        letterSpacing: 1.5,
     },
 });
 

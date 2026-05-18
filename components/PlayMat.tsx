@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Card as CardType } from '../types/game';
 import Colors from '../constants/colors';
 import Card from './Card';
@@ -18,6 +18,12 @@ interface PlayMatProps {
     stadium?: CardType;
     stadiumOwner?: 'player' | 'opponent';
 }
+
+const getHpBarColor = (ratio: number): string => {
+    if (ratio > 0.5) return '#4CAF50';
+    if (ratio > 0.25) return '#FFC107';
+    return '#F44336';
+};
 
 export const PlayMat: React.FC<PlayMatProps> = ({
     opponentActive,
@@ -52,6 +58,30 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                 onCardPress(playerActive.id);
             }
         }
+    };
+
+    const renderHpBar = (card: CardType) => {
+        const hp = card.hp ?? 100;
+        const dmg = card.damageCounters ?? 0;
+        const remaining = Math.max(0, hp - dmg);
+        const ratio = remaining / hp;
+
+        return (
+            <>
+                <View style={styles.hpBarTrack}>
+                    <View
+                        style={[
+                            styles.hpBarFill,
+                            {
+                                width: `${ratio * 100}%`,
+                                backgroundColor: getHpBarColor(ratio),
+                            },
+                        ]}
+                    />
+                </View>
+                <Text style={styles.hpLabel}>{remaining}/{hp}</Text>
+            </>
+        );
     };
 
     return (
@@ -94,11 +124,14 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                 {/* Opponent Active (in front, closer to center) */}
                 <View style={styles.activeZone}>
                     {opponentActive ? (
-                        <Card
-                            card={opponentActive}
-                            isHighlighted={selectedCardId === opponentActive.id}
-                            onPress={() => onCardPress?.(opponentActive.id)}
-                        />
+                        <View style={{ alignItems: 'center' }}>
+                            <Card
+                                card={opponentActive}
+                                isHighlighted={selectedCardId === opponentActive.id}
+                                onPress={() => onCardPress?.(opponentActive.id)}
+                            />
+                            {renderHpBar(opponentActive)}
+                        </View>
                     ) : (
                         <View style={[styles.emptySlot, { width: emptySlotSize, height: emptySlotSize * 1.4 }]} />
                     )}
@@ -117,15 +150,18 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                 {/* Player Active (in front, closer to center) */}
                 <View style={styles.activeZone}>
                     {playerActive ? (
-                        <Card
-                            card={playerActive}
-                            isHighlighted={
-                                selectedCardId === playerActive.id ||
-                                playerActive.isActive ||
-                                highlightTargets
-                            }
-                            onPress={handlePlayerActivePress}
-                        />
+                        <View style={{ alignItems: 'center' }}>
+                            <Card
+                                card={playerActive}
+                                isHighlighted={
+                                    selectedCardId === playerActive.id ||
+                                    playerActive.isActive ||
+                                    highlightTargets
+                                }
+                                onPress={handlePlayerActivePress}
+                            />
+                            {renderHpBar(playerActive)}
+                        </View>
                     ) : (
                         <View style={[styles.emptySlot, { width: emptySlotSize, height: emptySlotSize * 1.4 }]} />
                     )}
@@ -253,6 +289,24 @@ const styles = StyleSheet.create({
         top: '50%',
         transform: [{ translateY: -35 }],
         zIndex: 15,
+    },
+    hpBarTrack: {
+        width: '100%',
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        marginTop: 3,
+        overflow: 'hidden',
+    },
+    hpBarFill: {
+        height: 6,
+        borderRadius: 3,
+    },
+    hpLabel: {
+        color: '#FFFFFF',
+        fontSize: 9,
+        textAlign: 'center',
+        marginTop: 2,
     },
 });
 
