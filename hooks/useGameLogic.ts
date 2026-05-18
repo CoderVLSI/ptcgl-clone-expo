@@ -358,6 +358,23 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         const trainersInDeck = gameState.player.deck.filter(c => c.type === 'trainer');
         const isJewelSeekerActive = hasJewelSeeker && hasTera && trainersInDeck.length > 0;
 
+        // Ferocious Bellow (Mega Pyroar ex): put 2 damage counters on each opponent's Pokémon on evolve
+        const hasFerociousBellow = evolvedCard.abilities?.some(a => a.name === 'Ferocious Bellow');
+        if (hasFerociousBellow) {
+            setGameState(prev => {
+                if (!prev) return prev;
+                const newActive = prev.opponent.activePokemon
+                    ? { ...prev.opponent.activePokemon, damageCounters: (prev.opponent.activePokemon.damageCounters || 0) + 20 }
+                    : prev.opponent.activePokemon;
+                const newBench = prev.opponent.bench.map(b => ({ ...b, damageCounters: (b.damageCounters || 0) + 20 }));
+                return {
+                    ...prev,
+                    opponent: { ...prev.opponent, activePokemon: newActive, bench: newBench },
+                    message: `${evolutionCard.name} evolved! Ferocious Bellow: 20 damage to all opponent Pokémon!`,
+                };
+            });
+        }
+
         if (isHariyamaAbility) {
             setLogicState(prev => ({
                 ...prev,
@@ -1667,7 +1684,15 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             }
 
             if (opponentActive?.statusCondition) {
-                const result = processStatusCondition(opponentActive, () => Math.random() < 0.5);
+                // Pernicious Poison (Mega Dragalge ex): 16 damage counters instead of 1 per turn
+                const hasPerniciousPoison = [prev.player.activePokemon, ...prev.player.bench].some(
+                    p => p?.abilities?.some(a => a.name === 'Pernicious Poison')
+                );
+                let opponentForStatus = opponentActive;
+                if (hasPerniciousPoison && opponentActive.statusCondition === 'poisoned') {
+                    opponentForStatus = { ...opponentActive, poisonCounters: 16 };
+                }
+                const result = processStatusCondition(opponentForStatus, () => Math.random() < 0.5);
                 opponentActive = result.pokemon;
                 if (result.message) statusMessages.push(result.message);
                 if (opponentActive && (opponentActive.damageCounters || 0) >= (opponentActive.hp || 1)) {
@@ -2070,13 +2095,13 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
-        // Mortal Shuriken (Mega Greninja ex): discard a Water Energy from hand, place 6 damage counters on any opponent's Pokémon
-        if (ability.name === 'Mortal Shuriken') {
+        // Sure-Hit Shuriken (Mega Greninja ex): discard a Water Energy from hand, place 6 damage counters on any opponent's Pokémon
+        if (ability.name === 'Sure-Hit Shuriken') {
             // Must be in the Active Spot
             if (gameState.player.activePokemon?.id !== cardId) {
                 setLogicState(prev => ({
                     ...prev,
-                    message: 'Mortal Shuriken: This Pokémon must be in the Active Spot!',
+                    message: 'Sure-Hit Shuriken: This Pokémon must be in the Active Spot!',
                 }));
                 return false;
             }
@@ -2087,7 +2112,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             if (waterInHand.length === 0) {
                 setLogicState(prev => ({
                     ...prev,
-                    message: 'Mortal Shuriken: You need a Basic Water Energy in your hand to discard!',
+                    message: 'Sure-Hit Shuriken: You need a Basic Water Energy in your hand to discard!',
                 }));
                 return false;
             }
@@ -2109,13 +2134,13 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                             damageCounters: (prev.opponent.activePokemon.damageCounters || 0) + 60,
                         },
                     },
-                    message: `Mortal Shuriken: Discarded Water Energy, placed 6 damage counters on ${prev.opponent.activePokemon.name}!`,
+                    message: `Sure-Hit Shuriken: Discarded Water Energy, placed 6 damage counters on ${prev.opponent.activePokemon.name}!`,
                 };
             });
             setLogicState(prev => ({
                 ...prev,
                 abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
-                message: 'Mortal Shuriken: 60 damage to opponent\'s Active!',
+                message: 'Sure-Hit Shuriken: 60 damage to opponent\'s Active!',
             }));
             return true;
         }
@@ -2303,10 +2328,91 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
+        // Metal Road (Cobalion ex): search deck for Basic Metal Energy and attach to a Metal Pokémon
+        if (ability.name === 'Metal Road') {
+            const metalInDeck = gameState.player.deck.filter(c => c.type === 'energy' && c.energyType === 'metal');
+            if (metalInDeck.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'Metal Road: No Basic Metal Energy in deck!' }));
+                return false;
+            }
+            const metalPokemon = [gameState.player.activePokemon, ...gameState.player.bench].filter(
+                p => p && p.energyType === 'metal'
+            );
+            if (metalPokemon.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'Metal Road: No Metal Pokémon in play!' }));
+                return false;
+            }
+            const energyCard = metalInDeck[0];
+            const target = metalPokemon[0]!;
+            const isActive = gameState.player.activePokemon?.id === target.id;
+            setGameState(prev => {
+                if (!prev) return prev;
+                const updatedTarget = {
+                    ...target,
+                    attachedEnergy: [...(target.attachedEnergy || []), 'metal' as const],
+                };
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        deck: prev.player.deck.filter(c => c.id !== energyCard.id),
+                        activePokemon: isActive ? updatedTarget : prev.player.activePokemon,
+                        bench: isActive ? prev.player.bench : prev.player.bench.map(c => c.id === target.id ? updatedTarget : c),
+                    },
+                    message: `Metal Road: Attached Metal Energy to ${target.name}!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: 'Metal Road: Attached Metal Energy from deck!',
+            }));
+            return true;
+        }
+
+        // Metal Collection (Metagross): attach Basic Metal Energy from discard to any Pokémon
+        if (ability.name === 'Metal Collection') {
+            const metalInDiscard = gameState.player.discardPile.filter(c => c.type === 'energy' && c.energyType === 'metal');
+            if (metalInDiscard.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'Metal Collection: No Basic Metal Energy in discard!' }));
+                return false;
+            }
+            const allPokemon = [gameState.player.activePokemon, ...gameState.player.bench].filter(Boolean);
+            if (allPokemon.length === 0) return false;
+            const energyCard = metalInDiscard[0];
+            const target = allPokemon[0]!;
+            const isActive = gameState.player.activePokemon?.id === target.id;
+            setGameState(prev => {
+                if (!prev) return prev;
+                const updatedTarget = {
+                    ...target,
+                    attachedEnergy: [...(target.attachedEnergy || []), 'metal' as const],
+                };
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        discardPile: prev.player.discardPile.filter(c => c.id !== energyCard.id),
+                        activePokemon: isActive ? updatedTarget : prev.player.activePokemon,
+                        bench: isActive ? prev.player.bench : prev.player.bench.map(c => c.id === target.id ? updatedTarget : c),
+                    },
+                    message: `Metal Collection: Attached Metal Energy from discard to ${target.name}!`,
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
+                message: 'Metal Collection: Attached Metal Energy from discard!',
+            }));
+            return true;
+        }
+
         // Passive abilities that are always active — no manual activation needed
         if (['Battle-Hardened', 'Order Shield', 'Transistor', 'Lands Force',
              'Stone Arms', 'Smokescreen Veil', 'Fallen Giant', 'Midnight Fluttering',
-             'Wave Veil', 'Sparkling Scales', 'Brilliant Scales'].includes(ability.name)) {
+             'Wave Veil', 'Sparkling Scales', 'Brilliant Scales',
+             'Intimidation', 'Fluffy', 'Psychic Barrier', 'Slippery Goo', 'Pernicious Poison',
+             'Ferocious Bellow'].includes(ability.name)) {
             setLogicState(prev => ({
                 ...prev,
                 message: `${ability.name} is a passive Ability — it is always active and does not need to be used manually.`,
@@ -2555,6 +2661,32 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             }
         }
 
+        // Rumbling Bees (Beedrill ex): ×number of Beedrill ex in play
+        if (selectedAttack.name === 'Rumbling Bees') {
+            const beedrillCount = [gameState.player.activePokemon, ...gameState.player.bench].filter(
+                p => p?.name === 'Beedrill ex'
+            ).length;
+            damage = (selectedAttack.damage || 110) * beedrillCount;
+        }
+
+        // Gale Cut (Mega Gallade ex): 200 if defender has any damage counters
+        if (selectedAttack.name === 'Gale Cut') {
+            if ((defender.damageCounters || 0) > 0) {
+                damage = 200;
+            }
+        }
+
+        // Horror Rondo (Gourgeist ex): 60× number of opponent's Pokémon in play
+        if (selectedAttack.name === 'Horror Rondo') {
+            const oppTotal = (gameState.opponent.activePokemon ? 1 : 0) + gameState.opponent.bench.length;
+            damage = 60 * oppTotal;
+        }
+
+        // Do the Wave (Cinccino ex): 30× number of benched Pokémon (player's)
+        if (selectedAttack.name === 'Do the Wave') {
+            damage = 30 * gameState.player.bench.length;
+        }
+
         // Burst Roar: discard entire hand, draw 6
         const burstRoarActivated = selectedAttack.name === 'Burst Roar';
 
@@ -2563,6 +2695,9 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
 
         // Aura Jab: after attack, trigger Fighting Energy discard distribution
         const auraJabActivated = selectedAttack.name === 'Aura Jab';
+
+        // Acid Splash (Mega Dragalge ex): poison the opponent's Active Pokémon
+        const acidSplashActivated = selectedAttack.name === 'Acid Splash';
 
         // Transistor (Regieleki ex): Lightning Pokémon do +30 damage
         const hasTransistor = [gameState.player.activePokemon, ...gameState.player.bench].some(
@@ -2739,7 +2874,12 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 },
                 opponent: {
                     ...prev.opponent,
-                    activePokemon: opponentActive,
+                    activePokemon: opponentActive
+                        ? {
+                            ...opponentActive,
+                            statusCondition: acidSplashActivated ? 'poisoned' : opponentActive.statusCondition,
+                        }
+                        : opponentActive,
                     bench: opponentBench,
                     discardPile: [
                         ...prev.opponent.discardPile,
@@ -2748,7 +2888,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                     ],
                 },
                 opponentItemLocked: itchyPollenActivated ? true : prev.opponentItemLocked,
-                message: `Used ${selectedAttack.name}! Dealt ${damage} damage.${knockout ? ' KNOCKOUT!' : ''} ${effectMessages}`.trim(),
+                message: `Used ${selectedAttack.name}! Dealt ${damage} damage.${knockout ? ' KNOCKOUT!' : ''}${acidSplashActivated ? ' Opponent is Poisoned!' : ''} ${effectMessages}`.trim(),
             };
         });
 

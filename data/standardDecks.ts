@@ -617,16 +617,22 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         weaknesses: [{ type: 'lightning', value: '×2' }],
         retreatCost: 1,
         abilities: [{
-            name: 'Mortal Shuriken',
+            name: 'Sure-Hit Shuriken',
             type: 'Ability',
             text: 'Once during your turn, if this Pokémon is in the Active Spot, you may discard a Basic Water Energy card from your hand in order to use this Ability. Place 6 damage counters on 1 of your opponent\'s Pokémon.',
         }],
         attacks: [
             {
+                name: 'Mortal Shuriken',
+                damage: 220,
+                energyCost: ['water', 'water', 'colorless'],
+                description: '',
+            },
+            {
                 name: 'Ninja Spinner',
                 damage: 120,
-                energyCost: ['water', 'water'],
-                description: 'You may put a Water Energy attached to this Pokémon into your hand and have this attack do 80 more damage.',
+                energyCost: ['water'],
+                description: 'You may put a Water Energy attached to this Pokémon into your hand. If you do, this attack does 80 more damage.',
             },
         ],
         localImageSource: MEGA_GRENINJA_EX_IMAGE,  // bundled scan; swap for cri/22.png after 2026-05-22
@@ -1168,10 +1174,612 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
     },
 };
 
+// ============================================
+// CHAOS RISING (CRI) PROXY CARDS
+// Set releases 2026-05-22. Proxy data based on revealed card scans and spoilers.
+// All card numbers reference the CRI set (e.g. cri/003.png).
+// ============================================
+const CRI_PROXY_CARDS: Record<string, Partial<Card>> = {
+
+    // ─── Grass ───────────────────────────────────────────────────────────────
+    'Weedle': {
+        name: 'Weedle',
+        type: 'pokemon',
+        hp: 50,
+        energyType: 'grass',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [{ name: 'String Shot', damage: 10, energyCost: ['colorless'], description: 'Flip a coin. If heads, your opponent\'s Active Pokémon is now Paralyzed.' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/1.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/1_hires.png',
+    },
+    'Kakuna': {
+        name: 'Kakuna',
+        type: 'pokemon',
+        hp: 80,
+        energyType: 'grass',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Weedle',
+        retreatCost: 3,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [{ name: 'Harden', damage: 0, energyCost: ['colorless'], description: 'During your opponent\'s next turn, any damage dealt to this Pokémon is reduced by 30 (after applying Weakness and Resistance).' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/2.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/2_hires.png',
+    },
+    'Beedrill ex': {
+        name: 'Beedrill ex',
+        type: 'pokemon',
+        hp: 310,
+        energyType: 'grass',
+        subtypes: ['Stage 2', 'ex'],
+        evolvesFrom: 'Kakuna',
+        retreatCost: 0,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [
+            { name: 'Twineedle', damage: 30, energyCost: ['grass'], description: 'Flip 2 coins. This attack does 30 damage for each heads.' },
+            { name: 'Rumbling Bees', damage: 110, energyCost: ['grass', 'grass'], description: 'This attack does 110 damage for each of your Beedrill ex in play.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/cri/3.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/3_hires.png',
+    },
+
+    // ─── Fire ─────────────────────────────────────────────────────────────────
+    'Litleo': {
+        name: 'Litleo',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'fire',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'water', value: '×2' }],
+        attacks: [{ name: 'Headbutt', damage: 20, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/cri/16.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/16_hires.png',
+    },
+    'Mega Pyroar ex': {
+        name: 'Mega Pyroar ex',
+        type: 'pokemon',
+        hp: 340,
+        energyType: 'fire',
+        subtypes: ['Stage 1', 'MEGA', 'ex'],
+        evolvesFrom: 'Litleo',
+        retreatCost: 2,
+        weaknesses: [{ type: 'water', value: '×2' }],
+        abilities: [{
+            name: 'Ferocious Bellow',
+            type: 'Ability',
+            text: 'When you play this Pokémon from your hand to evolve 1 of your Pokémon during your turn, you may put 2 damage counters on each of your opponent\'s Pokémon.',
+        }],
+        attacks: [
+            { name: 'Fiery Big Bang', damage: 290, energyCost: ['fire', 'fire', 'fire'], description: 'Discard 3 Fire Energy from this Pokémon.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/cri/15.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/15_hires.png',
+    },
+
+    // ─── Psychic / Fairy ──────────────────────────────────────────────────────
+    'Flabébé': {
+        name: 'Flabébé',
+        type: 'pokemon',
+        hp: 40,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'metal', value: '×2' }],
+        attacks: [{ name: 'Tackle', damage: 10, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/cri/36.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/36_hires.png',
+    },
+    'Floette': {
+        name: 'Floette',
+        type: 'pokemon',
+        hp: 70,
+        energyType: 'psychic',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Flabébé',
+        retreatCost: 1,
+        weaknesses: [{ type: 'metal', value: '×2' }],
+        attacks: [{ name: 'Petal Dance', damage: 30, energyCost: ['psychic'], description: 'Flip 3 coins. This attack does 30 damage for each heads. This Pokémon is now Confused.' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/37.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/37_hires.png',
+    },
+    'Mega Floette ex': {
+        name: 'Mega Floette ex',
+        type: 'pokemon',
+        hp: 250,
+        energyType: 'psychic',
+        subtypes: ['Stage 2', 'MEGA', 'ex'],
+        evolvesFrom: 'Floette',
+        retreatCost: 1,
+        weaknesses: [{ type: 'metal', value: '×2' }],
+        attacks: [
+            { name: 'Gentle Light', damage: 0, energyCost: ['psychic'], description: 'Heal 30 damage from each of your Pokémon.' },
+            { name: 'Eternity Bloom', damage: 200, energyCost: ['psychic', 'psychic', 'colorless'], description: '' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/cri/35.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/35_hires.png',
+    },
+    'Pumpkaboo': {
+        name: 'Pumpkaboo',
+        type: 'pokemon',
+        hp: 70,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        attacks: [{ name: 'Eerie Sound', damage: 10, energyCost: ['psychic'], description: 'Your opponent\'s Active Pokémon is now Confused.' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/42.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/42_hires.png',
+    },
+    'Gourgeist ex': {
+        name: 'Gourgeist ex',
+        type: 'pokemon',
+        hp: 220,
+        energyType: 'psychic',
+        subtypes: ['Stage 1', 'ex'],
+        evolvesFrom: 'Pumpkaboo',
+        retreatCost: 2,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        attacks: [
+            { name: 'Ghost Touch', damage: 30, energyCost: ['psychic'], description: 'Put 2 damage counters on 1 of your opponent\'s Benched Pokémon.' },
+            { name: 'Horror Rondo', damage: 60, energyCost: ['psychic', 'psychic'], description: 'This attack does 60 damage for each of your opponent\'s Pokémon in play.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/cri/41.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/41_hires.png',
+    },
+    'Espurr': {
+        name: 'Espurr',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        attacks: [{ name: 'Scratch', damage: 10, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/cri/43.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/43_hires.png',
+    },
+    'Meowstic': {
+        name: 'Meowstic',
+        type: 'pokemon',
+        hp: 90,
+        energyType: 'psychic',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Espurr',
+        retreatCost: 1,
+        weaknesses: [{ type: 'darkness', value: '×2' }],
+        abilities: [{
+            name: 'Psychic Barrier',
+            type: 'Ability',
+            text: 'Your Pokémon with Rule Boxes take 20 less damage from your opponent\'s attacks (after applying Weakness and Resistance).',
+        }],
+        attacks: [{ name: 'Psybeam', damage: 60, energyCost: ['psychic', 'colorless'], description: 'Your opponent\'s Active Pokémon is now Confused.' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/44.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/44_hires.png',
+    },
+
+    // ─── Fighting ─────────────────────────────────────────────────────────────
+    'Ralts': {
+        name: 'Ralts',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'metal', value: '×2' }],
+        attacks: [{ name: 'Confuse Ray', damage: 10, energyCost: ['psychic'], description: 'Your opponent\'s Active Pokémon is now Confused.' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/49.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/49_hires.png',
+    },
+    'Kirlia': {
+        name: 'Kirlia',
+        type: 'pokemon',
+        hp: 80,
+        energyType: 'psychic',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Ralts',
+        retreatCost: 1,
+        weaknesses: [{ type: 'metal', value: '×2' }],
+        attacks: [{ name: 'Magical Leaf', damage: 50, energyCost: ['psychic', 'colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/cri/50.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/50_hires.png',
+    },
+    'Mega Gallade ex': {
+        name: 'Mega Gallade ex',
+        type: 'pokemon',
+        hp: 350,
+        energyType: 'fighting',
+        subtypes: ['Stage 2', 'MEGA', 'ex'],
+        evolvesFrom: 'Kirlia',
+        retreatCost: 1,
+        weaknesses: [{ type: 'psychic', value: '×2' }],
+        attacks: [
+            {
+                name: 'Gale Cut',
+                damage: 50,
+                energyCost: ['fighting', 'colorless'],
+                description: 'If your opponent\'s Active Pokémon has any damage counters on it, this attack does 200 damage instead.',
+            },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/cri/48.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/48_hires.png',
+    },
+
+    // ─── Darkness ─────────────────────────────────────────────────────────────
+    'Sandile': {
+        name: 'Sandile',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'darkness',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'grass', value: '×2' }],
+        attacks: [{ name: 'Bite', damage: 20, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/cri/55.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/55_hires.png',
+    },
+    'Krokorok': {
+        name: 'Krokorok',
+        type: 'pokemon',
+        hp: 90,
+        energyType: 'darkness',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Sandile',
+        retreatCost: 1,
+        weaknesses: [{ type: 'grass', value: '×2' }],
+        attacks: [{ name: 'Sand Tomb', damage: 30, energyCost: ['darkness'], description: 'Your opponent\'s Active Pokémon is now Trapped (it can\'t retreat).' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/56.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/56_hires.png',
+    },
+    'Krookodile ex': {
+        name: 'Krookodile ex',
+        type: 'pokemon',
+        hp: 320,
+        energyType: 'darkness',
+        subtypes: ['Stage 2', 'ex'],
+        evolvesFrom: 'Krokorok',
+        retreatCost: 2,
+        weaknesses: [{ type: 'grass', value: '×2' }],
+        abilities: [{
+            name: 'Intimidation',
+            type: 'Ability',
+            text: 'As long as this Pokémon is in the Active Spot, your opponent\'s Pokémon\'s attacks do 30 less damage to your Pokémon (before applying Weakness and Resistance).',
+        }],
+        attacks: [
+            { name: 'Crunch', damage: 120, energyCost: ['darkness', 'colorless'], description: 'Discard an Energy from your opponent\'s Active Pokémon.' },
+            { name: 'Earthquake Jaw', damage: 260, energyCost: ['darkness', 'darkness', 'colorless'], description: 'This attack also does 30 damage to each of your Benched Pokémon.' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/cri/54.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/54_hires.png',
+    },
+
+    // ─── Metal ────────────────────────────────────────────────────────────────
+    'Beldum': {
+        name: 'Beldum',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'metal',
+        subtypes: ['Basic'],
+        retreatCost: 2,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [{ name: 'Take Down', damage: 30, energyCost: ['colorless'], description: 'This Pokémon does 10 damage to itself.' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/65.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/65_hires.png',
+    },
+    'Metang': {
+        name: 'Metang',
+        type: 'pokemon',
+        hp: 90,
+        energyType: 'metal',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Beldum',
+        retreatCost: 2,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        attacks: [{ name: 'Magnet Bomb', damage: 60, energyCost: ['metal', 'colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/cri/66.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/66_hires.png',
+    },
+    'Metagross': {
+        name: 'Metagross',
+        type: 'pokemon',
+        hp: 150,
+        energyType: 'metal',
+        subtypes: ['Stage 2'],
+        evolvesFrom: 'Metang',
+        retreatCost: 3,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        abilities: [{
+            name: 'Metal Collection',
+            type: 'Ability',
+            text: 'Once during your turn, you may attach a Basic Metal Energy card from your discard pile to 1 of your Pokémon.',
+        }],
+        attacks: [{ name: 'Giga Impact', damage: 200, energyCost: ['metal', 'metal', 'colorless'], description: 'This Pokémon can\'t attack during your next turn.' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/67.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/67_hires.png',
+    },
+    'Cobalion ex': {
+        name: 'Cobalion ex',
+        type: 'pokemon',
+        hp: 230,
+        energyType: 'metal',
+        subtypes: ['Basic', 'ex'],
+        retreatCost: 2,
+        weaknesses: [{ type: 'fire', value: '×2' }],
+        abilities: [{
+            name: 'Metal Road',
+            type: 'Ability',
+            text: 'Once during your turn, you may search your deck for a Basic Metal Energy card and attach it to 1 of your Metal Pokémon. Then, shuffle your deck.',
+        }],
+        attacks: [
+            { name: 'Sacred Sword', damage: 200, energyCost: ['metal', 'metal', 'colorless'], description: '' },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/cri/63.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/63_hires.png',
+    },
+
+    // ─── Dragon ───────────────────────────────────────────────────────────────
+    'Skrelp': {
+        name: 'Skrelp',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        attacks: [{ name: 'Acid', damage: 10, energyCost: ['psychic'], description: 'The Defending Pokémon\'s Resistance is now 0.' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/69.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/69_hires.png',
+    },
+    'Mega Dragalge ex': {
+        name: 'Mega Dragalge ex',
+        type: 'pokemon',
+        hp: 290,
+        energyType: 'psychic',
+        subtypes: ['Stage 1', 'MEGA', 'ex'],
+        evolvesFrom: 'Skrelp',
+        retreatCost: 2,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        abilities: [{
+            name: 'Pernicious Poison',
+            type: 'Ability',
+            text: 'Your opponent\'s Poisoned Pokémon now get 16 damage counters instead of 1 between turns.',
+        }],
+        attacks: [
+            {
+                name: 'Acid Splash',
+                damage: 150,
+                energyCost: ['psychic', 'psychic', 'colorless'],
+                description: 'Your opponent\'s Active Pokémon is now Poisoned.',
+            },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/cri/64.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/64_hires.png',
+    },
+    'Goomy': {
+        name: 'Goomy',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'psychic',
+        subtypes: ['Basic'],
+        retreatCost: 2,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        attacks: [{ name: 'Ram', damage: 10, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/cri/70.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/70_hires.png',
+    },
+    'Sliggoo': {
+        name: 'Sliggoo',
+        type: 'pokemon',
+        hp: 90,
+        energyType: 'psychic',
+        subtypes: ['Stage 1'],
+        evolvesFrom: 'Goomy',
+        retreatCost: 2,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        attacks: [{ name: 'Acid Spray', damage: 40, energyCost: ['psychic', 'colorless'], description: 'Discard an Energy from your opponent\'s Active Pokémon.' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/71.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/71_hires.png',
+    },
+    'Goodra': {
+        name: 'Goodra',
+        type: 'pokemon',
+        hp: 150,
+        energyType: 'psychic',
+        subtypes: ['Stage 2'],
+        evolvesFrom: 'Sliggoo',
+        retreatCost: 3,
+        weaknesses: [{ type: 'lightning', value: '×2' }],
+        abilities: [{
+            name: 'Slippery Goo',
+            type: 'Ability',
+            text: 'Attacks used against this Pokémon do 30 less damage (before applying Weakness and Resistance).',
+        }],
+        attacks: [{ name: 'Dragon Pulse', damage: 130, energyCost: ['psychic', 'psychic', 'colorless'], description: 'Discard the top 3 cards of your deck.' }],
+        imageUrl: 'https://images.pokemontcg.io/cri/72.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/72_hires.png',
+    },
+
+    // ─── Colorless ────────────────────────────────────────────────────────────
+    'Minccino': {
+        name: 'Minccino',
+        type: 'pokemon',
+        hp: 60,
+        energyType: 'colorless',
+        subtypes: ['Basic'],
+        retreatCost: 1,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        attacks: [{ name: 'Slap', damage: 10, energyCost: ['colorless'] }],
+        imageUrl: 'https://images.pokemontcg.io/cri/74.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/74_hires.png',
+    },
+    'Cinccino ex': {
+        name: 'Cinccino ex',
+        type: 'pokemon',
+        hp: 200,
+        energyType: 'colorless',
+        subtypes: ['Stage 1', 'ex'],
+        evolvesFrom: 'Minccino',
+        retreatCost: 1,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
+        abilities: [{
+            name: 'Fluffy',
+            type: 'Ability',
+            text: 'This Pokémon takes 20 less damage from attacks (after applying Weakness and Resistance).',
+        }],
+        attacks: [
+            {
+                name: 'Do the Wave',
+                damage: 30,
+                energyCost: ['colorless', 'colorless'],
+                description: 'This attack does 30 damage for each of your Benched Pokémon.',
+            },
+        ],
+        imageUrl: 'https://images.pokemontcg.io/cri/73.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/73_hires.png',
+    },
+
+    // ─── CRI Trainers ─────────────────────────────────────────────────────────
+    "AZ's Tranquility": {
+        name: "AZ's Tranquility",
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Return all Pokémon you have in play to your hand. Return all Pokémon your opponent has in play to their hand.',
+        imageUrl: 'https://images.pokemontcg.io/cri/80.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/80_hires.png',
+    },
+    'Emma': {
+        name: 'Emma',
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Draw a card for each Pokémon your opponent has in their hand.',
+        imageUrl: 'https://images.pokemontcg.io/cri/81.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/81_hires.png',
+    },
+    'Philippe': {
+        name: 'Philippe',
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Attach up to 2 Basic Metal Energy cards from your discard pile to 1 of your Metal Pokémon.',
+        imageUrl: 'https://images.pokemontcg.io/cri/82.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/82_hires.png',
+    },
+    "Roxie's Performance": {
+        name: "Roxie's Performance",
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Your opponent\'s Poisoned Pokémon can\'t retreat during their next turn.',
+        imageUrl: 'https://images.pokemontcg.io/cri/83.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/83_hires.png',
+    },
+    'Special Red Card': {
+        name: 'Special Red Card',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Play this card only if your opponent has 3 or fewer Prize cards remaining. Your opponent shuffles their hand under their deck and draws 3 cards.',
+        imageUrl: 'https://images.pokemontcg.io/cri/87.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/87_hires.png',
+    },
+    'Great Haul Net': {
+        name: 'Great Haul Net',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Search your deck for up to 3 Water Pokémon and/or Basic Water Energy cards, reveal them, and put them into your hand. Then, shuffle your deck.',
+        imageUrl: 'https://images.pokemontcg.io/cri/88.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/88_hires.png',
+    },
+    'Transformation Tome': {
+        name: 'Transformation Tome',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'If your Active Pokémon is a damaged Basic Pokémon ex, switch it with a Basic Pokémon ex with the same name from your discard pile, keeping all attached cards.',
+        imageUrl: 'https://images.pokemontcg.io/cri/89.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/89_hires.png',
+    },
+    'Tool Scrapper': {
+        name: 'Tool Scrapper',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Discard up to 2 Pokémon Tool cards from any Pokémon in play.',
+        imageUrl: 'https://images.pokemontcg.io/cri/90.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/90_hires.png',
+    },
+    'Jumbo Ice Cream': {
+        name: 'Jumbo Ice Cream',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Heal 30 damage from each of your Benched Pokémon.',
+        imageUrl: 'https://images.pokemontcg.io/cri/91.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/91_hires.png',
+    },
+    'Adversity Policy': {
+        name: 'Adversity Policy',
+        type: 'trainer',
+        subtypes: ['Pokémon Tool'],
+        flavorText: 'When the Pokémon this card is attached to is damaged by an attack from a Pokémon of a type this Pokémon is weak to, draw 3 cards.',
+        imageUrl: 'https://images.pokemontcg.io/cri/92.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/92_hires.png',
+    },
+    'Prism Tower': {
+        name: 'Prism Tower',
+        type: 'trainer',
+        subtypes: ['Stadium'],
+        flavorText: 'Once during each player\'s turn, that player may discard 2 cards from their hand to draw 1 card.',
+        imageUrl: 'https://images.pokemontcg.io/cri/95.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/95_hires.png',
+    },
+    'Ange Floette': {
+        name: 'Ange Floette',
+        type: 'trainer',
+        subtypes: ['Stadium'],
+        flavorText: 'Your Mega Floette ex has 150 more HP.',
+        imageUrl: 'https://images.pokemontcg.io/cri/96.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/96_hires.png',
+    },
+    'Surfing Beach': {
+        name: 'Surfing Beach',
+        type: 'trainer',
+        subtypes: ['Stadium'],
+        flavorText: 'Once during each player\'s turn, that player may switch their Active Pokémon with 1 of their Benched Pokémon.',
+        imageUrl: 'https://images.pokemontcg.io/cri/97.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/97_hires.png',
+    },
+
+    // ─── CRI Special Energy ───────────────────────────────────────────────────
+    'Bubbly W Energy': {
+        name: 'Bubbly W Energy',
+        type: 'energy',
+        energyType: 'water',
+        subtypes: ['Special Energy'],
+        flavorText: 'Provides [W] Energy. The Pokémon this card is attached to can\'t be affected by any Special Conditions.',
+        imageUrl: 'https://images.pokemontcg.io/cri/100.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/100_hires.png',
+    },
+    'Magnetic M Energy': {
+        name: 'Magnetic M Energy',
+        type: 'energy',
+        energyType: 'metal',
+        subtypes: ['Special Energy'],
+        flavorText: 'Provides [M] Energy. The retreat cost of the Pokémon this card is attached to is 0.',
+        imageUrl: 'https://images.pokemontcg.io/cri/101.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/101_hires.png',
+    },
+    'Nitro R Energy': {
+        name: 'Nitro R Energy',
+        type: 'energy',
+        energyType: 'fire',
+        subtypes: ['Special Energy'],
+        flavorText: 'Provides [R] Energy. If this card would be discarded by an attack effect, put it into your hand instead.',
+        imageUrl: 'https://images.pokemontcg.io/cri/102.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/102_hires.png',
+    },
+};
+
 // Merge all proxies
 const ALL_PROXY_CARDS: Record<string, Partial<Card>> = {
     ...STANDARD_PROXY_CARDS,
     ...EXTRA_PROXY_CARDS,
+    ...CRI_PROXY_CARDS,
 };
 
 /** Shared deck builder helper — fetches sets and creates an addCard function */
@@ -1365,6 +1973,90 @@ export async function createMegaZygardeExDeck(): Promise<Card[]> {
     return shuffle(deck);
 }
 
+// ============================================
+// MEGA PYROAR EX DECK — CRI (Chaos Rising)
+// Fire spread — 60 cards: 14 Pokémon / 34 Trainers / 12 Energy
+// ============================================
+export async function createMegaPyroarExDeck(): Promise<Card[]> {
+    const { deck, addCard } = await buildDeckHelper();
+
+    // Pokémon (14)
+    addCard('Litleo', 4);               // CRI — base of Mega Pyroar ex
+    addCard('Mega Pyroar ex', 3);       // CRI 015 — Ferocious Bellow, Fiery Big Bang 290
+    addCard('Beedrill ex', 2);          // CRI 003 — Rumbling Bees spread
+    addCard('Weedle', 2);               // CRI — basic
+    addCard('Kakuna', 1);               // CRI — stage 1 bridge
+    addCard('Munkidori', 2);            // sv6 — Adrena-Brain chip damage
+
+    // Trainers — Supporters (10)
+    addCard("Professor's Research", 3);
+    addCard('Iono', 3);
+    addCard("Boss's Orders", 2);
+    addCard('Crispin', 1);              // sv7 — energy from discard
+    addCard('Briar', 1);                // sv6pt5 — draw after KO
+
+    // Trainers — Items (22)
+    addCard('Ultra Ball', 4);
+    addCard('Rare Candy', 4);           // Weedle/Kakuna → Beedrill ex skip
+    addCard('Nest Ball', 3);
+    addCard('Night Stretcher', 3);
+    addCard('Super Rod', 2);
+    addCard('Buddy-Buddy Poffin', 2);
+    addCard('Switch', 2);
+    addCard('Prism Tower', 2);          // CRI — discard 2 to draw 1
+
+    // Trainers — Stadiums (2)
+    addCard('Pokémon League Headquarters', 2);
+
+    // Energy (12)
+    addCard('Fire Energy', 12);
+
+    console.log(`[2026 Standard] Mega Pyroar ex deck: ${deck.length} cards`);
+    return shuffle(deck);
+}
+
+// ============================================
+// MEGA GALLADE EX DECK — CRI (Chaos Rising)
+// Fighting sweep — 60 cards: 16 Pokémon / 32 Trainers / 12 Energy
+// ============================================
+export async function createMegaGalladeExDeck(): Promise<Card[]> {
+    const { deck, addCard } = await buildDeckHelper();
+
+    // Pokémon (16)
+    addCard('Ralts', 4);                // CRI — base
+    addCard('Kirlia', 3);               // CRI — Stage 1 bridge
+    addCard('Mega Gallade ex', 3);      // CRI 048 — Gale Cut 50/200
+    addCard('Cobalion ex', 2);          // CRI 063 — Metal Road energy acceleration
+    addCard('Cinccino ex', 2);          // CRI 073 — Do the Wave + Fluffy
+    addCard('Minccino', 2);             // CRI — base for Cinccino ex
+
+    // Trainers — Supporters (10)
+    addCard("Professor's Research", 3);
+    addCard('Iono', 3);
+    addCard("Boss's Orders", 2);
+    addCard('Jacq', 1);                 // sv7 — evolution search
+    addCard('Tarragon', 1);             // me3 — retrieve Fighting Energy
+
+    // Trainers — Items (20)
+    addCard('Rare Candy', 4);           // Ralts → Mega Gallade ex skip
+    addCard('Ultra Ball', 4);
+    addCard('Nest Ball', 3);
+    addCard('Night Stretcher', 2);
+    addCard('Super Rod', 2);
+    addCard('Switch', 2);
+    addCard('Adversity Policy', 2);     // CRI — draw 3 when hit by weakness
+    addCard('Buddy-Buddy Poffin', 1);
+
+    // Trainers — Stadiums (2)
+    addCard('Pokémon League Headquarters', 2);
+
+    // Energy (12)
+    addCard('Fighting Energy', 12);
+
+    console.log(`[2026 Standard] Mega Gallade ex deck: ${deck.length} cards`);
+    return shuffle(deck);
+}
+
 export function shuffleDeck<T>(deck: T[]): T[] {
     return shuffle(deck);
 }
@@ -1375,4 +2067,6 @@ export const standardDecks = {
     ragingBoltEx: createRagingBoltExDeck,
     megaGreninjaEx: createMegaGreninjaExDeck,
     megaZygardeEx: createMegaZygardeExDeck,
+    megaPyroarEx: createMegaPyroarExDeck,
+    megaGalladeEx: createMegaGalladeExDeck,
 };

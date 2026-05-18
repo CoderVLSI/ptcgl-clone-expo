@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, GameState, Player } from '../types/game';
-import { createMegaLucarioExDeck, createDragapultExDeck, createRagingBoltExDeck, createMegaGreninjaExDeck, createMegaZygardeExDeck } from '../data/standardDecks';
+import { createMegaLucarioExDeck, createDragapultExDeck, createRagingBoltExDeck, createMegaGreninjaExDeck, createMegaZygardeExDeck, createMegaPyroarExDeck, createMegaGalladeExDeck } from '../data/standardDecks';
 
 export interface GameSetupData {
     playerDeck: Card[];
@@ -50,16 +50,18 @@ export function useGameData() {
             setError(null);
             setSetupPhase('loading');
 
-            // Load all 5 competitive decks in parallel
-            const [megaLucarioDeck, dragapultDeck, ragingBoltDeck, megaGreninajaDeck, megaZygardeDeck] = await Promise.all([
+            // Load all 7 competitive decks in parallel
+            const [megaLucarioDeck, dragapultDeck, ragingBoltDeck, megaGreninajaDeck, megaZygardeDeck, megaPyroarDeck, megaGalladeDeck] = await Promise.all([
                 createMegaLucarioExDeck(),
                 createDragapultExDeck(),
                 createRagingBoltExDeck(),
                 createMegaGreninjaExDeck(),
                 createMegaZygardeExDeck(),
+                createMegaPyroarExDeck(),
+                createMegaGalladeExDeck(),
             ]);
 
-            console.log(`Lucario: ${megaLucarioDeck.length} | Dragapult: ${dragapultDeck.length} | Raging Bolt: ${ragingBoltDeck.length} | Greninja: ${megaGreninajaDeck.length} | Zygarde: ${megaZygardeDeck.length}`);
+            console.log(`Lucario: ${megaLucarioDeck.length} | Dragapult: ${dragapultDeck.length} | Raging Bolt: ${ragingBoltDeck.length} | Greninja: ${megaGreninajaDeck.length} | Zygarde: ${megaZygardeDeck.length} | Pyroar: ${megaPyroarDeck.length} | Gallade: ${megaGalladeDeck.length}`);
 
             const decks = [
                 { id: 'deck-lucario',   name: 'Mega Lucario ex',   cards: megaLucarioDeck,    type: 'fighting',   mainCard: 'Mega Lucario ex'  },
@@ -67,6 +69,8 @@ export function useGameData() {
                 { id: 'deck-bolt',      name: 'Raging Bolt ex',     cards: ragingBoltDeck,     type: 'lightning',  mainCard: 'Raging Bolt ex'   },
                 { id: 'deck-greninja',  name: 'Mega Greninja ex',   cards: megaGreninajaDeck,  type: 'water',      mainCard: 'Mega Greninja ex' },
                 { id: 'deck-zygarde',   name: 'Mega Zygarde ex',    cards: megaZygardeDeck,    type: 'fighting',   mainCard: 'Mega Zygarde ex'  },
+                { id: 'deck-pyroar',    name: 'Mega Pyroar ex',     cards: megaPyroarDeck,     type: 'fire',       mainCard: 'Mega Pyroar ex'   },
+                { id: 'deck-gallade',   name: 'Mega Gallade ex',    cards: megaGalladeDeck,    type: 'fighting',   mainCard: 'Mega Gallade ex'  },
             ];
             setAvailableDecks(decks);
 
