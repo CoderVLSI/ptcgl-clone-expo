@@ -625,7 +625,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
             {
                 name: 'Ninja Spinner',
                 damage: 120,
-                energyCost: ['water'],
+                energyCost: ['water', 'water'],
                 description: 'You may put a Water Energy attached to this Pokémon into your hand. If you do, this attack does 80 more damage.',
             },
         ],
