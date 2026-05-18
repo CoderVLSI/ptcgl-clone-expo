@@ -1,4 +1,6 @@
 export { default as ActionMenu } from './ActionMenu';
+export { LeaderboardScreen } from './LeaderboardScreen';
+export { FriendBattleScreen } from './FriendBattleScreen';
 export { default as Card } from './Card';
 export { default as CardPreviewModal } from './CardPreviewModal';
 export { default as CardSelectorModal } from './CardSelectorModal';

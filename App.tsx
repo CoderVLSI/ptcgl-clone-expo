@@ -9,6 +9,8 @@ import { useGameData } from './hooks/useGameData';
 import Colors from './constants/colors';
 import EditDeckScreen from './components/EditDeckScreen';
 import DeckSelectionScreen from './components/DeckSelectionScreen';
+import LeaderboardScreen from './components/LeaderboardScreen';
+import FriendBattleScreen from './components/FriendBattleScreen';
 import useGameDimensions from './hooks/useGameDimensions';
 
 import { Card } from './types/game';
@@ -31,9 +33,13 @@ export default function App() {
     availableDecks,
   } = useGameData();
 
-  const [currentScreen, setCurrentScreen] = useState<'lobby' | 'game' | 'edit_deck' | 'deck_selection'>('lobby');
+  const [currentScreen, setCurrentScreen] = useState<
+    'lobby' | 'game' | 'edit_deck' | 'deck_selection' | 'leaderboard' | 'friend_battle'
+  >('lobby');
   const [editingDeck, setEditingDeck] = useState<Card[]>([]);
-  const [editingDeckName, setEditingDeckName] = useState<string>("");
+  const [editingDeckName, setEditingDeckName] = useState<string>('');
+  const [playerWins, setPlayerWins] = useState(0);
+  const [playerLosses, setPlayerLosses] = useState(0);
   const { isDesktop, screenWidth } = useGameDimensions();
 
   const renderContent = () => {
@@ -75,6 +81,10 @@ export default function App() {
           }}
           onDecksPress={() => setCurrentScreen('deck_selection')}
           onUpdateDeck={setPlayerDeck}
+          onLeaderboardPress={() => setCurrentScreen('leaderboard')}
+          onFriendBattlePress={() => setCurrentScreen('friend_battle')}
+          playerWins={playerWins}
+          playerLosses={playerLosses}
         />
       );
     }
@@ -98,7 +108,7 @@ export default function App() {
           }}
           onCreateDeck={() => {
             setEditingDeck([]);
-            setEditingDeckName("New Deck");
+            setEditingDeckName('New Deck');
             setCurrentScreen('edit_deck');
           }}
           onUpdateDeck={setPlayerDeck}
@@ -115,6 +125,29 @@ export default function App() {
           onBack={() => setCurrentScreen('lobby')}
           onHome={() => setCurrentScreen('lobby')}
           onUpdateDeck={setPlayerDeck}
+        />
+      );
+    }
+
+    // Leaderboard Screen
+    if (currentScreen === 'leaderboard') {
+      return (
+        <LeaderboardScreen
+          onBack={() => setCurrentScreen('lobby')}
+          playerScore={1708}
+          playerWins={playerWins}
+          playerLosses={playerLosses}
+        />
+      );
+    }
+
+    // Friend Battle Screen
+    if (currentScreen === 'friend_battle') {
+      return (
+        <FriendBattleScreen
+          onBack={() => setCurrentScreen('lobby')}
+          onStartBattle={() => setCurrentScreen('game')}
+          availableDecks={availableDecks}
         />
       );
     }

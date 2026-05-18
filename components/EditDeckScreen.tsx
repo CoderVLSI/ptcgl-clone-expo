@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, ScrollView, SafeAreaView, StatusBar, Platform, Alert, Modal } from 'react-native';
+import {
+    View, Text, StyleSheet, TouchableOpacity, Image, TextInput,
+    ScrollView, SafeAreaView, StatusBar, Platform, Alert, Modal
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/colors';
 import { Card } from '../types/game';
@@ -13,28 +16,68 @@ interface EditDeckScreenProps {
     onUpdateDeck: (deck: Card[]) => void;
 }
 
-const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck: initialDeck, deckName, onBack, onHome, onUpdateDeck }) => {
+type SortMode = 'Name' | 'Cost' | 'HP';
+type TypeFilter =
+    | 'All' | 'Grass' | 'Fire' | 'Water' | 'Lightning' | 'Psychic'
+    | 'Fighting' | 'Darkness' | 'Metal' | 'Colorless' | 'Trainer' | 'Energy';
+
+const TYPE_BUTTONS: { label: string; value: TypeFilter }[] = [
+    { label: 'All',       value: 'All' },
+    { label: '🌿',        value: 'Grass' },
+    { label: '🔥',        value: 'Fire' },
+    { label: '💧',        value: 'Water' },
+    { label: '⚡',        value: 'Lightning' },
+    { label: '🔮',        value: 'Psychic' },
+    { label: '⚔',         value: 'Fighting' },
+    { label: '🌑',        value: 'Darkness' },
+    { label: '⚙',         value: 'Metal' },
+    { label: '🎨Trainer', value: 'Trainer' },
+    { label: '⚡Energy',  value: 'Energy' },
+];
+
+const MAX_COPIES = 4;
+
+const EditDeckScreen: React.FC<EditDeckScreenProps> = ({
+    deck: initialDeck,
+    deckName,
+    onBack,
+    onHome,
+    onUpdateDeck,
+}) => {
     const [deck, setDeck] = useState<Card[]>(initialDeck);
     const [selectedTab, setSelectedTab] = useState<'Pokemon' | 'Trainers' | 'Energy' | 'Deck'>('Trainers');
     const [searchQuery, setSearchQuery] = useState('');
     const [hasChanges, setHasChanges] = useState(false);
+    const [saveConfirmed, setSaveConfirmed] = useState(false);
 
     // Library State
     const [libraryCards, setLibraryCards] = useState<LibraryCard[]>([]);
     const [page, setPage] = useState(1);
     const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
-    const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
-    // Debounce search
+    // Preview modal
+    const [previewCard, setPreviewCard] = useState<Card | LibraryCard | null>(null);
+
+    // Sort state
+    const [sortMode, setSortMode] = useState<SortMode>('Name');
+
+    // Type filter
+    const [activeTypeFilter, setActiveTypeFilter] = useState<TypeFilter>('All');
+
+    // Deck area collapsed/expanded
+    const [deckAreaExpanded, setDeckAreaExpanded] = useState(true);
+
+    // ---------- library loading ----------
+
     useEffect(() => {
         const timer = setTimeout(() => {
-            setPage(1); // Reset page on search
+            setPage(1);
             loadLibraryCards(1, searchQuery);
         }, 500);
         return () => clearTimeout(timer);
     }, [searchQuery]);
 
-    async function loadLibraryCards(pageNum: number, search: string, append: boolean = false) {
+    async function loadLibraryCards(pageNum: number, search: string, append = false) {
         if (isLoadingLibrary) return;
         setIsLoadingLibrary(true);
         const cards = await fetchStandardCards(pageNum, search);
@@ -48,9 +91,9 @@ const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck: initialDeck, deck
 
     const handleLoadMore = () => {
         if (!isLoadingLibrary) {
-            const nextPage = page + 1;
-            setPage(nextPage);
-            loadLibraryCards(nextPage, searchQuery, true);
+            const next = page + 1;
+            setPage(next);
+            loadLibraryCards(next, searchQuery, true);
         }
     };
 
@@ -59,255 +102,427 @@ const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck: initialDeck, deck
         setHasChanges(false);
     }, [initialDeck]);
 
-    // Mocking counts for the UI (real logic would calculate these)
+    // ---------- counts ----------
+
     const counts = {
-        Pokemon: deck.filter(c => c.type === 'pokemon').length,
+        Pokemon:  deck.filter(c => c.type === 'pokemon').length,
         Trainers: deck.filter(c => c.type === 'trainer').length,
-        Energy: deck.filter(c => c.type === 'energy').length,
-        Deck: deck.length
+        Energy:   deck.filter(c => c.type === 'energy').length,
+        Deck:     deck.length,
     };
 
-    // Filter deck for top view based on selected tab (or just show all for 'Deck')
+    const deckFillPct = Math.min(deck.length / 60, 1);
+
+    // ---------- filtered / grouped deck for top scroll ----------
+
     const filteredDeck = selectedTab === 'Deck'
         ? deck
         : deck.filter(c => c.type === (selectedTab === 'Trainers' ? 'trainer' : selectedTab.toLowerCase()));
 
-    // Group cards (simple logic for display)
     const groupedDeck = filteredDeck.reduce((acc, card) => {
         acc[card.name] = (acc[card.name] || 0) + 1;
         return acc;
     }, {} as Record<string, number>);
 
-    const handleAddCard = (cardOrName: string | Card) => {
+    // ---------- filtered library ----------
+
+    const applyLibraryFilters = (cards: LibraryCard[]): LibraryCard[] => {
+        let result = [...cards];
+
+        // Tab filter
+        if (selectedTab === 'Pokemon') {
+            result = result.filter(c => c.type === 'pokemon');
+        } else if (selectedTab === 'Trainers') {
+            result = result.filter(c => c.type === 'trainer');
+        } else if (selectedTab === 'Energy') {
+            result = result.filter(c => c.type === 'energy');
+        }
+
+        // Type filter
+        if (activeTypeFilter !== 'All') {
+            const tf = activeTypeFilter.toLowerCase();
+            if (activeTypeFilter === 'Trainer') {
+                result = result.filter(c => c.type === 'trainer');
+            } else if (activeTypeFilter === 'Energy') {
+                result = result.filter(c => c.type === 'energy');
+            } else {
+                result = result.filter(c =>
+                    (c as any).energyType?.toLowerCase() === tf ||
+                    (c as any).supertype?.toLowerCase() === tf
+                );
+            }
+        }
+
+        // Sort
+        result.sort((a, b) => {
+            if (sortMode === 'Name') return a.name.localeCompare(b.name);
+            if (sortMode === 'HP')   return ((b as any).hp || 0) - ((a as any).hp || 0);
+            if (sortMode === 'Cost') return ((a as any).convertedRetreatCost || 0) - ((b as any).convertedRetreatCost || 0);
+            return 0;
+        });
+
+        return result;
+    };
+
+    const visibleLibraryCards = applyLibraryFilters(libraryCards);
+
+    // ---------- deck mutations ----------
+
+    const copyCountInDeck = (name: string) => deck.filter(c => c.name === name).length;
+
+    const handleAddCard = (cardOrName: string | Card | LibraryCard) => {
         let cardToAdd: Card | undefined;
 
         if (typeof cardOrName === 'string') {
             cardToAdd = deck.find(c => c.name === cardOrName);
         } else {
-            cardToAdd = cardOrName;
+            cardToAdd = cardOrName as Card;
         }
 
-        if (cardToAdd) {
-            const newCard = { ...cardToAdd, id: `${cardToAdd.id}-${Date.now()}` };
-            const newDeck = [...deck, newCard];
-            setDeck(newDeck);
-            setHasChanges(true);
-        }
+        if (!cardToAdd) return;
+        if (copyCountInDeck(cardToAdd.name) >= MAX_COPIES) return;
+
+        const newCard = { ...cardToAdd, id: `${cardToAdd.id}-${Date.now()}` };
+        setDeck(prev => [...prev, newCard]);
+        setHasChanges(true);
     };
 
     const handleRemoveCard = (cardName: string) => {
-        const index = deck.findIndex(c => c.name === cardName);
-        if (index !== -1) {
-            const newDeck = [...deck];
-            newDeck.splice(index, 1);
-            setDeck(newDeck);
-            setHasChanges(true);
-        }
+        setDeck(prev => {
+            const idx = prev.findIndex(c => c.name === cardName);
+            if (idx === -1) return prev;
+            const next = [...prev];
+            next.splice(idx, 1);
+            return next;
+        });
+        setHasChanges(true);
     };
 
-    const handleExit = (action: () => void) => {
-        if (!hasChanges) {
-            action();
-            return;
-        }
+    // ---------- save ----------
 
+    const handleSave = () => {
+        onUpdateDeck(deck);
+        setHasChanges(false);
+        setSaveConfirmed(true);
+        setTimeout(() => setSaveConfirmed(false), 2000);
+    };
+
+    // ---------- exit guard ----------
+
+    const handleExit = (action: () => void) => {
+        if (!hasChanges) { action(); return; }
         Alert.alert(
-            "Unsaved Changes",
-            "You have unsaved changes to your deck. Do you want to save them?",
+            'Unsaved Changes',
+            'You have unsaved changes. Do you want to save them?',
             [
-                {
-                    text: "Discard",
-                    style: "destructive",
-                    onPress: action
-                },
-                {
-                    text: "Cancel",
-                    style: "cancel"
-                },
-                {
-                    text: "Save",
-                    onPress: () => {
-                        onUpdateDeck(deck);
-                        action();
-                    }
-                }
+                { text: 'Discard', style: 'destructive', onPress: action },
+                { text: 'Cancel',  style: 'cancel' },
+                { text: 'Save',    onPress: () => { onUpdateDeck(deck); action(); } },
             ]
         );
     };
 
-    const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }: any) => {
-        const paddingToBottom = 20;
-        return layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+    // ---------- sort cycle ----------
+
+    const cycleSortMode = () => {
+        setSortMode(prev =>
+            prev === 'Name' ? 'Cost' : prev === 'Cost' ? 'HP' : 'Name'
+        );
     };
+
+    // ---------- infinite scroll ----------
+
+    const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }: any) =>
+        layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+
+    // ---------- copy-limit badge color ----------
+
+    const copyBadgeColor = (name: string) => {
+        const n = copyCountInDeck(name);
+        if (n >= 4) return '#E53935';
+        if (n >= 3) return '#FB8C00';
+        return '#1565C0';
+    };
+
+    const deckAreaHeight = deckAreaExpanded ? 180 : 80;
 
     return (
         <View style={styles.container}>
-            <StatusBar backgroundColor="#D00000" barStyle="light-content" />
+            <StatusBar backgroundColor="#1A1A2E" barStyle="light-content" />
 
-            {/* Header */}
+            {/* ── Header ── */}
             <SafeAreaView style={styles.headerSafeArea}>
-                <View style={styles.header}>
-                    <View style={styles.deckBoxThumbnail}>
-                        <Image
-                            source={{ uri: 'https://images.pokemontcg.io/xy3/55.png' }}
-                            style={styles.headerDeckImage}
-                        />
+                <LinearGradient
+                    colors={['#1A1A2E', '#0D0D1A']}
+                    style={styles.headerGradient}
+                >
+                    <View style={styles.header}>
+                        <View style={styles.deckBoxThumbnail}>
+                            <Image
+                                source={{ uri: 'https://images.pokemontcg.io/xy3/55.png' }}
+                                style={styles.headerDeckImage}
+                            />
+                        </View>
+                        <Text style={styles.headerTitle}>{deckName}</Text>
+                        <TouchableOpacity style={styles.menuButton}>
+                            <Text style={styles.menuDots}>⋮</Text>
+                        </TouchableOpacity>
                     </View>
-                    <Text style={styles.headerTitle}>{deckName}</Text>
-                    <TouchableOpacity style={styles.menuButton}>
-                        <Text style={styles.menuDots}>⋮</Text>
-                    </TouchableOpacity>
-                </View>
 
-                {/* Tabs */}
-                <View style={styles.tabBar}>
-                    <TouchableOpacity style={styles.tabItem} onPress={() => setSelectedTab('Pokemon')}>
-                        <View style={styles.tabIconFallback}><Text>🚫</Text></View>
-                        <Text style={[styles.tabLabel, selectedTab === 'Pokemon' && styles.tabLabelActive]}>POKÉMON</Text>
-                        <Text style={styles.tabCount}>{counts.Pokemon}</Text>
-                        {selectedTab === 'Pokemon' && <View style={styles.activeTabIndicator} />}
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.tabItem} onPress={() => setSelectedTab('Trainers')}>
-                        <Text style={[styles.tabLabel, selectedTab === 'Trainers' && styles.tabLabelActive]}>TRAINERS</Text>
-                        <Text style={[styles.tabCount, styles.highlightCount]}>{counts.Trainers}</Text>
-                        {selectedTab === 'Trainers' && <View style={styles.activeTabIndicator} />}
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.tabItem} onPress={() => setSelectedTab('Energy')}>
-                        <Text style={[styles.tabLabel, selectedTab === 'Energy' && styles.tabLabelActive]}>ENERGY</Text>
-                        <Text style={styles.tabCount}>{counts.Energy}</Text>
-                        {selectedTab === 'Energy' && <View style={styles.activeTabIndicator} />}
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.tabItem} onPress={() => setSelectedTab('Deck')}>
-                        <Text style={[styles.tabLabel, selectedTab === 'Deck' && styles.tabLabelActive]}>DECK</Text>
-                        <Text style={styles.tabCount}>{counts.Deck}</Text>
-                        {selectedTab === 'Deck' && <View style={styles.activeTabIndicator} />}
-                    </TouchableOpacity>
-                </View>
+                    {/* Tabs */}
+                    <View style={styles.tabBar}>
+                        {(['Pokemon', 'Trainers', 'Energy', 'Deck'] as const).map(tab => (
+                            <TouchableOpacity
+                                key={tab}
+                                style={styles.tabItem}
+                                onPress={() => setSelectedTab(tab)}
+                            >
+                                <Text style={[styles.tabLabel, selectedTab === tab && styles.tabLabelActive]}>
+                                    {tab === 'Pokemon' ? 'POKÉMON' : tab.toUpperCase()}
+                                </Text>
+                                <Text style={[
+                                    styles.tabCount,
+                                    selectedTab === tab && styles.tabCountActive,
+                                ]}>
+                                    {counts[tab]}
+                                </Text>
+                                {selectedTab === tab && <View style={styles.activeTabIndicator} />}
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </LinearGradient>
             </SafeAreaView>
 
-            {/* Current Deck View (Top Section) */}
-            <View style={styles.currentDeckArea}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.deckScrollContent}>
-                    {Object.entries(groupedDeck).map(([name, count], index) => {
-                        const card = deck.find(c => c.name === name);
-                        return (
-                            <View key={index} style={styles.deckCardItem}>
-                                <Image source={{ uri: card?.imageUrl }} style={styles.cardImageSmall} resizeMode="contain" />
-                                <View style={styles.countBadge}><Text style={styles.countText}>{count}</Text></View>
-                                <View style={styles.cardControls}>
-                                    <TouchableOpacity style={styles.controlButton} onPress={() => handleRemoveCard(name)}>
-                                        <Text style={styles.controlText}>-</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={styles.controlButton} onPress={() => handleAddCard(name)}>
-                                        <Text style={styles.controlText}>+</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        );
-                    })}
-                </ScrollView>
+            {/* ── Deck Stats Bar ── */}
+            <View style={styles.deckStatsBar}>
+                <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: '#42A5F5' }]}>{counts.Pokemon}</Text>
+                    <Text style={styles.statLabel}>Pokémon</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: '#AB47BC' }]}>{counts.Trainers}</Text>
+                    <Text style={styles.statLabel}>Trainers</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: '#FFA726' }]}>{counts.Energy}</Text>
+                    <Text style={styles.statLabel}>Energy</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={[styles.statItem, { flex: 2 }]}>
+                    <Text style={styles.statTotal}>{deck.length}/60</Text>
+                    <View style={styles.progressBarBg}>
+                        <View style={[styles.progressBarFill, { width: `${deckFillPct * 100}%` as any }]} />
+                    </View>
+                </View>
             </View>
 
-            {/* Library Search & Filter Bar */}
-            <View style={styles.libraryControls}>
-                <TouchableOpacity style={styles.collapseButton}>
-                    <Text style={styles.arrowText}>›</Text>
+            {/* ── Current Deck Area ── */}
+            <View style={[styles.currentDeckArea, { height: deckAreaHeight }]}>
+                {/* Collapse toggle */}
+                <TouchableOpacity
+                    style={styles.deckToggleBtn}
+                    onPress={() => setDeckAreaExpanded(prev => !prev)}
+                >
+                    <Text style={styles.deckToggleText}>{deckAreaExpanded ? '▲ Collapse' : '▼ Expand'}</Text>
                 </TouchableOpacity>
+
+                {deckAreaExpanded && (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.deckScrollContent}
+                    >
+                        {Object.entries(groupedDeck).map(([name, count], index) => {
+                            const card = deck.find(c => c.name === name);
+                            const copies = copyCountInDeck(name);
+                            return (
+                                <View key={index} style={styles.deckCardItem}>
+                                    <Image
+                                        source={{ uri: card?.imageUrl }}
+                                        style={styles.cardImageSmall}
+                                        resizeMode="contain"
+                                    />
+                                    <View style={[styles.countBadge, { backgroundColor: copyBadgeColor(name) }]}>
+                                        <Text style={styles.countText}>{count}</Text>
+                                    </View>
+                                    <View style={styles.cardControls}>
+                                        <TouchableOpacity
+                                            style={styles.controlButton}
+                                            onPress={() => handleRemoveCard(name)}
+                                        >
+                                            <Text style={styles.controlText}>−</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.controlButton, copies >= MAX_COPIES && styles.controlDisabled]}
+                                            onPress={() => handleAddCard(name)}
+                                            disabled={copies >= MAX_COPIES}
+                                        >
+                                            <Text style={styles.controlText}>+</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            );
+                        })}
+                    </ScrollView>
+                )}
+            </View>
+
+            {/* ── Library Controls Row ── */}
+            <View style={styles.libraryControls}>
                 <View style={styles.searchContainer}>
                     <Text style={styles.searchIcon}>🔍</Text>
                     <TextInput
                         style={styles.searchInput}
                         placeholder="SEARCH CARD LIBRARY"
-                        placeholderTextColor="#888"
+                        placeholderTextColor="#555"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />
                 </View>
+
+                {/* Type filter quick-buttons */}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.typeFilterRow}
+                    style={styles.typeFilterScroll}
+                >
+                    {TYPE_BUTTONS.map(btn => (
+                        <TouchableOpacity
+                            key={btn.value}
+                            style={[
+                                styles.typeFilterBtn,
+                                activeTypeFilter === btn.value && styles.typeFilterBtnActive,
+                            ]}
+                            onPress={() => setActiveTypeFilter(btn.value)}
+                        >
+                            <Text style={[
+                                styles.typeFilterLabel,
+                                activeTypeFilter === btn.value && styles.typeFilterLabelActive,
+                            ]}>
+                                {btn.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </View>
 
+            {/* ── Filter / Sort Row ── */}
             <View style={styles.filterSortRow}>
                 <TouchableOpacity style={styles.filterButton}>
                     <Text style={styles.filterIcon}>⇅</Text>
                     <Text style={styles.filterText}>FILTERS</Text>
                 </TouchableOpacity>
                 <View style={styles.divider} />
-                <TouchableOpacity style={styles.filterButton}>
-                    <Text style={styles.filterIcon}>1L</Text>
-                    <Text style={styles.filterText}>SORTING</Text>
+                <TouchableOpacity style={styles.filterButton} onPress={cycleSortMode}>
+                    <Text style={styles.filterIcon}>⟳</Text>
+                    <Text style={styles.filterText}>SORT: {sortMode.toUpperCase()}</Text>
                 </TouchableOpacity>
             </View>
 
-            {/* Card Library Grid (Bottom Section) */}
+            {/* ── Card Library Grid ── */}
             <View style={styles.libraryGrid}>
                 {isLoadingLibrary && page === 1 ? (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                        <Text style={{ color: '#888' }}>Loading library...</Text>
+                    <View style={styles.loadingCenter}>
+                        <Text style={styles.loadingText}>Loading library...</Text>
                     </View>
                 ) : (
                     <ScrollView
                         contentContainerStyle={styles.libraryContent}
                         onScroll={({ nativeEvent }) => {
-                            if (isCloseToBottom(nativeEvent)) {
-                                handleLoadMore();
-                            }
+                            if (isCloseToBottom(nativeEvent)) handleLoadMore();
                         }}
                         scrollEventThrottle={400}
                     >
-                        {libraryCards.map((card, index) => (
-                            <TouchableOpacity
-                                key={`${card.id}-${index}`}
-                                style={styles.libraryCardItem}
-                                onPress={() => handleAddCard(card)}
-                            >
-                                <Image source={{ uri: card.imageUrl }} style={styles.cardImageLibrary} resizeMode="contain" />
-                                {/* Show count of this card currently in deck */}
-                                {deck.filter(c => c.name === card.name).length > 0 && (
-                                    <View style={styles.libraryCountBadge}>
-                                        <Text style={styles.countText}>{deck.filter(c => c.name === card.name).length}</Text>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                        ))}
+                        {visibleLibraryCards.map((card, index) => {
+                            const copies = copyCountInDeck(card.name);
+                            const atLimit = copies >= MAX_COPIES;
+                            return (
+                                <TouchableOpacity
+                                    key={`${card.id}-${index}`}
+                                    style={styles.libraryCardItem}
+                                    onPress={() => !atLimit && handleAddCard(card)}
+                                    onLongPress={() => setPreviewCard(card)}
+                                    disabled={atLimit}
+                                >
+                                    <Image
+                                        source={{ uri: card.imageUrl }}
+                                        style={[styles.cardImageLibrary, atLimit && styles.cardImageDimmed]}
+                                        resizeMode="contain"
+                                    />
+                                    {copies > 0 && (
+                                        <View style={[styles.libraryCountBadge, { backgroundColor: copyBadgeColor(card.name) }]}>
+                                            <Text style={styles.countText}>{copies}</Text>
+                                        </View>
+                                    )}
+                                    {atLimit && (
+                                        <View style={styles.limitOverlay}>
+                                            <Text style={styles.limitText}>MAX</Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })}
                         {isLoadingLibrary && (
-                            <View style={{ width: '100%', padding: 10, alignItems: 'center' }}>
-                                <Text style={{ color: '#888' }}>Loading more...</Text>
+                            <View style={styles.loadMoreRow}>
+                                <Text style={styles.loadingText}>Loading more...</Text>
                             </View>
                         )}
                     </ScrollView>
                 )}
             </View>
 
-            {/* Bottom Navigation Footer */}
+            {/* ── Bottom Footer ── */}
             <View style={styles.bottomFooter}>
                 <TouchableOpacity onPress={() => handleExit(onBack)} style={styles.footerButton}>
                     <Text style={styles.footerIcon}>←</Text>
                 </TouchableOpacity>
+
+                {/* Save Button */}
+                <TouchableOpacity onPress={handleSave} style={styles.saveButtonWrapper} activeOpacity={0.85}>
+                    <LinearGradient
+                        colors={saveConfirmed ? ['#2E7D32', '#1B5E20'] : ['#388E3C', '#1B5E20']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.saveButton}
+                    >
+                        <Text style={styles.saveButtonText}>
+                            {saveConfirmed ? '✓ SAVED' : '💾 SAVE DECK'}
+                        </Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+
                 <TouchableOpacity onPress={() => handleExit(onHome)} style={styles.footerButton}>
                     <Text style={styles.footerIcon}>🏠</Text>
                 </TouchableOpacity>
             </View>
 
-            {/* Card Viewer Modal */}
+            {/* ── Card Preview Modal ── */}
             <Modal
-                visible={!!selectedCard}
-                transparent={true}
+                visible={!!previewCard}
+                transparent
                 animationType="fade"
-                onRequestClose={() => setSelectedCard(null)}
+                onRequestClose={() => setPreviewCard(null)}
             >
                 <View style={styles.modalOverlay}>
-                    <TouchableOpacity style={styles.modalBackdrop} onPress={() => setSelectedCard(null)} />
-
-                    {selectedCard && (
+                    <TouchableOpacity
+                        style={StyleSheet.absoluteFillObject}
+                        onPress={() => setPreviewCard(null)}
+                        activeOpacity={1}
+                    />
+                    {previewCard && (
                         <View style={styles.modalContent}>
                             <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>{selectedCard.name}</Text>
-                                <TouchableOpacity onPress={() => setSelectedCard(null)} style={styles.closeButton}>
+                                <Text style={styles.modalTitle}>{previewCard.name}</Text>
+                                <TouchableOpacity onPress={() => setPreviewCard(null)} style={styles.closeButton}>
                                     <Text style={styles.closeButtonText}>✕</Text>
                                 </TouchableOpacity>
                             </View>
 
                             <Image
-                                source={{ uri: selectedCard.imageUrlLarge || selectedCard.imageUrl }}
+                                source={{ uri: (previewCard as any).imageUrlLarge || previewCard.imageUrl }}
                                 style={styles.largeCardImage}
                                 resizeMode="contain"
                             />
@@ -316,21 +531,24 @@ const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck: initialDeck, deck
                                 <View style={styles.deckCountInfo}>
                                     <Text style={styles.deckCountLabel}>In Deck:</Text>
                                     <Text style={styles.deckCountValue}>
-                                        {deck.filter(c => c.name === selectedCard.name).length}
+                                        {copyCountInDeck(previewCard.name)} / {MAX_COPIES}
                                     </Text>
                                 </View>
-
                                 <View style={styles.actionButtons}>
                                     <TouchableOpacity
                                         style={[styles.modalActionButton, styles.removeButton]}
-                                        onPress={() => handleRemoveCard(selectedCard.name)}
+                                        onPress={() => handleRemoveCard(previewCard.name)}
                                     >
-                                        <Text style={styles.actionButtonText}>- Remove</Text>
+                                        <Text style={styles.actionButtonText}>− Remove</Text>
                                     </TouchableOpacity>
-
                                     <TouchableOpacity
-                                        style={[styles.modalActionButton, styles.addButton]}
-                                        onPress={() => handleAddCard(selectedCard)}
+                                        style={[
+                                            styles.modalActionButton,
+                                            styles.addButton,
+                                            copyCountInDeck(previewCard.name) >= MAX_COPIES && styles.addButtonDisabled,
+                                        ]}
+                                        onPress={() => handleAddCard(previewCard)}
+                                        disabled={copyCountInDeck(previewCard.name) >= MAX_COPIES}
                                     >
                                         <Text style={styles.actionButtonText}>+ Add</Text>
                                     </TouchableOpacity>
@@ -347,11 +565,16 @@ const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck: initialDeck, deck
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#0D0D1A',
     },
+
+    // Header
     headerSafeArea: {
-        backgroundColor: '#D00000',
+        backgroundColor: '#1A1A2E',
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    },
+    headerGradient: {
+        paddingBottom: 0,
     },
     header: {
         height: 60,
@@ -370,7 +593,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#FFF',
+        borderColor: '#444',
     },
     headerDeckImage: {
         width: '100%',
@@ -390,9 +613,11 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
     },
+
+    // Tabs
     tabBar: {
         flexDirection: 'row',
-        backgroundColor: '#333',
+        backgroundColor: 'rgba(0,0,0,0.3)',
         height: 50,
     },
     tabItem: {
@@ -402,19 +627,19 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     tabLabel: {
-        color: '#AAA',
+        color: '#888',
         fontSize: 10,
         fontWeight: 'bold',
     },
     tabLabelActive: {
-        color: '#FFD700', // Yellow for active text
+        color: '#FFD700',
     },
     tabCount: {
-        color: '#FFF',
+        color: '#CCC',
         fontSize: 14,
         fontWeight: 'bold',
     },
-    highlightCount: {
+    tabCountActive: {
         color: '#FFD700',
     },
     activeTabIndicator: {
@@ -424,159 +649,104 @@ const styles = StyleSheet.create({
         height: 3,
         backgroundColor: '#FFD700',
     },
-    tabIconFallback: {
-        display: 'none', // simplifying for now
-    },
-    currentDeckArea: {
-        height: 180, // Approximate height for the top deck view
-        backgroundColor: '#E0E0E0',
-        paddingVertical: 10,
+
+    // Deck Stats Bar
+    deckStatsBar: {
+        flexDirection: 'row',
+        backgroundColor: '#111122',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        alignItems: 'center',
         borderBottomWidth: 1,
-        borderBottomColor: '#CCC',
+        borderBottomColor: '#2A2A3E',
+    },
+    statItem: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    statValue: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    statLabel: {
+        color: '#666',
+        fontSize: 10,
+        marginTop: 1,
+    },
+    statDivider: {
+        width: 1,
+        height: 32,
+        backgroundColor: '#2A2A3E',
+        marginHorizontal: 4,
+    },
+    statTotal: {
+        color: '#EEE',
+        fontSize: 15,
+        fontWeight: 'bold',
+    },
+    progressBarBg: {
+        width: '80%',
+        height: 4,
+        backgroundColor: '#2A2A3E',
+        borderRadius: 2,
+        marginTop: 4,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: '#FFD700',
+        borderRadius: 2,
+    },
+
+    // Current Deck Area
+    currentDeckArea: {
+        backgroundColor: '#0A0A14',
+        borderBottomWidth: 1,
+        borderBottomColor: '#1E1E2E',
+        overflow: 'hidden',
+    },
+    deckToggleBtn: {
+        alignSelf: 'flex-end',
+        paddingHorizontal: 12,
+        paddingVertical: 2,
+    },
+    deckToggleText: {
+        color: '#555',
+        fontSize: 11,
     },
     deckScrollContent: {
         paddingHorizontal: 10,
+        paddingVertical: 6,
         alignItems: 'center',
     },
     deckCardItem: {
-        width: 100,
-        height: 140,
+        width: 80,
+        height: 112,
         marginRight: 8,
         position: 'relative',
     },
     cardImageSmall: {
         width: '100%',
         height: '100%',
+        borderRadius: 4,
     },
     countBadge: {
         position: 'absolute',
-        bottom: -5,
+        bottom: 4,
         alignSelf: 'center',
-        backgroundColor: '#FFF',
         borderRadius: 10,
-        width: 20,
-        height: 20,
+        minWidth: 22,
+        height: 22,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingHorizontal: 4,
         borderWidth: 1,
-        borderColor: '#CCC',
+        borderColor: 'rgba(255,255,255,0.3)',
     },
     countText: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 'bold',
-        color: '#333',
-    },
-    libraryControls: {
-        backgroundColor: '#F0F0F0',
-        padding: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    collapseButton: {
-        padding: 5,
-    },
-    arrowText: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    searchContainer: {
-        flex: 1,
-        backgroundColor: '#DDD',
-        borderRadius: 4,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 8,
-        height: 40,
-    },
-    searchIcon: {
-        marginRight: 8,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 14,
-        color: '#333',
-    },
-    filterSortRow: {
-        flexDirection: 'row',
-        backgroundColor: '#FFF',
-        height: 44,
-        borderBottomWidth: 1,
-        borderBottomColor: '#DDD',
-    },
-    filterButton: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-    },
-    filterIcon: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    filterText: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    divider: {
-        width: 1,
-        backgroundColor: '#DDD',
-        height: '100%',
-    },
-    libraryGrid: {
-        flex: 1,
-        backgroundColor: '#FFF',
-    },
-    libraryContent: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        padding: 8,
-        justifyContent: 'space-between',
-    },
-    libraryCardItem: {
-        width: '24%', // 4 columns
-        aspectRatio: 0.7,
-        marginBottom: 8,
-        position: 'relative',
-    },
-    cardImageLibrary: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 4,
-    },
-    libraryCountBadge: {
-        position: 'absolute',
-        bottom: 5,
-        alignSelf: 'center',
-        backgroundColor: '#FFF',
-        borderRadius: 10,
-        width: 20,
-        height: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#CCC',
-    },
-    bottomFooter: {
-        height: 50,
-        backgroundColor: '#FFF',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        alignItems: 'center',
-        borderTopWidth: 1,
-        borderTopColor: '#DDD',
-    },
-    footerButton: {
-        padding: 10,
-    },
-    footerIcon: {
-        fontSize: 24,
-        color: '#333',
+        color: '#FFF',
     },
     cardControls: {
         position: 'absolute',
@@ -587,20 +757,300 @@ const styles = StyleSheet.create({
         zIndex: 10,
     },
     controlButton: {
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        backgroundColor: 'rgba(0,0,0,0.72)',
         width: 20,
         height: 20,
         borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#FFF',
+        borderColor: 'rgba(255,255,255,0.4)',
+    },
+    controlDisabled: {
+        opacity: 0.35,
     },
     controlText: {
         color: '#FFF',
         fontWeight: 'bold',
+        fontSize: 13,
+        lineHeight: 15,
+    },
+
+    // Library Controls
+    libraryControls: {
+        backgroundColor: '#111',
+        paddingHorizontal: 8,
+        paddingTop: 8,
+        paddingBottom: 4,
+    },
+    searchContainer: {
+        backgroundColor: '#1C1C2E',
+        borderRadius: 6,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        height: 38,
+        borderWidth: 1,
+        borderColor: '#2A2A3E',
+        marginBottom: 6,
+    },
+    searchIcon: {
+        marginRight: 8,
+        fontSize: 14,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 13,
+        color: '#DDD',
+    },
+    typeFilterScroll: {
+        maxHeight: 36,
+    },
+    typeFilterRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingBottom: 2,
+    },
+    typeFilterBtn: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        backgroundColor: '#1C1C2E',
+        borderWidth: 1,
+        borderColor: '#2A2A3E',
+    },
+    typeFilterBtnActive: {
+        backgroundColor: '#3A2A6E',
+        borderColor: '#8A6ADE',
+    },
+    typeFilterLabel: {
         fontSize: 12,
-        lineHeight: 14,
+        color: '#888',
+        fontWeight: '600',
+    },
+    typeFilterLabelActive: {
+        color: '#C9AAFF',
+    },
+
+    // Filter / Sort Row
+    filterSortRow: {
+        flexDirection: 'row',
+        backgroundColor: '#111',
+        height: 40,
+        borderBottomWidth: 1,
+        borderBottomColor: '#1E1E2E',
+    },
+    filterButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+    filterIcon: {
+        fontSize: 16,
+        color: '#888',
+    },
+    filterText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#888',
+    },
+    divider: {
+        width: 1,
+        backgroundColor: '#1E1E2E',
+        height: '100%',
+    },
+
+    // Library Grid
+    libraryGrid: {
+        flex: 1,
+        backgroundColor: '#111',
+    },
+    libraryContent: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        padding: 6,
+        gap: 6,
+    },
+    libraryCardItem: {
+        width: '31%',
+        aspectRatio: 0.7,
+        position: 'relative',
+        borderRadius: 6,
+        overflow: 'hidden',
+    },
+    cardImageLibrary: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 6,
+    },
+    cardImageDimmed: {
+        opacity: 0.4,
+    },
+    libraryCountBadge: {
+        position: 'absolute',
+        bottom: 6,
+        alignSelf: 'center',
+        borderRadius: 10,
+        minWidth: 22,
+        height: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.25)',
+    },
+    limitOverlay: {
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(200,0,0,0.25)',
+        borderRadius: 6,
+    },
+    limitText: {
+        color: '#FF5252',
+        fontSize: 14,
+        fontWeight: '900',
+        letterSpacing: 2,
+    },
+    loadingCenter: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        color: '#555',
+    },
+    loadMoreRow: {
+        width: '100%',
+        padding: 10,
+        alignItems: 'center',
+    },
+
+    // Bottom Footer
+    bottomFooter: {
+        height: 56,
+        backgroundColor: '#0D0D1A',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 12,
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: '#1E1E2E',
+    },
+    footerButton: {
+        padding: 10,
+    },
+    footerIcon: {
+        fontSize: 22,
+        color: '#888',
+    },
+    saveButtonWrapper: {
+        flex: 1,
+        marginHorizontal: 12,
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    saveButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        gap: 6,
+    },
+    saveButtonText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: 14,
+        letterSpacing: 1,
+    },
+
+    // Preview Modal
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.85)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#1A1A2E',
+        borderRadius: 12,
+        padding: 16,
+        width: '80%',
+        maxWidth: 340,
+        borderWidth: 1,
+        borderColor: '#2A2A4E',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    modalTitle: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+        flex: 1,
+    },
+    closeButton: {
+        padding: 4,
+    },
+    closeButtonText: {
+        color: '#888',
+        fontSize: 18,
+    },
+    largeCardImage: {
+        width: '100%',
+        aspectRatio: 0.7,
+        borderRadius: 8,
+    },
+    modalControls: {
+        marginTop: 12,
+    },
+    deckCountInfo: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 10,
+    },
+    deckCountLabel: {
+        color: '#888',
+        fontSize: 14,
+    },
+    deckCountValue: {
+        color: '#FFF',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    modalActionButton: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    removeButton: {
+        backgroundColor: '#7F1D1D',
+    },
+    addButton: {
+        backgroundColor: '#1565C0',
+    },
+    addButtonDisabled: {
+        backgroundColor: '#333',
+        opacity: 0.5,
+    },
+    actionButtonText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: 14,
     },
 });
 
