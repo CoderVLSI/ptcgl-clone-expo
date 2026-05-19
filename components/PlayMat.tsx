@@ -49,6 +49,10 @@ interface PlayMatProps {
     selectedHandCardId?: string;
     onHandCardPress?: (card: CardType) => void;
     onHandCardLongPress?: (card: CardType) => void;
+    playerDiscard?: CardType[];
+    opponentDiscard?: CardType[];
+    onPlayerRetreat?: () => void;
+    isPlayerTurn?: boolean;
 }
 
 const getHpBarColor = (ratio: number): string => {
@@ -77,6 +81,10 @@ export const PlayMat: React.FC<PlayMatProps> = ({
     selectedHandCardId,
     onHandCardPress,
     onHandCardLongPress,
+    playerDiscard,
+    opponentDiscard,
+    onPlayerRetreat,
+    isPlayerTurn,
 }) => {
     const { width: GAME_WIDTH, isDesktop } = useGameDimensions();
 
@@ -98,6 +106,10 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                 opponentPrizeCount={opponentPrizeCount}
                 playerDeckCount={playerDeckCount}
                 playerPrizeCount={playerPrizeCount}
+                playerDiscard={playerDiscard}
+                opponentDiscard={opponentDiscard}
+                onPlayerRetreat={onPlayerRetreat}
+                isPlayerTurn={isPlayerTurn}
                 playerHand={playerHand}
                 selectedHandCardId={selectedHandCardId}
                 onHandCardPress={onHandCardPress}

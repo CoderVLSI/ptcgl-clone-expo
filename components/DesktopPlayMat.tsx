@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -6,6 +6,7 @@ import {
     ScrollView,
     TouchableOpacity,
     Image,
+    Modal,
 } from 'react-native';
 import { Card as CardType } from '../types/game';
 import Colors from '../constants/colors';
@@ -51,6 +52,10 @@ interface DesktopPlayMatProps {
     opponentPrizeCount?: number;
     playerDeckCount?: number;
     playerPrizeCount?: number;
+    playerDiscard?: CardType[];
+    opponentDiscard?: CardType[];
+    onPlayerRetreat?: () => void;
+    isPlayerTurn?: boolean;
     // Player hand — shown inside the mat
     playerHand?: CardType[];
     selectedHandCardId?: string;
@@ -110,10 +115,13 @@ const ActiveSlot: React.FC<{
     selectedCardId?: string;
     highlightTargets?: boolean;
     onPress?: (id: string) => void;
+    onRetreat?: () => void;
+    isPlayerTurn?: boolean;
     cardWidth: number;
-}> = ({ card, isPlayer, selectedCardId, highlightTargets, onPress, cardWidth }) => {
+}> = ({ card, isPlayer, selectedCardId, highlightTargets, onPress, onRetreat, isPlayerTurn, cardWidth }) => {
     const cardHeight = cardWidth * 1.4;
     const ringSize = Math.max(cardWidth, cardHeight) * 1.55;
+    const canRetreat = isPlayer && isPlayerTurn && onRetreat && card && (card.attachedEnergy?.length ?? 0) >= (card.retreatCost ?? 0);
 
     return (
         <View style={activeStyles.wrapper}>
@@ -134,6 +142,15 @@ const ActiveSlot: React.FC<{
                     <HpBar card={card} />
                     <EnergyDots card={card} />
                     <StatusBadge card={card} />
+                    {isPlayer && onRetreat && isPlayerTurn && (
+                        <TouchableOpacity
+                            style={[activeStyles.retreatBtn, !canRetreat && activeStyles.retreatBtnDisabled]}
+                            onPress={canRetreat ? onRetreat : undefined}
+                            disabled={!canRetreat}
+                        >
+                            <Text style={activeStyles.retreatBtnText}>↩ Retreat</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             ) : (
                 <View style={[activeStyles.empty, { width: cardWidth, height: cardHeight }]}>
@@ -165,6 +182,14 @@ const activeStyles = StyleSheet.create({
         borderRadius: 10, justifyContent: 'center', alignItems: 'center',
     },
     emptyText: { color: 'rgba(255,255,255,0.25)', fontSize: 11, textAlign: 'center', fontWeight: 'bold' },
+    retreatBtn: {
+        marginTop: 5, paddingHorizontal: 10, paddingVertical: 3,
+        backgroundColor: '#2a5fa8', borderRadius: 8, borderWidth: 1, borderColor: '#5599ee',
+    },
+    retreatBtnDisabled: {
+        backgroundColor: '#333', borderColor: '#555',
+    },
+    retreatBtnText: { fontSize: 10, color: '#fff', fontWeight: 'bold' },
 });
 
 /** A single bench slot */
@@ -217,6 +242,28 @@ const DeckPileBlock: React.FC<{ count: number; label: string }> = ({ count, labe
         <Text style={sideStyles.label}>{label}</Text>
     </View>
 );
+
+/** Discard pile — shows top card face, clickable */
+const DiscardPileBlock: React.FC<{ cards: CardType[]; onPress: () => void }> = ({ cards, onPress }) => {
+    const top = cards[cards.length - 1];
+    return (
+        <TouchableOpacity style={sideStyles.block} onPress={onPress} activeOpacity={0.7}>
+            <View style={sideStyles.discardVisual}>
+                {top?.imageUrl ? (
+                    <Image source={{ uri: top.imageUrl }} style={sideStyles.discardTopImage} resizeMode="cover" />
+                ) : (
+                    <View style={sideStyles.discardEmpty}>
+                        <Text style={sideStyles.discardEmptyIcon}>🗑</Text>
+                    </View>
+                )}
+                <View style={sideStyles.discardBadge}>
+                    <Text style={sideStyles.discardBadgeText}>{cards.length}</Text>
+                </View>
+            </View>
+            <Text style={sideStyles.label}>DISCARD</Text>
+        </TouchableOpacity>
+    );
+};
 
 /** Prize cards shown as a 2×3 grid (face-down if remaining, empty slot if taken) */
 const PrizeBlock: React.FC<{ count: number; total?: number }> = ({ count, total = 6 }) => {
@@ -300,6 +347,23 @@ const sideStyles = StyleSheet.create({
         color: 'rgba(167,139,250,0.8)',
         fontWeight: 'bold',
     },
+    discardVisual: {
+        width: 36, height: 50, borderRadius: 4, overflow: 'hidden',
+        borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+        marginBottom: 2, position: 'relative',
+    },
+    discardTopImage: { width: '100%', height: '100%' },
+    discardEmpty: {
+        flex: 1, justifyContent: 'center', alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+    },
+    discardEmptyIcon: { fontSize: 16 },
+    discardBadge: {
+        position: 'absolute', top: 2, right: 2,
+        backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 6,
+        paddingHorizontal: 3, paddingVertical: 1,
+    },
+    discardBadgeText: { fontSize: 8, color: '#fff', fontWeight: 'bold' },
     count: { fontSize: 14, fontWeight: 'bold', color: '#fff' },
     label: { fontSize: 9, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 },
 });
@@ -322,12 +386,19 @@ export const DesktopPlayMat: React.FC<DesktopPlayMatProps> = ({
     opponentPrizeCount = 0,
     playerDeckCount = 0,
     playerPrizeCount = 0,
+    playerDiscard = [],
+    opponentDiscard = [],
+    onPlayerRetreat,
+    isPlayerTurn = false,
     playerHand = [],
     selectedHandCardId,
     onHandCardPress,
     onHandCardLongPress,
 }) => {
     const { width: GAME_WIDTH } = useGameDimensions();
+    const [discardModal, setDiscardModal] = useState<{ visible: boolean; cards: CardType[]; title: string }>({
+        visible: false, cards: [], title: '',
+    });
 
     // Card sizes tuned to fit within each half zone (~220px tall each)
     // active: ~75px wide → 105px tall, bench: ~50px wide → 70px tall
@@ -368,9 +439,13 @@ export const DesktopPlayMat: React.FC<DesktopPlayMatProps> = ({
         <View style={styles.root}>
             {/* ── OPPONENT HALF (red zone) ── */}
             <View style={styles.opponentHalf}>
-                {/* Left side — opponent deck/prizes */}
+                {/* Left side — opponent deck + discard + prizes */}
                 <View style={styles.sidePanel}>
                     <DeckPileBlock count={opponentDeckCount} label="Deck" />
+                    <DiscardPileBlock
+                        cards={opponentDiscard}
+                        onPress={() => setDiscardModal({ visible: true, cards: opponentDiscard, title: "Opponent's Discard" })}
+                    />
                     <View style={styles.sideSpacer} />
                     <PrizeBlock count={opponentPrizeCount} />
                     <Text style={styles.handCount}>🃏 {opponentHandCount}</Text>
@@ -378,13 +453,10 @@ export const DesktopPlayMat: React.FC<DesktopPlayMatProps> = ({
 
                 {/* Center — opponent bench (top) + active (bottom) */}
                 <View style={styles.centerZone}>
-                    {/* Opponent bench — near the divider line, facing player */}
                     <View style={styles.opponentBenchArea}>
                         <Text style={styles.benchLabel}>BENCH</Text>
                         {renderBench(opponentBench, false)}
                     </View>
-
-                    {/* Opponent active — at the bottom of their half */}
                     <View style={styles.activeZone}>
                         <ActiveSlot
                             card={opponentActive}
@@ -409,27 +481,24 @@ export const DesktopPlayMat: React.FC<DesktopPlayMatProps> = ({
                 </View>
             </View>
 
-            {/* ── DIVIDER ── */}
-            <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <View style={styles.dividerBall}>
-                    <View style={styles.dividerBallCenter} />
-                </View>
-                <View style={styles.dividerLine} />
-            </View>
+            {/* ── THIN BORDER between halves (no black bar) ── */}
+            <View style={styles.halfBorder} />
 
             {/* ── PLAYER HALF (blue zone) ── */}
             <View style={styles.playerHalf}>
-                {/* Left side — player deck/prizes */}
+                {/* Left side — player deck + discard + prizes */}
                 <View style={styles.sidePanel}>
                     <DeckPileBlock count={playerDeckCount} label="Deck" />
+                    <DiscardPileBlock
+                        cards={playerDiscard}
+                        onPress={() => setDiscardModal({ visible: true, cards: playerDiscard, title: 'Your Discard' })}
+                    />
                     <View style={styles.sideSpacer} />
                     <PrizeBlock count={playerPrizeCount} />
                 </View>
 
                 {/* Center — player active (top) + bench (bottom) */}
                 <View style={styles.centerZone}>
-                    {/* Player active — at the top of their half */}
                     <View style={styles.activeZone}>
                         <ActiveSlot
                             card={playerActive}
@@ -437,18 +506,18 @@ export const DesktopPlayMat: React.FC<DesktopPlayMatProps> = ({
                             selectedCardId={selectedCardId}
                             highlightTargets={highlightTargets}
                             onPress={handlePlayerActive}
+                            onRetreat={onPlayerRetreat}
+                            isPlayerTurn={isPlayerTurn}
                             cardWidth={activeCardWidth}
                         />
                     </View>
-
-                    {/* Player bench — near the bottom */}
                     <View style={styles.playerBenchArea}>
                         <Text style={styles.benchLabel}>BENCH</Text>
                         {renderBench(playerBench, true)}
                     </View>
                 </View>
 
-                {/* Right side — empty or extra info */}
+                {/* Right side — empty */}
                 <View style={styles.sidePanel} />
             </View>
 
@@ -486,6 +555,42 @@ export const DesktopPlayMat: React.FC<DesktopPlayMatProps> = ({
                     )}
                 </ScrollView>
             </View>
+
+            {/* ── DISCARD PILE MODAL ── */}
+            <Modal
+                visible={discardModal.visible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setDiscardModal(d => ({ ...d, visible: false }))}
+            >
+                <TouchableOpacity
+                    style={styles.discardOverlay}
+                    activeOpacity={1}
+                    onPress={() => setDiscardModal(d => ({ ...d, visible: false }))}
+                >
+                    <TouchableOpacity activeOpacity={1} style={styles.discardModalBox} onPress={() => {}}>
+                        <View style={styles.discardModalHeader}>
+                            <Text style={styles.discardModalTitle}>{discardModal.title}</Text>
+                            <Text style={styles.discardModalCount}>{discardModal.cards.length} cards</Text>
+                            <TouchableOpacity onPress={() => setDiscardModal(d => ({ ...d, visible: false }))}>
+                                <Text style={styles.discardModalClose}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView contentContainerStyle={styles.discardModalGrid}>
+                            {discardModal.cards.length === 0 ? (
+                                <Text style={styles.discardModalEmpty}>No cards in discard pile</Text>
+                            ) : (
+                                [...discardModal.cards].reverse().map((card, i) => (
+                                    <View key={`${card.id}-${i}`} style={styles.discardModalCard}>
+                                        <Card card={card} isSmall size={70} />
+                                        <Text style={styles.discardModalCardName} numberOfLines={1}>{card.name}</Text>
+                                    </View>
+                                ))
+                            )}
+                        </ScrollView>
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 };
@@ -565,37 +670,10 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
 
-    // ── divider ──
-    divider: {
-        height: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#0A0A14',
-        zIndex: 10,
-    },
-    dividerLine: {
-        flex: 1,
+    // ── thin border between halves ──
+    halfBorder: {
         height: 2,
-        backgroundColor: 'rgba(255,255,255,0.15)',
-    },
-    dividerBall: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: '#0A0A14',
-        borderWidth: 2,
-        borderColor: 'rgba(255,255,255,0.25)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: -16,
-    },
-    dividerBallCenter: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.4)',
+        backgroundColor: 'rgba(255,255,255,0.18)',
     },
 
     // ── stadium ──
@@ -655,6 +733,69 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.3)',
         fontSize: 12,
         fontStyle: 'italic',
+    },
+
+    // ── discard pile modal ──
+    discardOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.75)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    discardModalBox: {
+        backgroundColor: '#1A1A2E',
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.15)',
+        width: 380,
+        maxHeight: 520,
+    },
+    discardModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.1)',
+        gap: 8,
+    },
+    discardModalTitle: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: '#fff',
+    },
+    discardModalCount: {
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.5)',
+    },
+    discardModalClose: {
+        fontSize: 18,
+        color: '#888',
+        paddingHorizontal: 4,
+    },
+    discardModalGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        padding: 12,
+        gap: 8,
+    },
+    discardModalCard: {
+        alignItems: 'center',
+        width: 70,
+    },
+    discardModalCardName: {
+        fontSize: 9,
+        color: 'rgba(255,255,255,0.6)',
+        marginTop: 3,
+        textAlign: 'center',
+        maxWidth: 70,
+    },
+    discardModalEmpty: {
+        color: 'rgba(255,255,255,0.4)',
+        fontSize: 13,
+        fontStyle: 'italic',
+        padding: 20,
     },
 });
 

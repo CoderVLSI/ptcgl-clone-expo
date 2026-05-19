@@ -618,6 +618,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                     selectedHandCardId={isDesktop ? selectedCardId : undefined}
                     onHandCardPress={isDesktop ? handleHandCardPress : undefined}
                     onHandCardLongPress={isDesktop ? (card) => setPreviewCard(card) : undefined}
+                    playerDiscard={isDesktop ? gameState.player.discardPile : undefined}
+                    opponentDiscard={isDesktop ? gameState.opponent.discardPile : undefined}
+                    isPlayerTurn={isDesktop ? isPlayerTurn : undefined}
+                    onPlayerRetreat={isDesktop ? () => {
+                        if (gameState.player.bench.length === 1) {
+                            retreat(gameState.player.bench[0].id);
+                        } else {
+                            setLogicState(prev => ({
+                                ...prev,
+                                actionMode: 'retreat_select_bench',
+                                message: 'Select a Benched Pokémon to retreat to.',
+                            }));
+                        }
+                    } : undefined}
                 />
 
                 {/* End Turn Button - Center Right */}
