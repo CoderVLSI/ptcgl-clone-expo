@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Colors from '../constants/colors';
+import { playSound } from '../services/soundService';
 
 interface EndTurnButtonProps {
     onPress: () => void;
@@ -40,7 +41,7 @@ export const EndTurnButton: React.FC<EndTurnButtonProps> = ({
                     styles.button,
                     disabled && styles.buttonDisabled,
                 ]}
-                onPress={onPress}
+                onPress={() => { playSound('button_click'); onPress(); }}
                 disabled={disabled}
                 activeOpacity={0.8}
             >
