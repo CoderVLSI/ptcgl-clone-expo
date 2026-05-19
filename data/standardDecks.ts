@@ -939,8 +939,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'pokemon',
         hp: 340,
         energyType: 'fighting',
-        subtypes: ['Stage 2', 'ex', 'Mega'],
-        evolvesFrom: 'Zygarde 50%',
+        subtypes: ['Stage 1', 'MEGA', 'ex'],
+        evolvesFrom: 'Barbaracle',
         weaknesses: [{ type: 'grass', value: '×2' }],
         retreatCost: 3,
         abilities: [{
@@ -962,8 +962,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'This attack also does 50 damage to all of your opponent\'s Benched Pokémon. This Pokémon cannot use Nullifying Zero during your next turn.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me3/188.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me3/188_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me3/47.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/47_hires.png',
     },
 
     'Binacle': {
@@ -974,8 +974,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         subtypes: ['Basic'],
         retreatCost: 1,
         attacks: [{ name: 'Scratch', damage: 10, energyCost: ['colorless'] }],
-        imageUrl: 'https://images.pokemontcg.io/me3/35.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me3/35_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me3/42.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/42_hires.png',
     },
 
     'Barbaracle': {
@@ -992,8 +992,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
             text: 'Once during your turn, you may attach a Basic Fighting Energy card from your discard pile to 1 of your Pokémon.',
         }],
         attacks: [{ name: 'Rock Smash', damage: 100, energyCost: ['fighting', 'fighting'] }],
-        imageUrl: 'https://images.pokemontcg.io/me3/36.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me3/36_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me3/43.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/43_hires.png',
     },
 
     'Tarragon': {
@@ -1001,8 +1001,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Retrieve up to 4 Basic Fighting Energy cards from your discard pile and put them into your hand.',
-        imageUrl: 'https://images.pokemontcg.io/me3/95.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me3/95_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me3/85.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/85_hires.png',
     },
 
     'Poké Pad': {
@@ -1010,8 +1010,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Search your deck for a Pokémon Tool card or a basic Energy card, reveal it, and put it into your hand. Then shuffle your deck.',
-        imageUrl: 'https://images.pokemontcg.io/me3/101.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me3/101_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me3/81.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/81_hires.png',
     },
 
     // ─── Shared trainers (if not already in STANDARD_PROXY_CARDS) ────────────
@@ -1089,6 +1089,52 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         flavorText: 'Shuffle up to 3 Pokémon and/or basic Energy cards from your discard pile into your deck.',
         imageUrl: 'https://images.pokemontcg.io/sv2/188.png',
         imageUrlLarge: 'https://images.pokemontcg.io/sv2/188_hires.png',
+    },
+
+    'Switch': {
+        name: 'Switch',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Switch your Active Pokémon with 1 of your Benched Pokémon.',
+        imageUrl: 'https://images.pokemontcg.io/me1/130.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/130_hires.png',
+    },
+
+    "Wally's Compassion": {
+        name: "Wally's Compassion",
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Heal all damage from 1 of your Mega Evolution Pokémon ex. If you healed any damage in this way, put all Energy attached to that Pokémon into your hand.',
+        imageUrl: 'https://images.pokemontcg.io/me1/132.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/132_hires.png',
+    },
+
+    'Precious Trolley': {
+        name: 'Precious Trolley',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Search your deck for up to 2 Item cards, reveal them, and put them into your hand. Then, shuffle your deck.',
+        imageUrl: 'https://images.pokemontcg.io/sv8pt5/185.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv8pt5/185_hires.png',
+    },
+
+    'Air Balloon': {
+        name: 'Air Balloon',
+        type: 'trainer',
+        subtypes: ['Pokémon Tool'],
+        flavorText: 'The Retreat Cost of the Pokémon this card is attached to is 2 less.',
+        imageUrl: 'https://images.pokemontcg.io/me2/79.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me2/79_hires.png',
+    },
+
+    'Rocky Fighting Energy': {
+        name: 'Rocky Fighting Energy',
+        type: 'energy',
+        energyType: 'fighting',
+        subtypes: ['Special Energy'],
+        flavorText: 'This card provides Fighting Energy. The Pokémon this card is attached to takes 20 less damage from attacks (after applying Weakness and Resistance).',
+        imageUrl: 'https://images.pokemontcg.io/me3/87.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me3/87_hires.png',
     },
 
     // ─── Basic Energy cards ───────────────────────────────────────────────────
@@ -2786,39 +2832,38 @@ export async function createMegaGreninjaExDeck(): Promise<Card[]> {
 
 // ============================================
 // MEGA ZYGARDE EX DECK — 2026 Standard (H-On)
-// me3 (Perfect Order) — Fighting/spread control
-// 60 cards: 17 Pokémon / 31 Trainers / 12 Energy
+// me3 (Perfect Order) — Fighting Barbaracle engine
+// 60 cards: 16 Pokémon / 33 Trainers / 11 Energy
 // ============================================
 export async function createMegaZygardeExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
 
-    // Pokémon (17)
-    addCard('Zygarde', 4);               // me3 — Basic, evolves into Zygarde 50%
-    addCard('Zygarde 50%', 3);           // me3 — Stage 1, Order Shield -20 damage
-    addCard('Mega Zygarde ex', 2);       // me3 — Stage 2, Gaia Wave + Nullifying Zero spread
-    addCard('Binacle', 4);               // me3 — Basic, evolves into Barbaracle
-    addCard('Barbaracle', 3);            // me3 — Stone Arms: attach Fighting from discard each turn
-    addCard('Lunatone', 1);              // me1 — Lunar Cycle: discard Fighting Energy to draw 3
+    // Pokémon (16)
+    addCard('Binacle', 4);               // me3/42 — Basic, evolves into Barbaracle
+    addCard('Barbaracle', 4);            // me3/43 — Stone Arms: attach Fighting from discard
+    addCard('Mega Zygarde ex', 4);       // me3/47 — Stage 1 MEGA; Gaia Wave + Nullifying Zero
+    addCard('Solrock', 2);               // me1/75 — powers up Lands Force ability
+    addCard('Lunatone', 2);              // me1/74 — Lunar Cycle: discard Fighting to draw 3
 
-    // Trainers — Supporters (11)
-    addCard('Tarragon', 4);              // me3 — retrieve 4 Fighting Energy from discard
-    addCard("Professor's Research", 3);
-    addCard('Iono', 2);
-    addCard("Boss's Orders", 2);
+    // Trainers — Supporters (16)
+    addCard('Carmine', 4);               // sv6/145 — shuffle hand, draw up to 5
+    addCard("Lillie's Determination", 4); // me1/119 — search Fighting Pokémon/Energy
+    addCard('Tarragon', 4);              // me3/85 — retrieve 4 Fighting Energy from discard
+    addCard("Wally's Compassion", 2);    // me1/132 — heal Mega Evo ex, return Energy to hand
+    addCard("Boss's Orders", 2);         // me1/114 — gust opponent's Benched Pokémon
 
-    // Trainers — Items (18)
-    addCard('Rare Candy', 4);            // sv5/sv8 — Zygarde→Mega Zygarde ex
-    addCard('Ultra Ball', 4);
-    addCard('Nest Ball', 4);
-    addCard('Super Rod', 2);
-    addCard('Night Stretcher', 2);
-    addCard('Poké Pad', 2);              // me3 — search for Tool or Energy
+    // Trainers — Items (17)
+    addCard('Poké Pad', 4);              // me3/81 — search for Tool or Energy
+    addCard('Fighting Gong', 4);         // me1/116 — search Fighting Energy or Fighting Pokémon
+    addCard('Night Stretcher', 3);       // sv6pt5/61 — recover Pokémon (+ Energy if Rule Box)
+    addCard('Ultra Ball', 2);            // me1/131 — search any Pokémon
+    addCard('Switch', 2);               // me1/130 — free retreat
+    addCard('Precious Trolley', 1);      // sv8pt5/185 — search up to 2 Items
+    addCard('Air Balloon', 1);           // me2/79 — Tool: -2 Retreat Cost
 
-    // Trainers — Stadiums (2)
-    addCard('Pokémon League Headquarters', 2);
-
-    // Energy (12)
-    addCard('Fighting Energy', 12);
+    // Energy (11)
+    addCard('Fighting Energy', 8);       // sve/6
+    addCard('Rocky Fighting Energy', 3); // me3/87 — Fighting + -20 damage taken
 
     console.log(`[2026 Standard] Mega Zygarde ex deck: ${deck.length} cards`);
     return shuffle(deck);

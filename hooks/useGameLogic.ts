@@ -1194,6 +1194,79 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
+        // Wally's Compassion — heal all damage from 1 Mega Evolution Pokémon ex, return its Energy to hand
+        if (cardNameLower.includes("wally") && cardNameLower.includes("compassion")) {
+            const megaPokemons = [gameState.player.activePokemon, ...gameState.player.bench].filter(
+                p => p && p.subtypes?.includes('MEGA') && p.damageCounters && p.damageCounters > 0
+            );
+            if (megaPokemons.length === 0) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: "Wally's Compassion: No damaged Mega Evolution Pokémon ex in play!",
+                }));
+                return false;
+            }
+            // Auto-select first damaged Mega (player can see the effect)
+            const target = megaPokemons[0]!;
+            const isActive = gameState.player.activePokemon?.id === target.id;
+            const energyCount = target.attachedEnergy?.length || 0;
+            setGameState(prev => {
+                if (!prev) return prev;
+                // Build energy cards to return to hand from attached energy
+                const energyCardsToReturn = (target.attachedEnergy || []).map((type, i) => ({
+                    id: `wally_energy_${i}_${Date.now()}`,
+                    name: `${type.charAt(0).toUpperCase() + type.slice(1)} Energy`,
+                    type: 'energy' as const,
+                    energyType: type,
+                    subtypes: ['Basic Energy'],
+                }));
+                const healed = { ...target, damageCounters: 0, attachedEnergy: [] };
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: [...prev.player.hand.filter(c => c.id !== cardId), ...energyCardsToReturn],
+                        discardPile: [...prev.player.discardPile, card],
+                        activePokemon: isActive ? healed : prev.player.activePokemon,
+                        bench: isActive ? prev.player.bench : prev.player.bench.map(c => c.id === target.id ? healed : c),
+                    },
+                    message: `Wally's Compassion: Healed all damage from ${target.name} and returned ${energyCount} Energy to hand!`,
+                };
+            });
+            setLogicState(prev => ({ ...prev, hasPlayedSupporter: true, message: "Wally's Compassion used!" }));
+            return true;
+        }
+
+        // Precious Trolley — search deck for up to 2 Item cards, put into hand
+        if (cardNameLower.includes('precious trolley')) {
+            const itemsInDeck = gameState.player.deck.filter(
+                c => c.type === 'trainer' && c.subtypes?.includes('Item')
+            );
+            if (itemsInDeck.length === 0) {
+                setLogicState(prev => ({ ...prev, message: 'No Item cards in deck!' }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                actionMode: 'search_deck_multiple',
+                activeCardId: 'precious_trolley',
+                discardCount: 2,
+                message: 'Precious Trolley: Select up to 2 Item cards from your deck.',
+            }));
+            return true;
+        }
+
         // Professor's Research / any Research supporter
         if (cardNameLower.includes('professor') || cardNameLower.includes('research')) {
             discardHand = true;
@@ -1602,7 +1675,9 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         const benchCard = gameState.player.bench.find(c => c.id === benchCardId);
         if (!benchCard) return false;
 
-        const retreatCost = active.retreatCost || 0;
+        const baseRetreatCost = active.retreatCost || 0;
+        const hasAirBalloon = active.attachedTool?.name === 'Air Balloon';
+        const retreatCost = Math.max(0, baseRetreatCost - (hasAirBalloon ? 2 : 0));
         const attachedEnergy = active.attachedEnergy || [];
 
         if (attachedEnergy.length < retreatCost) {
