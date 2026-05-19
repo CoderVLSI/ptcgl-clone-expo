@@ -1,5 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+
+const STATUS_CONFIG: Record<string, { emoji: string; color: string; label: string }> = {
+    poisoned:  { emoji: '☠', color: '#9B59B6', label: 'PSN' },
+    burned:    { emoji: '🔥', color: '#E74C3C', label: 'BRN' },
+    asleep:    { emoji: '💤', color: '#3498DB', label: 'SLP' },
+    paralyzed: { emoji: '⚡', color: '#F1C40F', label: 'PAR' },
+    confused:  { emoji: '💫', color: '#E67E22', label: 'CNF' },
+};
 import { Card as CardType } from '../types/game';
 import Colors from '../constants/colors';
 import Card from './Card';
@@ -84,6 +92,22 @@ export const PlayMat: React.FC<PlayMatProps> = ({
         );
     };
 
+    const renderStatusBadge = (card: CardType) => {
+        if (!card.statusCondition) return null;
+        const config = STATUS_CONFIG[card.statusCondition];
+        if (!config) return null;
+        return (
+            <View
+                style={[
+                    styles.statusBadge,
+                    { backgroundColor: config.color + 'D9' }, // D9 ≈ 85% opacity in hex
+                ]}
+            >
+                <Text style={styles.statusBadgeText}>{config.emoji} {config.label}</Text>
+            </View>
+        );
+    };
+
     return (
         <View style={styles.container}>
             {/* Mat Background Pattern */}
@@ -131,6 +155,7 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                                 onPress={() => onCardPress?.(opponentActive.id)}
                             />
                             {renderHpBar(opponentActive)}
+                            {renderStatusBadge(opponentActive)}
                         </View>
                     ) : (
                         <View style={[styles.emptySlot, { width: emptySlotSize, height: emptySlotSize * 1.4 }]} />
@@ -161,6 +186,7 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                                 onPress={handlePlayerActivePress}
                             />
                             {renderHpBar(playerActive)}
+                            {renderStatusBadge(playerActive)}
                         </View>
                     ) : (
                         <View style={[styles.emptySlot, { width: emptySlotSize, height: emptySlotSize * 1.4 }]} />
@@ -307,6 +333,18 @@ const styles = StyleSheet.create({
         fontSize: 9,
         textAlign: 'center',
         marginTop: 2,
+    },
+    statusBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+        marginTop: 3,
+        alignSelf: 'center',
+    },
+    statusBadgeText: {
+        color: '#FFFFFF',
+        fontSize: 11,
+        fontWeight: 'bold',
     },
 });
 

@@ -32,9 +32,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 interface GameBoardProps {
     gameState?: GameState;
     onReturnToLobby?: () => void;
+    onGameEnd?: (didWin: boolean) => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameState, onReturnToLobby }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameState, onReturnToLobby, onGameEnd }) => {
     const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useGameDimensions();
 
     const {
@@ -95,6 +96,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const [isMegaEvolution, setIsMegaEvolution] = useState(false);
     const [evolutionName, setEvolutionName] = useState<string>('');
     const [soundMuted, setSoundMuted] = useState(false);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
 
     // Victory/Defeat modal
     const [showGameOver, setShowGameOver] = useState(false);
@@ -215,6 +217,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         if (msg.includes('you win') || msg.includes('won the game')) {
             setIsVictory(true);
             setShowGameOver(true);
+            onGameEnd?.(true);
             gameOverOpacity.setValue(0);
             Animated.timing(gameOverOpacity, {
                 toValue: 1,
@@ -224,6 +227,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         } else if (msg.includes('you lose') || msg.includes('lost the game')) {
             setIsVictory(false);
             setShowGameOver(true);
+            onGameEnd?.(false);
             gameOverOpacity.setValue(0);
             Animated.timing(gameOverOpacity, {
                 toValue: 1,
@@ -529,7 +533,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             <HeaderBar
                 opponentName={gameState.opponent.name}
                 turnNumber={gameState.turn}
-                onMenuPress={() => onReturnToLobby?.()}
+                onMenuPress={() => setShowSettingsModal(true)}
             />
             {/* Mute toggle */}
             <TouchableOpacity
@@ -1052,6 +1056,69 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                     </Animated.View>
                 </View>
             </Modal>
+
+            {/* In-Game Settings Modal */}
+            <Modal
+                visible={showSettingsModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowSettingsModal(false)}
+            >
+                <View style={styles.settingsOverlay}>
+                    <View style={styles.settingsCard}>
+                        <Text style={styles.settingsTitle}>⚙ SETTINGS</Text>
+
+                        {/* Sound toggle */}
+                        <View style={styles.settingsRow}>
+                            <Text style={styles.settingsRowLabel}>🔊 Sound</Text>
+                            <TouchableOpacity
+                                style={[styles.settingsToggle, soundMuted ? styles.settingsToggleOff : styles.settingsToggleOn]}
+                                onPress={() => {
+                                    const next = !soundMuted;
+                                    setSoundMuted(next);
+                                    setMuted(next);
+                                }}
+                            >
+                                <Text style={styles.settingsToggleText}>{soundMuted ? 'OFF' : 'ON'}</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.settingsDivider} />
+
+                        {/* Return to Lobby */}
+                        <TouchableOpacity
+                            style={styles.settingsReturnButton}
+                            onPress={() => {
+                                Alert.alert(
+                                    'Return to Lobby?',
+                                    'Your current game progress will be lost.',
+                                    [
+                                        { text: 'Cancel', style: 'cancel' },
+                                        {
+                                            text: 'Return',
+                                            style: 'destructive',
+                                            onPress: () => {
+                                                setShowSettingsModal(false);
+                                                onReturnToLobby?.();
+                                            },
+                                        },
+                                    ]
+                                );
+                            }}
+                        >
+                            <Text style={styles.settingsReturnText}>↩ Return to Lobby</Text>
+                        </TouchableOpacity>
+
+                        {/* Close */}
+                        <TouchableOpacity
+                            style={styles.settingsCloseButton}
+                            onPress={() => setShowSettingsModal(false)}
+                        >
+                            <Text style={styles.settingsCloseText}>✕ Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -1253,6 +1320,102 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 14,
         letterSpacing: 1.5,
+    },
+
+    // Settings Modal
+    settingsOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.75)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+    },
+    settingsCard: {
+        backgroundColor: '#1A1A2E',
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: '#FFD700',
+        paddingVertical: 28,
+        paddingHorizontal: 24,
+        width: '100%',
+        maxWidth: 300,
+        alignItems: 'stretch',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.6,
+        shadowRadius: 16,
+        elevation: 20,
+    },
+    settingsTitle: {
+        color: '#FFD700',
+        fontSize: 20,
+        fontWeight: 'bold',
+        letterSpacing: 2,
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    settingsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 16,
+    },
+    settingsRowLabel: {
+        color: '#FFFFFF',
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    settingsToggle: {
+        borderRadius: 8,
+        paddingVertical: 6,
+        paddingHorizontal: 14,
+        minWidth: 52,
+        alignItems: 'center',
+    },
+    settingsToggleOn: {
+        backgroundColor: '#FFD700',
+    },
+    settingsToggleOff: {
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        borderWidth: 1,
+        borderColor: '#666',
+    },
+    settingsToggleText: {
+        color: '#1A1A1A',
+        fontWeight: 'bold',
+        fontSize: 13,
+        letterSpacing: 1,
+    },
+    settingsDivider: {
+        height: 1,
+        backgroundColor: 'rgba(255,255,255,0.12)',
+        marginVertical: 16,
+    },
+    settingsReturnButton: {
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: '#FF4444',
+        paddingVertical: 13,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    settingsReturnText: {
+        color: '#FF4444',
+        fontWeight: 'bold',
+        fontSize: 14,
+        letterSpacing: 0.5,
+    },
+    settingsCloseButton: {
+        borderRadius: 12,
+        backgroundColor: '#FFD700',
+        paddingVertical: 13,
+        alignItems: 'center',
+    },
+    settingsCloseText: {
+        color: '#1A1A1A',
+        fontWeight: 'bold',
+        fontSize: 14,
+        letterSpacing: 0.5,
     },
 });
 

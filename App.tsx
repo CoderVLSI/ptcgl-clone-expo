@@ -183,7 +183,14 @@ export default function App() {
     return (
       <View style={styles.container}>
         <StatusBar style="light" />
-        <GameBoard gameState={gameState || undefined} onReturnToLobby={() => setCurrentScreen('lobby')} />
+        <GameBoard
+          gameState={gameState || undefined}
+          onReturnToLobby={() => setCurrentScreen('lobby')}
+          onGameEnd={(didWin) => {
+            if (didWin) setPlayerWins(w => w + 1);
+            else setPlayerLosses(l => l + 1);
+          }}
+        />
       </View>
     );
   };
