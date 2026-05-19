@@ -183,13 +183,14 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                             {mainCardImage ? (
                                 <Image
                                     source={{ uri: mainCardImage }}
-                                    style={styles.featuredCard}
+                                    style={[styles.featuredCard, isDesktop && styles.featuredCardDesktop]}
                                     resizeMode="contain"
                                 />
                             ) : (
                                 <View
                                     style={[
                                         styles.featuredCard,
+                                        isDesktop && styles.featuredCardDesktop,
                                         { backgroundColor: deckTypeColor, opacity: 0.5, borderRadius: 12 },
                                     ]}
                                 />
@@ -227,7 +228,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
 
                     {/* Active Deck Display */}
                     <TouchableOpacity
-                        style={styles.activeDeckContainer}
+                        style={[styles.activeDeckContainer, isDesktop && styles.activeDeckContainerDesktop]}
                         onPress={() => setShowDeckManager(true)}
                         activeOpacity={0.8}
                     >
@@ -419,9 +420,17 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         backgroundColor: 'rgba(255,255,255,0.05)',
     },
+    featuredCardWrapperDesktop: {
+        width: 180,
+        height: 252,
+    },
     featuredCard: {
         width: 130,
         height: 182,
+    },
+    featuredCardDesktop: {
+        width: 180,
+        height: 252,
     },
 
     // ── Tier + Rank Score ─────────────────────────────────────────────────────
@@ -491,6 +500,10 @@ const styles = StyleSheet.create({
         gap: 12,
         minWidth: 280,
         maxWidth: 340,
+    },
+    activeDeckContainerDesktop: {
+        maxWidth: 680,
+        minWidth: 400,
     },
     deckBoxVisual: {
         width: 60,
