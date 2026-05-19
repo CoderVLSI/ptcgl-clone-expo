@@ -609,6 +609,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                     opponentPrizeCount={gameState.opponent.prizeCards.length}
                     playerDeckCount={gameState.player.deck.length}
                     playerPrizeCount={gameState.player.prizeCards.length}
+                    playerHand={isDesktop ? gameState.player.hand : undefined}
+                    selectedHandCardId={isDesktop ? selectedCardId : undefined}
+                    onHandCardPress={isDesktop ? handleHandCardPress : undefined}
+                    onHandCardLongPress={isDesktop ? (card) => setPreviewCard(card) : undefined}
                 />
 
                 {/* End Turn Button - Center Right */}
@@ -636,8 +640,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 )}
 
 
-                {/* Attack Button */}
-                {isPlayerTurn &&
+                {/* Attack Button — mobile only; desktop opens AttackMenu by clicking active Pokémon */}
+                {!isDesktop && isPlayerTurn &&
                     gameState.player.activePokemon &&
                     selectedCardId === gameState.player.activePokemon.id &&
                     !pendingEnergyCard && !pendingEvolveCard && (
@@ -652,46 +656,47 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                     )}
             </View>
 
-            {/* Player Area */}
-            <PlayerArea
-                player={gameState.player}
-                onCardPress={handleHandCardPress}
-                onCardLongPress={(card) => setPreviewCard(card)}
-                selectedCardId={selectedCardId}
-                hideInfoBar={isDesktop}
-            />
+            {/* Player Area — hidden on desktop (hand shown inside PlayMat right column) */}
+            {!isDesktop && (
+                <PlayerArea
+                    player={gameState.player}
+                    onCardPress={handleHandCardPress}
+                    onCardLongPress={(card) => setPreviewCard(card)}
+                    selectedCardId={selectedCardId}
+                />
+            )}
 
-            {/* Game Controls */}
-            <GameControls
-                hasAttachedEnergy={logicState.hasAttachedEnergy}
-                deckCount={gameState.player.deck.length}
-                discardCount={gameState.player.discardPile.length}
-                currentTurn={gameState.turn}
-                prizeCount={gameState.player.prizeCards.length}
-                opponentDeckCount={gameState.opponent.deck.length}
-                isPlayerTurn={isPlayerTurn}
-                activeStatusCondition={gameState.player.activePokemon?.statusCondition}
-                activeRetreatCost={gameState.player.activePokemon?.retreatCost ?? 0}
-                activeEnergyCount={gameState.player.activePokemon?.attachedEnergy?.length ?? 0}
-                canRetreat={
-                    isPlayerTurn &&
-                    gameState.player.bench.length > 0 &&
-                    (gameState.player.activePokemon?.retreatCost ?? 0) <= (gameState.player.activePokemon?.attachedEnergy?.length ?? 0)
-                }
-                onRetreat={() => {
-                    if (gameState.player.bench.length === 1) {
-                        // Only one bench option — retreat directly
-                        retreat(gameState.player.bench[0].id);
-                    } else {
-                        // Show bench selection
-                        setLogicState(prev => ({
-                            ...prev,
-                            actionMode: 'retreat_select_bench',
-                            message: 'Select a Benched Pokémon to retreat to.',
-                        }));
+            {/* Game Controls — mobile only; desktop has hand inside playmat */}
+            {!isDesktop && (
+                <GameControls
+                    hasAttachedEnergy={logicState.hasAttachedEnergy}
+                    deckCount={gameState.player.deck.length}
+                    discardCount={gameState.player.discardPile.length}
+                    currentTurn={gameState.turn}
+                    prizeCount={gameState.player.prizeCards.length}
+                    opponentDeckCount={gameState.opponent.deck.length}
+                    isPlayerTurn={isPlayerTurn}
+                    activeStatusCondition={gameState.player.activePokemon?.statusCondition}
+                    activeRetreatCost={gameState.player.activePokemon?.retreatCost ?? 0}
+                    activeEnergyCount={gameState.player.activePokemon?.attachedEnergy?.length ?? 0}
+                    canRetreat={
+                        isPlayerTurn &&
+                        gameState.player.bench.length > 0 &&
+                        (gameState.player.activePokemon?.retreatCost ?? 0) <= (gameState.player.activePokemon?.attachedEnergy?.length ?? 0)
                     }
-                }}
-            />
+                    onRetreat={() => {
+                        if (gameState.player.bench.length === 1) {
+                            retreat(gameState.player.bench[0].id);
+                        } else {
+                            setLogicState(prev => ({
+                                ...prev,
+                                actionMode: 'retreat_select_bench',
+                                message: 'Select a Benched Pokémon to retreat to.',
+                            }));
+                        }
+                    }}
+                />
+            )}
 
             {/* Promote Pokémon Modal — shown when player's active is KO'd by opponent */}
             <CardSelectorModal

@@ -45,6 +45,10 @@ interface PlayMatProps {
     opponentPrizeCount?: number;
     playerDeckCount?: number;
     playerPrizeCount?: number;
+    playerHand?: CardType[];
+    selectedHandCardId?: string;
+    onHandCardPress?: (card: CardType) => void;
+    onHandCardLongPress?: (card: CardType) => void;
 }
 
 const getHpBarColor = (ratio: number): string => {
@@ -69,6 +73,10 @@ export const PlayMat: React.FC<PlayMatProps> = ({
     opponentPrizeCount,
     playerDeckCount,
     playerPrizeCount,
+    playerHand,
+    selectedHandCardId,
+    onHandCardPress,
+    onHandCardLongPress,
 }) => {
     const { width: GAME_WIDTH, isDesktop } = useGameDimensions();
 
@@ -90,6 +98,10 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                 opponentPrizeCount={opponentPrizeCount}
                 playerDeckCount={playerDeckCount}
                 playerPrizeCount={playerPrizeCount}
+                playerHand={playerHand}
+                selectedHandCardId={selectedHandCardId}
+                onHandCardPress={onHandCardPress}
+                onHandCardLongPress={onHandCardLongPress}
             />
         );
     }

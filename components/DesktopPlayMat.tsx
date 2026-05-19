@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Card as CardType } from '../types/game';
 import Colors from '../constants/colors';
 import Card from './Card';
@@ -45,6 +45,11 @@ interface PlayMatProps {
     opponentPrizeCount?: number;
     playerDeckCount?: number;
     playerPrizeCount?: number;
+    // Player hand — shown inside right column on desktop
+    playerHand?: CardType[];
+    selectedHandCardId?: string;
+    onHandCardPress?: (card: CardType) => void;
+    onHandCardLongPress?: (card: CardType) => void;
 }
 
 const getHpBarColor = (ratio: number): string => {
@@ -69,6 +74,10 @@ export const DesktopPlayMat: React.FC<PlayMatProps> = ({
     opponentPrizeCount = 0,
     playerDeckCount = 0,
     playerPrizeCount = 0,
+    playerHand = [],
+    selectedHandCardId,
+    onHandCardPress,
+    onHandCardLongPress,
 }) => {
     const { width: GAME_WIDTH } = useGameDimensions();
 
@@ -289,6 +298,38 @@ export const DesktopPlayMat: React.FC<PlayMatProps> = ({
                                 </View>
                             );
                         })}
+                    </View>
+
+                    {/* Player hand strip */}
+                    <View style={styles.handStrip}>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.handScrollContent}
+                        >
+                            {playerHand.length === 0 ? (
+                                <Text style={styles.emptyHandText}>No cards in hand</Text>
+                            ) : (
+                                playerHand.map((card, index) => (
+                                    <TouchableOpacity
+                                        key={card.id}
+                                        onPress={() => onHandCardPress?.(card)}
+                                        onLongPress={() => onHandCardLongPress?.(card)}
+                                        style={[
+                                            styles.handCard,
+                                            index > 0 && { marginLeft: -14 },
+                                            selectedHandCardId === card.id && styles.handCardSelected,
+                                        ]}
+                                    >
+                                        <Card
+                                            card={card}
+                                            isSmall
+                                            isHighlighted={selectedHandCardId === card.id}
+                                        />
+                                    </TouchableOpacity>
+                                ))
+                            )}
+                        </ScrollView>
                     </View>
 
                     {/* Player stats bar */}
@@ -515,6 +556,42 @@ const styles = StyleSheet.create({
     energyOverflow: {
         color: '#FFFFFF',
         fontSize: 8,
+    },
+
+    // Player hand strip (inside right column)
+    handStrip: {
+        width: '100%',
+        backgroundColor: 'rgba(0,0,0,0.25)',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        paddingVertical: 6,
+        marginVertical: 4,
+        minHeight: 88,
+        justifyContent: 'center',
+    },
+    handScrollContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        minWidth: '100%',
+    },
+    handCard: {
+        zIndex: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 3,
+        elevation: 4,
+    },
+    handCardSelected: {
+        transform: [{ translateY: -6 }],
+    },
+    emptyHandText: {
+        color: 'rgba(255,255,255,0.35)',
+        fontSize: 11,
+        fontStyle: 'italic',
+        paddingHorizontal: 12,
     },
 });
 
