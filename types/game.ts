@@ -119,7 +119,7 @@ export interface GameLogicState {
     abilitiesUsed: string[]; // Track card IDs that used abilities this turn
     coinFlipResult: 'heads' | 'tails' | null;
     selectedCard: Card | null;
-    actionMode: 'none' | 'attach_energy' | 'evolve' | 'select_target' | 'discard_from_hand' | 'search_deck' | 'search_deck_basic' | 'switch_opponent_active' | 'search_deck_fighting' | 'attach_energy_from_discard' | 'distribute_energy_from_discard' | 'retreat_select_bench' | 'select_from_discard' | 'search_deck_multiple' | 'select_discard_multiple' | 'promote_active';
+    actionMode: 'none' | 'attach_energy' | 'evolve' | 'select_target' | 'discard_from_hand' | 'search_deck' | 'search_deck_basic' | 'switch_opponent_active' | 'search_deck_fighting' | 'attach_energy_from_discard' | 'distribute_energy_from_discard' | 'retreat_select_bench' | 'select_from_discard' | 'search_deck_multiple' | 'select_discard_multiple' | 'promote_active' | 'place_damage_counters';
     message: string;
     activeCardId?: string;
     discardCount: number;

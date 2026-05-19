@@ -20,6 +20,7 @@ export interface GameLogicReturn {
     confirmDeckSelection: (cardIds: string[]) => void;
     confirmNestBallSelection: (cardIds: string[]) => void;
     confirmBossOrdersSelection: (benchCardId: string) => void;
+    confirmPlaceDamageCounters: (targetCardId: string) => void;
     confirmFightingGongSelection: (cardIds: string[]) => void;
     attack: (attackIndex: number) => boolean;
     currentPhase?: 'setup' | 'draw' | 'action' | 'attack';
@@ -1503,6 +1504,53 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         }));
     }, [gameState, logicState.activeCardId]);
 
+    const confirmPlaceDamageCounters = useCallback((targetCardId: string) => {
+        if (!gameState) return;
+        const damageAmount = logicState.discardCount || 60;
+
+        setGameState(prev => {
+            if (!prev) return prev;
+            const oppActive = prev.opponent.activePokemon;
+            const oppBench = prev.opponent.bench;
+
+            if (oppActive && oppActive.id === targetCardId) {
+                return {
+                    ...prev,
+                    opponent: {
+                        ...prev.opponent,
+                        activePokemon: {
+                            ...oppActive,
+                            damageCounters: (oppActive.damageCounters || 0) + damageAmount,
+                        },
+                    },
+                    message: `Placed ${damageAmount / 10} damage counters on ${oppActive.name}!`,
+                };
+            }
+
+            const benchTarget = oppBench.find(c => c.id === targetCardId);
+            if (!benchTarget) return prev;
+            return {
+                ...prev,
+                opponent: {
+                    ...prev.opponent,
+                    bench: oppBench.map(c =>
+                        c.id === targetCardId
+                            ? { ...c, damageCounters: (c.damageCounters || 0) + damageAmount }
+                            : c
+                    ),
+                },
+                message: `Placed ${damageAmount / 10} damage counters on ${benchTarget.name}!`,
+            };
+        });
+        setLogicState(prev => ({
+            ...prev,
+            actionMode: 'none',
+            activeCardId: undefined,
+            discardCount: 0,
+            message: '',
+        }));
+    }, [gameState, logicState.discardCount]);
+
     const confirmFightingGongSelection = useCallback((selectedCardIds: string[]) => {
         if (!gameState || !logicState.activeCardId || selectedCardIds.length === 0) return;
 
@@ -2233,8 +2281,9 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             }
             if (!gameState.opponent.activePokemon) return false;
             const energyToDiscard = waterInHand[0];
+            // Discard the Water Energy now; player will pick the target via modal
             setGameState(prev => {
-                if (!prev || !prev.opponent.activePokemon) return prev;
+                if (!prev) return prev;
                 return {
                     ...prev,
                     player: {
@@ -2242,20 +2291,15 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                         hand: prev.player.hand.filter(c => c.id !== energyToDiscard.id),
                         discardPile: [...prev.player.discardPile, energyToDiscard],
                     },
-                    opponent: {
-                        ...prev.opponent,
-                        activePokemon: {
-                            ...prev.opponent.activePokemon,
-                            damageCounters: (prev.opponent.activePokemon.damageCounters || 0) + 60,
-                        },
-                    },
-                    message: `Sure-Hit Shuriken: Discarded Water Energy, placed 6 damage counters on ${prev.opponent.activePokemon.name}!`,
                 };
             });
             setLogicState(prev => ({
                 ...prev,
+                actionMode: 'place_damage_counters',
+                activeCardId: cardId,
+                discardCount: 60, // 6 damage counters = 60 damage
                 abilitiesUsed: [...prev.abilitiesUsed, cardId, ability.name],
-                message: 'Sure-Hit Shuriken: 60 damage to opponent\'s Active!',
+                message: 'Sure-Hit Shuriken: Select 1 of your opponent\'s Pokémon to place 6 damage counters on.',
             }));
             return true;
         }
@@ -3231,6 +3275,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         confirmDiscardEnergySelection,
         confirmNestBallSelection,
         confirmBossOrdersSelection,
+        confirmPlaceDamageCounters,
         confirmFightingGongSelection,
         attack,
         useAbility,

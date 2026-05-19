@@ -67,6 +67,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         confirmDiscardSelection,
         confirmMultiDeckSelection,
         confirmCarmineSelection,
+        confirmPlaceDamageCounters,
     } = useGameLogic(externalGameState || null);
 
     const [selectedCardId, setSelectedCardId] = useState<string | undefined>();
@@ -793,6 +794,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 onConfirm={(ids) => confirmBossOrdersSelection(ids[0])}
                 onCancel={() => selectCard(null, 'none')}
                 confirmText="Switch"
+            />
+
+            {/* Place Damage Counters Modal (Sure-Hit Shuriken etc) */}
+            <CardSelectorModal
+                visible={logicState.actionMode === 'place_damage_counters'}
+                title="Choose Target"
+                subtitle={logicState.message || `Place ${(logicState.discardCount || 60) / 10} damage counters on 1 of your opponent's Pokémon.`}
+                cards={[
+                    ...(gameState.opponent.activePokemon ? [gameState.opponent.activePokemon] : []),
+                    ...gameState.opponent.bench,
+                ]}
+                minSelection={1}
+                maxSelection={1}
+                onConfirm={(ids) => confirmPlaceDamageCounters(ids[0])}
+                onCancel={() => selectCard(null, 'none')}
+                confirmText="Place Damage"
             />
 
             {/* Fighting Gong Modal */}
