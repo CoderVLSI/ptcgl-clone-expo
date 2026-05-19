@@ -17,6 +17,7 @@ interface AttackMenuProps {
     onClose: () => void;
     onAttack: (attackIndex: number) => void;
     onUseAbility?: (abilityIndex: number) => void;
+    onSetActive?: () => void;
     abilitiesUsed?: string[];
     opponentActive?: OpponentActive;
 }
@@ -109,6 +110,7 @@ export const AttackMenu: React.FC<AttackMenuProps> = ({
     onClose,
     onAttack,
     onUseAbility,
+    onSetActive,
     abilitiesUsed = [],
     opponentActive,
 }) => {
@@ -139,6 +141,23 @@ export const AttackMenu: React.FC<AttackMenuProps> = ({
                     </View>
 
                     <ScrollView contentContainerStyle={styles.content}>
+                        {/* Set Active — shown for bench Pokémon on desktop */}
+                        {onSetActive && (
+                            <View style={styles.section}>
+                                <TouchableOpacity
+                                    style={[styles.attackCard, { borderColor: Colors.energy.fire }]}
+                                    onPress={() => { onSetActive(); onClose(); }}
+                                    activeOpacity={0.8}
+                                >
+                                    <View style={styles.attackMain}>
+                                        <View style={styles.attackInfo}>
+                                            <Text style={[styles.attackName, { color: Colors.energy.fire }]}>⚔ Set as Active Pokémon</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
                         {/* Abilities Section */}
                         {hasAbilities && (
                             <View style={styles.section}>

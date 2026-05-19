@@ -76,6 +76,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const [showCoinFlip, setShowCoinFlip] = useState(false);
     const [showAttackMenu, setShowAttackMenu] = useState(false);
     const [menuCard, setMenuCard] = useState<CardType | null>(null);
+    const [menuCardIsBench, setMenuCardIsBench] = useState(false);
     const [previewCard, setPreviewCard] = useState<CardType | null>(null);
     const [selectedHandCard, setSelectedHandCard] = useState<CardType | null>(null);
     const [hasDrawnThisTurn, setHasDrawnThisTurn] = useState(false);
@@ -398,6 +399,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         // If player clicks their own active pokemon during their turn, open attack menu
         if (gameState?.currentPlayer === 'player' && gameState.player.activePokemon?.id === cardId) {
             setMenuCard(gameState.player.activePokemon || null);
+            setMenuCardIsBench(false);
             setShowAttackMenu(true);
         }
     }, [gameState, logicState.actionMode, pendingEnergyCard, pendingEvolveCard, selectedCardId, attachEnergy, evolvePokemon, distributeEnergyToTarget]);
@@ -454,24 +456,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
         }
 
         // Options: Set Active or Ability
-        Alert.alert(
-            'Options',
-            `What to do with ${card.name}?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Set Active',
-                    onPress: () => setActivePokemon(card.id)
-                },
-                {
-                    text: 'View/Abilities',
-                    onPress: () => {
-                        setMenuCard(card);
-                        setShowAttackMenu(true);
-                    }
-                }
-            ]
-        );
+        if (isDesktop) {
+            // Alert.alert only supports 2 buttons on web — open AttackMenu directly so
+            // the user can use abilities. Set Active is accessible via the AttackMenu too.
+            setMenuCard(card);
+            setMenuCardIsBench(true);
+            setShowAttackMenu(true);
+        } else {
+            Alert.alert(
+                'Options',
+                `What to do with ${card.name}?`,
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Set Active', onPress: () => setActivePokemon(card.id) },
+                    { text: 'View/Abilities', onPress: () => { setMenuCard(card); setShowAttackMenu(true); } }
+                ]
+            );
+        }
     }, [gameState, logicState, pendingEnergyCard, pendingEvolveCard, attachEnergy, evolvePokemon, setActivePokemon, distributeEnergyToTarget, setLogicState]);
 
 
@@ -486,6 +487,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const handleAttachEnergy = useCallback(() => {
         if (!selectedHandCard) return;
         setPendingEnergyCard(selectedHandCard);
+        setShowActionMenu(false);
+        setSelectedHandCard(null);
         setLogicState(prev => ({
             ...prev,
             actionMode: 'attach_energy',
@@ -496,6 +499,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const handleEvolve = useCallback(() => {
         if (!selectedHandCard) return;
         setPendingEvolveCard(selectedHandCard);
+        setShowActionMenu(false);
+        setSelectedHandCard(null);
         setLogicState(prev => ({
             ...prev,
             actionMode: 'evolve',
@@ -929,8 +934,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             {/* Action Menu Modal */}
             <ActionMenu
                 card={selectedHandCard}
-                visible={showActionMenu || logicState.actionMode === 'attach_energy' || logicState.actionMode === 'evolve'}
-                selectionMode={logicState.actionMode === 'attach_energy' || logicState.actionMode === 'evolve'}
+                visible={showActionMenu}
+                selectionMode={false}
                 onClose={() => {
                     setShowActionMenu(false);
                     setSelectedHandCard(null);
@@ -986,6 +991,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 onClose={() => {
                     setShowAttackMenu(false);
                     setMenuCard(null);
+                    setMenuCardIsBench(false);
                 }}
                 onAttack={handleAttack}
                 onUseAbility={(abilityIndex) => {
@@ -993,8 +999,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                         useAbility(menuCard.id, abilityIndex);
                         setShowAttackMenu(false);
                         setMenuCard(null);
+                        setMenuCardIsBench(false);
                     }
                 }}
+                onSetActive={menuCardIsBench && isDesktop && isPlayerTurn && menuCard ? () => {
+                    setActivePokemon(menuCard.id);
+                    setShowAttackMenu(false);
+                    setMenuCard(null);
+                    setMenuCardIsBench(false);
+                } : undefined}
                 abilitiesUsed={logicState.abilitiesUsed || []}
             />
 
