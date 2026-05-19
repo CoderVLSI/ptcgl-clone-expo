@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import DesktopPlayMat from './DesktopPlayMat';
 
 const ENERGY_COLORS: Record<string, string> = {
     fire:      '#C04808',
@@ -59,7 +60,25 @@ export const PlayMat: React.FC<PlayMatProps> = ({
     stadium,
     stadiumOwner,
 }) => {
-    const { width: GAME_WIDTH } = useGameDimensions();
+    const { width: GAME_WIDTH, isDesktop } = useGameDimensions();
+
+    if (isDesktop) {
+        return (
+            <DesktopPlayMat
+                opponentActive={opponentActive}
+                opponentBench={opponentBench}
+                playerActive={playerActive}
+                playerBench={playerBench}
+                onCardPress={onCardPress}
+                onBenchCardPress={onBenchCardPress}
+                selectedCardId={selectedCardId}
+                highlightTargets={highlightTargets}
+                stadium={stadium}
+                stadiumOwner={stadiumOwner}
+            />
+        );
+    }
+
     const emptySlotSize = GAME_WIDTH * 0.18;
     const emptyBenchSlotSize = GAME_WIDTH * 0.12;
 

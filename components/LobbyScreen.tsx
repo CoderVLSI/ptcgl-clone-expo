@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/colors';
 import { Card } from '../types/game';
 import DeckManager from './DeckManager';
+import useGameDimensions from '../hooks/useGameDimensions';
 
 interface LobbyScreenProps {
     onPlayPress: () => void;
@@ -71,6 +72,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
     const [mode, setMode] = useState<GameMode>('Ranked');
     const [showDeckManager, setShowDeckManager] = useState(false);
     const { width, height } = useWindowDimensions();
+    const { isDesktop } = useGameDimensions();
 
     // Bounce animation for play button (spring from 0.7 → 1 on mount)
     const playScale = useRef(new Animated.Value(0.7)).current;
@@ -168,6 +170,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                         <View
                             style={[
                                 styles.featuredCardWrapper,
+                                isDesktop && styles.featuredCardWrapperDesktop,
                                 {
                                     shadowColor: deckTypeColor,
                                     shadowRadius: 20,

@@ -311,7 +311,7 @@ export default function App() {
       {/* Desktop sidebar - right */}
       <View style={desktopStyles.sidebar}>
         <View style={desktopStyles.sidebarContent}>
-          <Text style={desktopStyles.sidebarHint}>Controls{'\n\n'}Click cards{'\n'}to select{'\n\n'}Click active{'\n'}Pokémon{'\n'}to attack{'\n\n'}END TURN{'\n'}button →</Text>
+          <Text style={desktopStyles.sidebarHint}>Tips{'\n\n'}Click bench{'\n'}cards to{'\n'}promote them{'\n\n'}Attach energy{'\n'}before{'\n'}attacking{'\n\n'}Click active{'\n'}foe to attack{'\n\n'}Prize cards{'\n'}awarded on{'\n'}each KO</Text>
         </View>
       </View>
     </View>
@@ -439,7 +439,7 @@ const desktopStyles = StyleSheet.create({
     lineHeight: 20,
   },
   gameFrame: {
-    width: 480,
+    width: 900,
     alignSelf: 'stretch',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 0 },

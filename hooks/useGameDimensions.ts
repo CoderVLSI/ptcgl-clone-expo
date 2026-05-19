@@ -1,6 +1,6 @@
 import { useWindowDimensions, Platform } from 'react-native';
 
-const DESKTOP_GAME_WIDTH = 480;
+const DESKTOP_GAME_WIDTH = 900;
 
 export function useGameDimensions() {
   const { width, height } = useWindowDimensions();
