@@ -165,8 +165,8 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: Colors.primary.red,
         paddingHorizontal: 12,
-        paddingTop: 10,
-        paddingBottom: 8,
+        paddingTop: 6,
+        paddingBottom: 4,
         borderTopWidth: 3,
         borderTopColor: Colors.primary.darkRed,
     },
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 6,
         paddingHorizontal: 8,
     },
     handInfo: {
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 6,
+        marginBottom: 3,
         paddingHorizontal: 4,
     },
     handInfoLabel: {
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
 
     // Hand scroll
     handSection: {
-        height: 110,
+        height: 88,
     },
     handContainer: {
         alignItems: 'center',
