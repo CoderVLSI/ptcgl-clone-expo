@@ -35,9 +35,11 @@ export const Card: React.FC<CardProps> = ({
     showFullImage = true,
 }) => {
     const [imageError, setImageError] = useState(false);
-    const { width: GAME_WIDTH } = useGameDimensions();
+    const { width: GAME_WIDTH, isDesktop } = useGameDimensions();
 
-    const cardWidth = isSmall ? GAME_WIDTH * 0.12 : GAME_WIDTH * 0.18;
+    // On desktop, cap the base size so cards don't render too large in the 3-column layout
+    const cardBase = isDesktop ? Math.min(GAME_WIDTH, 520) : GAME_WIDTH;
+    const cardWidth = isSmall ? cardBase * 0.12 : cardBase * 0.18;
     const cardHeight = cardWidth * CARD_ASPECT_RATIO;
 
     const renderCardBack = () => (

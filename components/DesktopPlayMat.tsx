@@ -152,8 +152,9 @@ export const DesktopPlayMat: React.FC<PlayMatProps> = ({
         );
     };
 
-    // Bench card size for desktop — a bit larger than mobile isSmall cards
-    const benchSlotSize = Math.floor(GAME_WIDTH * 0.075);
+    // Bench slot size must match Card's isSmall width: min(GAME_WIDTH,520)*0.12
+    const cardBase = Math.min(GAME_WIDTH, 520);
+    const benchSlotSize = Math.floor(cardBase * 0.12);
 
     return (
         <View style={styles.container}>

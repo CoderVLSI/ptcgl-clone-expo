@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     PanResponder,
     Image,
+    Modal,
 } from 'react-native';
 import { Card } from '../types/game';
 import Colors from '../constants/colors';
@@ -61,7 +62,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
     message,
     selectionMode = false,
 }) => {
-    const { width: GAME_WIDTH, height: GAME_HEIGHT } = useGameDimensions();
+    const { width: GAME_WIDTH, height: GAME_HEIGHT, isDesktop } = useGameDimensions();
     const [position, setPosition] = useState({ x: GAME_WIDTH - 170, y: 100 });
 
     const panResponder = useRef(
@@ -139,6 +140,95 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
 
     const energyColor = card.energyType ? ENERGY_TYPE_COLOR[card.energyType] : undefined;
 
+    const menuBody = (
+        <View style={styles.menuContent}>
+            {/* Card Thumbnail Header */}
+            <View style={styles.header}>
+                {card.imageUrl ? (
+                    <Image
+                        source={{ uri: card.imageUrl }}
+                        style={styles.cardThumb}
+                        resizeMode="contain"
+                    />
+                ) : null}
+                <View style={styles.cardInfo}>
+                    <Text style={styles.cardName} numberOfLines={1}>{card.name}</Text>
+                    {card.hp && card.type === 'pokemon' && (
+                        <Text style={styles.cardHP}>{card.hp} HP</Text>
+                    )}
+                    {energyColor && (
+                        <View style={styles.typeBadgeRow}>
+                            <View style={[styles.typeBadge, { backgroundColor: energyColor }]} />
+                            <Text style={styles.typeLabel}>{card.energyType}</Text>
+                        </View>
+                    )}
+                </View>
+                <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                    <Text style={styles.closeText}>✕</Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Message */}
+            {message && (
+                <Text style={styles.message}>{message}</Text>
+            )}
+
+            {/* Action Buttons - hide during selection mode */}
+            {!selectionMode && (
+                <View style={styles.actionsRow}>
+                    {actions.map((action, index) => (
+                        <View key={index} style={styles.actionWrapper}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.actionButton,
+                                    { backgroundColor: action.enabled ? action.color : '#444' },
+                                ]}
+                                onPress={action.onPress}
+                                disabled={!action.enabled}
+                            >
+                                <Text style={[
+                                    styles.actionText,
+                                    !action.enabled && styles.disabledText,
+                                ]}>
+                                    {action.label}
+                                </Text>
+                            </TouchableOpacity>
+                            {!action.enabled && action.disabledReason && (
+                                <Text style={styles.disabledReason}>{action.disabledReason}</Text>
+                            )}
+                        </View>
+                    ))}
+                </View>
+            )}
+
+            {/* Cancel Button */}
+            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+                <Text style={styles.cancelText}>{selectionMode ? 'Cancel Action' : 'Cancel'}</Text>
+            </TouchableOpacity>
+        </View>
+    );
+
+    // On desktop: centered modal overlay. On mobile: draggable floating panel.
+    if (isDesktop) {
+        return (
+            <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+                <TouchableOpacity
+                    style={styles.desktopOverlay}
+                    activeOpacity={1}
+                    onPress={onClose}
+                >
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        onPress={() => {}}
+                        style={styles.desktopContainer}
+                    >
+                        {menuBody}
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
+        );
+    }
+
     return (
         <View
             style={[
@@ -146,7 +236,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                 { left: position.x, top: position.y },
             ]}
         >
-            {/* Drag Handle - Only this area is draggable */}
+            {/* Drag Handle */}
             <View
                 {...panResponder.panHandlers}
                 style={styles.dragHandleContainer}
@@ -155,78 +245,31 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                     <View style={styles.dragHandleBar} />
                 </View>
             </View>
-
-            {/* Rest of the menu - not draggable, buttons work */}
-            <View style={styles.menuContent}>
-                {/* Card Thumbnail Header */}
-                <View style={styles.header}>
-                    {card.imageUrl ? (
-                        <Image
-                            source={{ uri: card.imageUrl }}
-                            style={styles.cardThumb}
-                            resizeMode="contain"
-                        />
-                    ) : null}
-                    <View style={styles.cardInfo}>
-                        <Text style={styles.cardName} numberOfLines={1}>{card.name}</Text>
-                        {card.hp && card.type === 'pokemon' && (
-                            <Text style={styles.cardHP}>{card.hp} HP</Text>
-                        )}
-                        {energyColor && (
-                            <View style={styles.typeBadgeRow}>
-                                <View style={[styles.typeBadge, { backgroundColor: energyColor }]} />
-                                <Text style={styles.typeLabel}>{card.energyType}</Text>
-                            </View>
-                        )}
-                    </View>
-                    <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                        <Text style={styles.closeText}>✕</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Message */}
-                {message && (
-                    <Text style={styles.message}>{message}</Text>
-                )}
-
-                {/* Action Buttons - hide during selection mode */}
-                {!selectionMode && (
-                    <View style={styles.actionsRow}>
-                        {actions.map((action, index) => (
-                            <View key={index} style={styles.actionWrapper}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.actionButton,
-                                        { backgroundColor: action.enabled ? action.color : '#444' },
-                                    ]}
-                                    onPress={action.onPress}
-                                    disabled={!action.enabled}
-                                >
-                                    <Text style={[
-                                        styles.actionText,
-                                        !action.enabled && styles.disabledText,
-                                    ]}>
-                                        {action.label}
-                                    </Text>
-                                </TouchableOpacity>
-                                {!action.enabled && action.disabledReason && (
-                                    <Text style={styles.disabledReason}>{action.disabledReason}</Text>
-                                )}
-                            </View>
-                        ))}
-                    </View>
-                )}
-
-                {/* Cancel Button */}
-                <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-                    <Text style={styles.cancelText}>{selectionMode ? 'Cancel Action' : 'Cancel'}</Text>
-                </TouchableOpacity>
-            </View>
+            {menuBody}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
+    desktopOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    desktopContainer: {
+        backgroundColor: '#1A1A2E',
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: Colors.card.highlight,
+        minWidth: 240,
+        maxWidth: 320,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.6,
+        shadowRadius: 12,
+        elevation: 20,
+    },
     container: {
         position: 'absolute',
         backgroundColor: '#1A1A2E',
