@@ -36,7 +36,7 @@ interface GameBoardProps {
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameState, onReturnToLobby, onGameEnd }) => {
-    const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useGameDimensions();
+    const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT, isDesktop } = useGameDimensions();
 
     const {
         gameState,
@@ -585,10 +585,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 <Text style={styles.muteIcon}>{soundMuted ? '🔇' : '🔊'}</Text>
             </TouchableOpacity>
 
-            {/* Opponent Area */}
-            <OpponentArea
-                opponent={gameState.opponent}
-            />
+            {/* Opponent Area — hidden on desktop (info shown inside DesktopPlayMat) */}
+            {!isDesktop && (
+                <OpponentArea opponent={gameState.opponent} />
+            )}
 
             {/* Play Mat */}
             <View style={styles.playMatContainer}>
@@ -603,6 +603,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                     highlightTargets={!!pendingEnergyCard || !!pendingEvolveCard}
                     stadium={gameState.stadium}
                     stadiumOwner={gameState.stadiumOwner}
+                    opponentDeckCount={gameState.opponent.deck.length}
+                    opponentHandCount={gameState.opponent.hand.length}
+                    opponentPrizeCount={gameState.opponent.prizeCards.length}
+                    playerDeckCount={gameState.player.deck.length}
+                    playerPrizeCount={gameState.player.prizeCards.length}
                 />
 
                 {/* End Turn Button - Center Right */}
@@ -652,6 +657,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 onCardPress={handleHandCardPress}
                 onCardLongPress={(card) => setPreviewCard(card)}
                 selectedCardId={selectedCardId}
+                hideInfoBar={isDesktop}
             />
 
             {/* Game Controls */}

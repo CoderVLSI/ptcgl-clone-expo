@@ -39,6 +39,12 @@ interface PlayMatProps {
     highlightTargets?: boolean;
     stadium?: CardType;
     stadiumOwner?: 'player' | 'opponent';
+    // Extra info shown in side columns on desktop
+    opponentDeckCount?: number;
+    opponentHandCount?: number;
+    opponentPrizeCount?: number;
+    playerDeckCount?: number;
+    playerPrizeCount?: number;
 }
 
 const getHpBarColor = (ratio: number): string => {
@@ -58,6 +64,11 @@ export const DesktopPlayMat: React.FC<PlayMatProps> = ({
     highlightTargets = false,
     stadium,
     stadiumOwner,
+    opponentDeckCount = 0,
+    opponentHandCount = 0,
+    opponentPrizeCount = 0,
+    playerDeckCount = 0,
+    playerPrizeCount = 0,
 }) => {
     const { width: GAME_WIDTH } = useGameDimensions();
 
@@ -157,6 +168,13 @@ export const DesktopPlayMat: React.FC<PlayMatProps> = ({
 
                 {/* ── Left column: Opponent side ── */}
                 <View style={styles.opponentColumn}>
+                    {/* Opponent stats bar */}
+                    <View style={styles.statsBar}>
+                        <Text style={styles.statChip}>🃏 {opponentHandCount}</Text>
+                        <Text style={styles.statChip}>📦 {opponentDeckCount}</Text>
+                        <Text style={styles.statChip}>🏆 {opponentPrizeCount}</Text>
+                    </View>
+
                     {/* Opponent bench — horizontal row at top */}
                     <View style={styles.benchRow}>
                         {[...Array(5)].map((_, index) => {
@@ -271,6 +289,12 @@ export const DesktopPlayMat: React.FC<PlayMatProps> = ({
                             );
                         })}
                     </View>
+
+                    {/* Player stats bar */}
+                    <View style={styles.statsBar}>
+                        <Text style={styles.statChip}>📦 {playerDeckCount}</Text>
+                        <Text style={styles.statChip}>🏆 {playerPrizeCount}</Text>
+                    </View>
                 </View>
 
             </View>
@@ -374,6 +398,23 @@ const styles = StyleSheet.create({
 
     centerBottom: {
         flex: 1,
+    },
+
+    // Stats bar
+    statsBar: {
+        flexDirection: 'row',
+        gap: 8,
+        justifyContent: 'center',
+        paddingVertical: 4,
+    },
+    statChip: {
+        color: 'rgba(255,255,255,0.85)',
+        fontSize: 11,
+        fontWeight: '600',
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 10,
     },
 
     // Bench row (horizontal)

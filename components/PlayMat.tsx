@@ -40,6 +40,11 @@ interface PlayMatProps {
     highlightTargets?: boolean;
     stadium?: CardType;
     stadiumOwner?: 'player' | 'opponent';
+    opponentDeckCount?: number;
+    opponentHandCount?: number;
+    opponentPrizeCount?: number;
+    playerDeckCount?: number;
+    playerPrizeCount?: number;
 }
 
 const getHpBarColor = (ratio: number): string => {
@@ -59,6 +64,11 @@ export const PlayMat: React.FC<PlayMatProps> = ({
     highlightTargets = false,
     stadium,
     stadiumOwner,
+    opponentDeckCount,
+    opponentHandCount,
+    opponentPrizeCount,
+    playerDeckCount,
+    playerPrizeCount,
 }) => {
     const { width: GAME_WIDTH, isDesktop } = useGameDimensions();
 
@@ -75,6 +85,11 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                 highlightTargets={highlightTargets}
                 stadium={stadium}
                 stadiumOwner={stadiumOwner}
+                opponentDeckCount={opponentDeckCount}
+                opponentHandCount={opponentHandCount}
+                opponentPrizeCount={opponentPrizeCount}
+                playerDeckCount={playerDeckCount}
+                playerPrizeCount={playerPrizeCount}
             />
         );
     }

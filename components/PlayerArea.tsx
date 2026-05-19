@@ -58,6 +58,7 @@ interface PlayerAreaProps {
     onCardPress?: (card: CardType) => void;
     onCardLongPress?: (card: CardType) => void;
     selectedCardId?: string;
+    hideInfoBar?: boolean;
 }
 
 export const PlayerArea: React.FC<PlayerAreaProps> = ({
@@ -65,10 +66,60 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
     onCardPress,
     onCardLongPress,
     selectedCardId,
+    hideInfoBar = false,
 }) => {
     const { width: GAME_WIDTH } = useGameDimensions();
     const hand = player.hand;
     const [hasScrolled, setHasScrolled] = useState(false);
+
+    if (hideInfoBar) {
+        // Desktop: show only the hand scroll, no top info bar
+        return (
+            <View style={[styles.container, styles.containerDesktop]}>
+                <View style={styles.handSection}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={[
+                            styles.handContainer,
+                            hand.length === 0 && styles.handContainerEmpty,
+                        ]}
+                        decelerationRate="fast"
+                    >
+                        {hand.length === 0 ? (
+                            <View style={styles.emptyHand}>
+                                <Text style={styles.emptyHandIcon}>🃏</Text>
+                                <Text style={styles.emptyHandText}>No cards in hand</Text>
+                            </View>
+                        ) : (
+                            hand.map((card, index) => (
+                                <View
+                                    key={card.id}
+                                    style={[
+                                        styles.handCard,
+                                        { zIndex: hand.length - index },
+                                        index > 0 && { marginLeft: -20 },
+                                    ]}
+                                >
+                                    <PulsingCard isSelected={selectedCardId === card.id}>
+                                        <Card
+                                            card={card}
+                                            isHighlighted={selectedCardId === card.id}
+                                            onPress={() => onCardPress?.(card)}
+                                            onLongPress={() => onCardLongPress?.(card)}
+                                        />
+                                    </PulsingCard>
+                                </View>
+                            ))
+                        )}
+                    </ScrollView>
+                </View>
+                {hand.length > 5 && !hasScrolled && (
+                    <Text style={styles.swipeHint}>← swipe to browse →</Text>
+                )}
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -169,6 +220,10 @@ const styles = StyleSheet.create({
         paddingBottom: 4,
         borderTopWidth: 3,
         borderTopColor: Colors.primary.darkRed,
+    },
+    containerDesktop: {
+        paddingTop: 4,
+        paddingBottom: 4,
     },
     topRow: {
         flexDirection: 'row',
