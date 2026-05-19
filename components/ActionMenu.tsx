@@ -5,6 +5,7 @@ import {
     StyleSheet,
     TouchableOpacity,
     PanResponder,
+    Image,
 } from 'react-native';
 import { Card } from '../types/game';
 import Colors from '../constants/colors';
@@ -27,6 +28,21 @@ interface ActionMenuProps {
     message?: string;
     selectionMode?: boolean;
 }
+
+// Map energy type to a display color
+const ENERGY_TYPE_COLOR: Record<string, string> = {
+    fire: Colors.energy.fire,
+    water: Colors.energy.water,
+    grass: Colors.energy.grass,
+    lightning: Colors.energy.lightning,
+    psychic: Colors.energy.psychic,
+    fighting: Colors.energy.fighting,
+    darkness: Colors.energy.darkness,
+    metal: Colors.energy.metal,
+    fairy: Colors.energy.fairy,
+    dragon: Colors.energy.dragon,
+    colorless: Colors.energy.colorless,
+};
 
 export const ActionMenu: React.FC<ActionMenuProps> = ({
     card,
@@ -64,7 +80,13 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
 
     if (!visible || !card) return null;
 
-    const actions: { label: string; onPress: () => void; enabled: boolean; color: string }[] = [];
+    const actions: {
+        label: string;
+        onPress: () => void;
+        enabled: boolean;
+        color: string;
+        disabledReason?: string;
+    }[] = [];
 
     if (card.type === 'pokemon') {
         if (card.subtypes?.includes('Basic')) {
@@ -73,6 +95,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                 onPress: () => { onPlayToBench?.(); onClose(); },
                 enabled: canPlayToBench,
                 color: Colors.energy.grass,
+                disabledReason: canPlayToBench ? undefined : 'Bench full',
             });
         }
         if (card.subtypes?.some(s => s.includes('Stage'))) {
@@ -81,6 +104,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                 onPress: () => { onEvolve?.(); },
                 enabled: canEvolve,
                 color: Colors.energy.psychic,
+                disabledReason: canEvolve ? undefined : 'Just played / need a turn',
             });
         }
         if (canSetActive) {
@@ -99,6 +123,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             onPress: () => { onPlayTrainer?.(); },
             enabled: canPlayTrainer,
             color: Colors.energy.psychic,
+            disabledReason: canPlayTrainer ? undefined : 'Already played a Supporter',
         });
     }
 
@@ -108,8 +133,11 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             onPress: () => { onAttachEnergy?.(); },
             enabled: canAttachEnergy,
             color: Colors.energy.lightning,
+            disabledReason: canAttachEnergy ? undefined : 'Already attached this turn',
         });
     }
+
+    const energyColor = card.energyType ? ENERGY_TYPE_COLOR[card.energyType] : undefined;
 
     return (
         <View
@@ -130,11 +158,26 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
 
             {/* Rest of the menu - not draggable, buttons work */}
             <View style={styles.menuContent}>
-                {/* Card Info Header */}
+                {/* Card Thumbnail Header */}
                 <View style={styles.header}>
+                    {card.imageUrl ? (
+                        <Image
+                            source={{ uri: card.imageUrl }}
+                            style={styles.cardThumb}
+                            resizeMode="contain"
+                        />
+                    ) : null}
                     <View style={styles.cardInfo}>
                         <Text style={styles.cardName} numberOfLines={1}>{card.name}</Text>
-                        {card.hp && <Text style={styles.cardHP}>{card.hp} HP</Text>}
+                        {card.hp && card.type === 'pokemon' && (
+                            <Text style={styles.cardHP}>{card.hp} HP</Text>
+                        )}
+                        {energyColor && (
+                            <View style={styles.typeBadgeRow}>
+                                <View style={[styles.typeBadge, { backgroundColor: energyColor }]} />
+                                <Text style={styles.typeLabel}>{card.energyType}</Text>
+                            </View>
+                        )}
                     </View>
                     <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                         <Text style={styles.closeText}>✕</Text>
@@ -150,22 +193,26 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                 {!selectionMode && (
                     <View style={styles.actionsRow}>
                         {actions.map((action, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={[
-                                    styles.actionButton,
-                                    { backgroundColor: action.enabled ? action.color : '#444' },
-                                ]}
-                                onPress={action.onPress}
-                                disabled={!action.enabled}
-                            >
-                                <Text style={[
-                                    styles.actionText,
-                                    !action.enabled && styles.disabledText,
-                                ]}>
-                                    {action.label}
-                                </Text>
-                            </TouchableOpacity>
+                            <View key={index} style={styles.actionWrapper}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.actionButton,
+                                        { backgroundColor: action.enabled ? action.color : '#444' },
+                                    ]}
+                                    onPress={action.onPress}
+                                    disabled={!action.enabled}
+                                >
+                                    <Text style={[
+                                        styles.actionText,
+                                        !action.enabled && styles.disabledText,
+                                    ]}>
+                                        {action.label}
+                                    </Text>
+                                </TouchableOpacity>
+                                {!action.enabled && action.disabledReason && (
+                                    <Text style={styles.disabledReason}>{action.disabledReason}</Text>
+                                )}
+                            </View>
                         ))}
                     </View>
                 )}
@@ -216,25 +263,48 @@ const styles = StyleSheet.create({
     },
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 12,
+        paddingHorizontal: 10,
         paddingTop: 8,
         paddingBottom: 8,
+        gap: 8,
+    },
+    cardThumb: {
+        width: 60,
+        height: 84,
+        borderRadius: 4,
+        flexShrink: 0,
     },
     cardInfo: {
         flex: 1,
-        marginRight: 8,
+        marginRight: 4,
+        gap: 2,
     },
     cardName: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: 'bold',
         color: Colors.ui.white,
     },
     cardHP: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 'bold',
         color: Colors.energy.fire,
+    },
+    typeBadgeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 2,
+    },
+    typeBadge: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    typeLabel: {
+        fontSize: 9,
+        color: '#AAA',
+        textTransform: 'capitalize',
     },
     closeButton: {
         width: 24,
@@ -243,6 +313,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#333',
         justifyContent: 'center',
         alignItems: 'center',
+        alignSelf: 'flex-start',
     },
     closeText: {
         fontSize: 14,
@@ -262,6 +333,9 @@ const styles = StyleSheet.create({
         padding: 8,
         gap: 6,
     },
+    actionWrapper: {
+        alignItems: 'center',
+    },
     actionButton: {
         paddingHorizontal: 12,
         paddingVertical: 8,
@@ -277,6 +351,13 @@ const styles = StyleSheet.create({
     },
     disabledText: {
         color: '#888',
+    },
+    disabledReason: {
+        fontSize: 9,
+        color: '#FF6B6B',
+        textAlign: 'center',
+        marginTop: 2,
+        maxWidth: 70,
     },
     cancelButton: {
         borderTopWidth: 1,

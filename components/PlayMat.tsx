@@ -1,6 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
+const ENERGY_COLORS: Record<string, string> = {
+    fire:      '#C04808',
+    water:     '#2060C0',
+    grass:     '#3A8A30',
+    lightning: '#C8A000',
+    psychic:   '#A040A0',
+    fighting:  '#C03028',
+    darkness:  '#403830',
+    metal:     '#6870A0',
+    fairy:     '#EE99AC',
+    dragon:    '#7038F8',
+    colorless: '#888888',
+};
+
 const STATUS_CONFIG: Record<string, { emoji: string; color: string; label: string }> = {
     poisoned:  { emoji: '☠', color: '#9B59B6', label: 'PSN' },
     burned:    { emoji: '🔥', color: '#E74C3C', label: 'BRN' },
@@ -87,8 +101,30 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                         ]}
                     />
                 </View>
-                <Text style={styles.hpLabel}>{remaining}/{hp}</Text>
+                <Text style={styles.hpLabel} numberOfLines={1}>{remaining}/{hp}</Text>
             </>
+        );
+    };
+
+    const renderEnergyRow = (card: CardType) => {
+        if (!card.attachedEnergy || card.attachedEnergy.length === 0) return null;
+        const shown = card.attachedEnergy.slice(0, 8);
+        const overflow = card.attachedEnergy.length - 8;
+        return (
+            <View style={styles.energyRow}>
+                {shown.map((energy, i) => (
+                    <View
+                        key={i}
+                        style={[
+                            styles.energyDot,
+                            { backgroundColor: ENERGY_COLORS[energy] ?? '#888888' },
+                        ]}
+                    />
+                ))}
+                {overflow > 0 && (
+                    <Text style={styles.energyOverflow}>+{overflow}</Text>
+                )}
+            </View>
         );
     };
 
@@ -156,6 +192,7 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                             />
                             {renderHpBar(opponentActive)}
                             {renderStatusBadge(opponentActive)}
+                            {renderEnergyRow(opponentActive)}
                         </View>
                     ) : (
                         <View style={[styles.emptySlot, { width: emptySlotSize, height: emptySlotSize * 1.4 }]} />
@@ -187,6 +224,7 @@ export const PlayMat: React.FC<PlayMatProps> = ({
                             />
                             {renderHpBar(playerActive)}
                             {renderStatusBadge(playerActive)}
+                            {renderEnergyRow(playerActive)}
                         </View>
                     ) : (
                         <View style={[styles.emptySlot, { width: emptySlotSize, height: emptySlotSize * 1.4 }]} />
@@ -345,6 +383,24 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 11,
         fontWeight: 'bold',
+    },
+    energyRow: {
+        flexDirection: 'row',
+        gap: 3,
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        marginTop: 2,
+    },
+    energyDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.4)',
+    },
+    energyOverflow: {
+        color: '#FFFFFF',
+        fontSize: 8,
     },
 });
 

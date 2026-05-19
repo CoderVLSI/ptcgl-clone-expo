@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
+    Animated,
 } from 'react-native';
 import Colors from '../constants/colors';
 import { StatusCondition } from '../types/game';
@@ -27,6 +28,9 @@ interface GameControlsProps {
     activeEnergyCount?: number;
     canRetreat?: boolean;
     onRetreat?: () => void;
+    // New optional props
+    prizeCount?: number;
+    opponentDeckCount?: number;
 }
 
 export const GameControls: React.FC<GameControlsProps> = ({
@@ -40,7 +44,37 @@ export const GameControls: React.FC<GameControlsProps> = ({
     activeEnergyCount = 0,
     canRetreat = false,
     onRetreat,
+    prizeCount,
+    opponentDeckCount,
 }) => {
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        if (isPlayerTurn) {
+            Animated.sequence([
+                Animated.timing(pulseAnim, {
+                    toValue: 1.15,
+                    duration: 150,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(pulseAnim, {
+                    toValue: 1,
+                    duration: 150,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        }
+    }, [isPlayerTurn]);
+
+    // Deck count display helpers
+    const deckIsEmpty = deckCount === 0;
+    const deckIsLow = deckCount > 0 && deckCount < 5;
+    const deckCountColor = deckIsEmpty || deckIsLow ? '#FF4444' : Colors.ui.white;
+
+    // Prize display helpers
+    const lastPrize = prizeCount === 1;
+    const prizeBadgeColor = lastPrize ? '#22C55E' : '#C9A100';
+
     return (
         <View style={styles.container}>
             {/* Status Row */}
@@ -51,12 +85,23 @@ export const GameControls: React.FC<GameControlsProps> = ({
                     <Text style={styles.turnValue}>{currentTurn}</Text>
                 </View>
 
-                {/* Current Player */}
-                <View style={[styles.playerBadge, isPlayerTurn ? styles.yourTurn : styles.oppTurn]}>
-                    <Text style={styles.playerBadgeText}>
-                        {isPlayerTurn ? 'Your Turn' : "Opp's Turn"}
-                    </Text>
-                </View>
+                {/* Prize Card Counter */}
+                {prizeCount !== undefined && (
+                    <View style={[styles.prizeBadge, { backgroundColor: prizeBadgeColor }]}>
+                        <Text style={styles.prizeBadgeText}>
+                            {lastPrize ? '🏆 1 — LAST PRIZE!' : `🏆 ${prizeCount}`}
+                        </Text>
+                    </View>
+                )}
+
+                {/* Current Player — animated pulse on your turn */}
+                <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                    <View style={[styles.playerBadge, isPlayerTurn ? styles.yourTurn : styles.oppTurn]}>
+                        <Text style={styles.playerBadgeText}>
+                            {isPlayerTurn ? 'Your Turn' : "Opp's Turn"}
+                        </Text>
+                    </View>
+                </Animated.View>
 
                 {/* Active Status Condition */}
                 {activeStatusCondition && (
@@ -76,7 +121,13 @@ export const GameControls: React.FC<GameControlsProps> = ({
                 {/* Deck Count */}
                 <View style={styles.countItem}>
                     <Text style={styles.countLabel}>Deck</Text>
-                    <Text style={styles.countValue}>{deckCount}</Text>
+                    {deckIsEmpty ? (
+                        <Text style={[styles.countValue, styles.deckOutText]}>DECK OUT!</Text>
+                    ) : (
+                        <Text style={[styles.countValue, { color: deckCountColor }]}>
+                            {deckIsLow ? `⚠ ${deckCount}` : `${deckCount}`}
+                        </Text>
+                    )}
                 </View>
 
                 {/* Discard Count */}
@@ -84,6 +135,19 @@ export const GameControls: React.FC<GameControlsProps> = ({
                     <Text style={styles.countLabel}>Discard</Text>
                     <Text style={styles.countValue}>{discardCount}</Text>
                 </View>
+
+                {/* Opponent Deck Count */}
+                {opponentDeckCount !== undefined && (
+                    <View style={styles.countItem}>
+                        <Text style={styles.countLabel}>Opp deck</Text>
+                        <Text style={[
+                            styles.countValue,
+                            opponentDeckCount < 5 && styles.oppDeckLow,
+                        ]}>
+                            {opponentDeckCount}
+                        </Text>
+                    </View>
+                )}
 
                 {/* Retreat Button */}
                 {isPlayerTurn && activeRetreatCost >= 0 && onRetreat && (
@@ -126,6 +190,16 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: Colors.card.highlight,
+    },
+    prizeBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    prizeBadgeText: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        color: Colors.ui.white,
     },
     playerBadge: {
         paddingHorizontal: 12,
@@ -175,6 +249,14 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
         color: Colors.ui.white,
+    },
+    deckOutText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#FF4444',
+    },
+    oppDeckLow: {
+        color: '#FF4444',
     },
     statusBadge: {
         backgroundColor: '#800080',
