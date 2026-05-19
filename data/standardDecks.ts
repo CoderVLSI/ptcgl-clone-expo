@@ -821,6 +821,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         energyType: 'colorless',
         subtypes: ['Basic', 'ex'],
         retreatCost: 3,
+        weaknesses: [{ type: 'fighting', value: '×2' }],
         abilities: [{
             name: 'Fallen Giant',
             type: 'Ability',

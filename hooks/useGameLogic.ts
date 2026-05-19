@@ -3157,6 +3157,9 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                ?? gameState.player.deck.find(c => c.type === 'energy' && c.energyType === 'water'))
             : undefined;
 
+        // Pre-compute KO so Aura Jab doesn't enter energy-selection when the attack already knocked out
+        const willKnockout = ((defender?.damageCounters || 0) + damage) >= (defender?.hp || 0);
+
         setGameState(prev => {
             if (!prev) return prev;
 
@@ -3267,9 +3270,10 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             };
         });
 
-        // End turn unless in a selection mode (Ora Jab / Aura Jab)
-        const skipAutoEndTurn = selectedAttack.name === 'Ora Jab' || auraJabActivated;
-        if (auraJabActivated) {
+        // End turn unless in a selection mode (Ora Jab / Aura Jab).
+        // If the attack KO'd the opponent's active, always end the turn (no energy selection).
+        const skipAutoEndTurn = !willKnockout && (selectedAttack.name === 'Ora Jab' || auraJabActivated);
+        if (auraJabActivated && !willKnockout) {
             const fightingInDiscard = gameState.player.discardPile.filter(
                 c => c.type === 'energy' && c.energyType === 'fighting'
             );
