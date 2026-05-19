@@ -1,6 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Platform,
+  Animated,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { GameBoard } from './components';
 import LobbyScreen from './components/LobbyScreen';
 import GameStartCoinFlip from './components/GameStartCoinFlip';
@@ -14,6 +22,101 @@ import FriendBattleScreen from './components/FriendBattleScreen';
 import useGameDimensions from './hooks/useGameDimensions';
 
 import { Card } from './types/game';
+
+// ─── Loading Screen ───────────────────────────────────────────────────────────
+
+function LoadingScreen() {
+  const spinValue = useRef(new Animated.Value(0)).current;
+  const barWidth = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Continuous spin
+    Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Pulsing progress bar: 0 → 80% → 0, repeat
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(barWidth, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: false,
+        }),
+        Animated.timing(barWidth, {
+          toValue: 0,
+          duration: 700,
+          useNativeDriver: false,
+        }),
+      ])
+    ).start();
+  }, [spinValue, barWidth]);
+
+  const rotate = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const animatedBarWidth = barWidth.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '80%'],
+  });
+
+  return (
+    <View style={loadingStyles.container}>
+      <StatusBar style="light" />
+
+      <Text style={loadingStyles.appTitle}>PTCGL CLONE</Text>
+
+      <Animated.Text style={[loadingStyles.ball, { transform: [{ rotate }] }]}>
+        🔴
+      </Animated.Text>
+
+      <Text style={loadingStyles.loadingText}>Loading Pokémon TCG data...</Text>
+
+      <View style={loadingStyles.barTrack}>
+        <Animated.View style={[loadingStyles.barFill, { width: animatedBarWidth }]}>
+          <LinearGradient
+            colors={['#FFD700', '#FFA500']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+      </View>
+    </View>
+  );
+}
+
+// ─── Error Screen ─────────────────────────────────────────────────────────────
+
+function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <View style={errorStyles.container}>
+      <StatusBar style="light" />
+
+      <Text style={errorStyles.icon}>❌</Text>
+      <Text style={errorStyles.errorText}>{error}</Text>
+
+      <TouchableOpacity onPress={onRetry} activeOpacity={0.8}>
+        <LinearGradient
+          colors={['#8B1538', '#C0392B']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={errorStyles.retryButton}
+        >
+          <Text style={errorStyles.retryText}>↻ RETRY</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
   const {
@@ -45,26 +148,12 @@ export default function App() {
   const renderContent = () => {
     // Loading state
     if (isLoading) {
-      return (
-        <View style={[styles.container, styles.center]}>
-          <StatusBar style="light" />
-          <ActivityIndicator size="large" color={Colors.card.highlight} />
-          <Text style={styles.loadingText}>Loading cards from Pokémon TCG API...</Text>
-        </View>
-      );
+      return <LoadingScreen />;
     }
 
     // Error state
     if (error && !decksReady) {
-      return (
-        <View style={[styles.container, styles.center]}>
-          <StatusBar style="light" />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={reloadGame}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      );
+      return <ErrorScreen error={error} onRetry={reloadGame} />;
     }
 
     // Lobby Screen
@@ -229,38 +318,83 @@ export default function App() {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1A1A2E',
   },
-  center: {
+});
+
+const loadingStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0D0D1A',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
+  },
+  appTitle: {
+    color: '#FFD700',
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: 4,
+    marginBottom: 40,
+  },
+  ball: {
+    fontSize: 60,
+    marginBottom: 32,
   },
   loadingText: {
     color: Colors.ui.white,
     fontSize: 16,
-    marginTop: 20,
+    marginBottom: 24,
     textAlign: 'center',
   },
-  errorText: {
-    color: '#FF6B6B',
-    fontSize: 16,
-    textAlign: 'center',
+  barTrack: {
+    width: '70%',
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+});
+
+const errorStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0D0D1A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  icon: {
+    fontSize: 48,
     marginBottom: 20,
   },
+  errorText: {
+    color: Colors.ui.white,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
   retryButton: {
-    backgroundColor: Colors.primary.red,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 10,
   },
   retryText: {
     color: Colors.ui.white,
     fontSize: 16,
     fontWeight: 'bold',
+    letterSpacing: 1,
   },
 });
 
