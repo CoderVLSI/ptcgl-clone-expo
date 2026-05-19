@@ -107,6 +107,33 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const [showTurnBanner, setShowTurnBanner] = useState(false);
     const turnBannerOpacity = useRef(new Animated.Value(0)).current;
 
+    // AI thinking indicator
+    const aiThinkingOpacity = useRef(new Animated.Value(1)).current;
+    const aiThinkingLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+    useEffect(() => {
+        const isOpponentTurn = gameState?.currentPlayer === 'opponent';
+        if (aiActing && isOpponentTurn) {
+            aiThinkingLoopRef.current = Animated.loop(
+                Animated.sequence([
+                    Animated.timing(aiThinkingOpacity, { toValue: 0.3, duration: 400, useNativeDriver: true }),
+                    Animated.timing(aiThinkingOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+                ])
+            );
+            aiThinkingLoopRef.current.start();
+        } else {
+            if (aiThinkingLoopRef.current) {
+                aiThinkingLoopRef.current.stop();
+                aiThinkingLoopRef.current = null;
+            }
+            aiThinkingOpacity.setValue(1);
+        }
+        return () => {
+            if (aiThinkingLoopRef.current) {
+                aiThinkingLoopRef.current.stop();
+            }
+        };
+    }, [aiActing, gameState?.currentPlayer]);
+
     // Update game state when external state changes
     const updateGameStateRef = useRef(updateGameState);
     updateGameStateRef.current = updateGameState;
@@ -534,7 +561,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 opponentName={gameState.opponent.name}
                 turnNumber={gameState.turn}
                 onMenuPress={() => setShowSettingsModal(true)}
+                playerPrizes={gameState.player.prizeCards.length}
+                opponentPrizes={gameState.opponent.prizeCards.length}
+                timeRemaining={gameState.timeRemaining}
+                isPlayerTurn={isPlayerTurn}
             />
+
+            {/* AI Thinking Indicator */}
+            {aiActing && !isPlayerTurn && (
+                <Animated.View style={[styles.aiThinkingPill, { opacity: aiThinkingOpacity }]}>
+                    <Text style={styles.aiThinkingText}>🤖 Thinking...</Text>
+                </Animated.View>
+            )}
             {/* Mute toggle */}
             <TouchableOpacity
                 style={styles.muteButton}
@@ -622,6 +660,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 deckCount={gameState.player.deck.length}
                 discardCount={gameState.player.discardPile.length}
                 currentTurn={gameState.turn}
+                prizeCount={gameState.player.prizeCards.length}
+                opponentDeckCount={gameState.opponent.deck.length}
                 isPlayerTurn={isPlayerTurn}
                 activeStatusCondition={gameState.player.activePokemon?.statusCondition}
                 activeRetreatCost={gameState.player.activePokemon?.retreatCost ?? 0}
@@ -1142,6 +1182,21 @@ const styles = StyleSheet.create({
     },
     muteIcon: {
         fontSize: 18,
+    },
+    aiThinkingPill: {
+        position: 'absolute',
+        top: 60,
+        right: 10,
+        zIndex: 100,
+        backgroundColor: 'rgba(0,0,0,0.72)',
+        borderRadius: 14,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+    },
+    aiThinkingText: {
+        color: '#FFFFFF',
+        fontSize: 13,
+        fontStyle: 'italic',
     },
     playMatContainer: {
         flex: 1,
