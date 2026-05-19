@@ -338,8 +338,8 @@ const styles = StyleSheet.create({
     topBar: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        padding: 16,
-        paddingTop: 40,
+        padding: 12,
+        paddingTop: 12,
     },
     currencyContainer: {
         flexDirection: 'row',
@@ -369,17 +369,19 @@ const styles = StyleSheet.create({
     modeSelector: {
         flexDirection: 'row',
         justifyContent: 'center',
-        gap: 32,
-        marginTop: 16,
+        gap: 24,
+        marginTop: 8,
+        paddingHorizontal: 16,
     },
     modeButton: {
         alignItems: 'center',
+        flex: 1,
     },
     modeText: {
         color: 'rgba(255,255,255,0.55)',
-        fontSize: 16,
+        fontSize: 13,
         fontWeight: 'bold',
-        letterSpacing: 1,
+        letterSpacing: 0.5,
     },
     modeTextActive: {
         color: '#FFD700',
@@ -404,25 +406,25 @@ const styles = StyleSheet.create({
 
     // ── Featured Card ─────────────────────────────────────────────────────────
     featuredContainer: {
-        marginBottom: 16,
+        marginBottom: 8,
         alignItems: 'center',
     },
     featuredCardWrapper: {
-        width: 200,
-        height: 280,
-        borderRadius: 12,
+        width: 130,
+        height: 182,
+        borderRadius: 10,
         overflow: 'hidden',
         backgroundColor: 'rgba(255,255,255,0.05)',
     },
     featuredCard: {
-        width: 200,
-        height: 280,
+        width: 130,
+        height: 182,
     },
 
     // ── Tier + Rank Score ─────────────────────────────────────────────────────
     rankBlock: {
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 4,
         gap: 4,
     },
     tierBadge: {
@@ -450,7 +452,7 @@ const styles = StyleSheet.create({
 
     // ── Play Button ───────────────────────────────────────────────────────────
     playButtonWrapper: {
-        marginTop: 16,
+        marginTop: 10,
         marginBottom: 4,
         shadowColor: '#FFD700',
         shadowOffset: { width: 0, height: 4 },
@@ -460,15 +462,15 @@ const styles = StyleSheet.create({
     },
     playButton: {},
     playButtonGradient: {
-        paddingHorizontal: 80,
-        paddingVertical: 18,
+        paddingHorizontal: 60,
+        paddingVertical: 13,
         borderRadius: 8,
         borderWidth: 2,
         borderColor: '#FFF',
     },
     playButtonText: {
         color: '#8B0000',
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: '900',
         letterSpacing: 2,
     },
@@ -478,13 +480,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.6)',
-        padding: 12,
-        borderRadius: 16,
-        marginTop: 20,
+        padding: 10,
+        borderRadius: 14,
+        marginTop: 10,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
-        gap: 16,
+        gap: 12,
         minWidth: 280,
+        maxWidth: 340,
     },
     deckBoxVisual: {
         width: 60,
@@ -600,19 +603,19 @@ const styles = StyleSheet.create({
     // ── Bottom Navigation ─────────────────────────────────────────────────────
     bottomNav: {
         flexDirection: 'row',
-        marginBottom: 20,
+        marginBottom: 8,
         alignItems: 'flex-end',
         justifyContent: 'space-around',
         paddingHorizontal: 10,
         borderTopWidth: 1,
         borderTopColor: 'rgba(255,255,255,0.08)',
-        paddingTop: 10,
+        paddingTop: 8,
     },
     navItem: {
         alignItems: 'center',
         justifyContent: 'flex-end',
-        height: 70,
-        minWidth: 64,
+        height: 60,
+        minWidth: 60,
     },
     navLabel: {
         color: 'rgba(255,255,255,0.75)',
