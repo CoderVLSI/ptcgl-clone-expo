@@ -181,24 +181,24 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Search your deck for a Basic Fighting Pokémon or Basic Fighting Energy and put it into your hand.',
-        imageUrl: 'https://images.pokemontcg.io/me1/101.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me1/101_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me1/116.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/116_hires.png',
     },
     'Premium Power Pro': {
         name: 'Premium Power Pro',
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'During this turn, attacks used by your Fighting Pokémon do 30 more damage to your opponent\'s Active Pokémon (before applying Weakness and Resistance).',
-        imageUrl: 'https://images.pokemontcg.io/me1/105.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me1/105_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me1/124.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/124_hires.png',
     },
     "Lillie's Determination": {
         name: "Lillie's Determination",
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Shuffle your hand into your deck. If you have 6 Prize cards remaining, draw 8 cards. Otherwise, draw 6 cards.',
-        imageUrl: 'https://images.pokemontcg.io/me1/95.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me1/95_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me1/119.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/119_hires.png',
     },
     // --- sv6pt5 / sv7 Trainers ---
     'Fezandipiti ex': {
@@ -240,24 +240,24 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Search your deck for 2 Basic Energy cards of different types, reveal them, and put 1 into your hand. Attach the other to 1 of your Pokémon.',
-        imageUrl: 'https://images.pokemontcg.io/sv7/132.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv7/132_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv7/133.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv7/133_hires.png',
     },
     'Carmine': {
         name: 'Carmine',
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Put your hand into your deck and shuffle it. Then draw cards until you have 5 cards in hand.',
-        imageUrl: 'https://images.pokemontcg.io/sv6pt5/87.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/87_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/145.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/145_hires.png',
     },
     'Briar': {
         name: 'Briar',
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Draw 3 cards. If any of your Pokémon were Knocked Out during your opponent\'s last turn, draw 3 more cards.',
-        imageUrl: 'https://images.pokemontcg.io/sv6pt5/86.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/86_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv7/132.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv7/132_hires.png',
     },
     // --- sv8 items ---
     'Night Stretcher': {
@@ -265,8 +265,8 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Put a Pokémon from your discard pile into your hand. If that Pokémon has a Rule Box, put 2 basic Energy from your discard pile into your hand as well.',
-        imageUrl: 'https://images.pokemontcg.io/sv8/171.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv8/171_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6pt5/61.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/61_hires.png',
     },
     'Buddy-Buddy Poffin': {
         name: 'Buddy-Buddy Poffin',
@@ -281,8 +281,8 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Stadium'],
         flavorText: 'Each player\'s Pokémon with a Rule Box take 20 less damage from attacks (after applying Weakness and Resistance).',
-        imageUrl: 'https://images.pokemontcg.io/sv8/177.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv8/177_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv3/192.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv3/192_hires.png',
     },
     'Neo Upper Energy': {
         name: 'Neo Upper Energy',
@@ -489,8 +489,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'This Pokémon does 50 damage to itself.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv5/79.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv5/79_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me2/49.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me2/49_hires.png',
     },
 
     'Sandy Shocks ex': {
@@ -515,8 +515,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'This Pokémon does 30 damage to itself.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv6/70.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6/70_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv8pt5/56.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv8pt5/56_hires.png',
     },
 
     'Flutter Mane': {
@@ -566,8 +566,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: '',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv6pt5/25.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/25_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/25.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/25_hires.png',
     },
 
     // ─── Mega Greninja ex line (CRI — Chaos Rising, releases 2026-05-22) ───────
@@ -582,8 +582,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         attacks: [
             { name: 'Bubble', damage: 10, energyCost: ['colorless'], description: 'Flip a coin. If heads, your opponent\'s Active Pokémon is now Paralyzed.' },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv6/56.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6/56_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv7/39.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv7/39_hires.png',
     },
 
     'Frogadier': {
@@ -656,8 +656,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'Flip a coin. If heads, switch this Pokémon with 1 of your Benched Pokémon.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv6/56.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6/56_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/cri/21.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/cri/21_hires.png',
     },
 
     'Tatsugiri': {
@@ -682,8 +682,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'Put this Pokémon and all attached cards into your hand.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv1/62.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv1/62_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/131.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/131_hires.png',
     },
 
     'Dondozo': {
@@ -708,8 +708,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: '',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv1/61.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv1/61_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv4/55.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv4/55_hires.png',
     },
 
     // ─── Raging Bolt ex support ──────────────────────────────────────────────
@@ -729,8 +729,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         attacks: [
             { name: 'Ivy Cudgel', damage: 80, energyCost: ['grass', 'colorless'], description: 'If your opponent\'s Active Pokémon has a Rule Box, this attack does 80 more damage.' },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv6pt5/25.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/25_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/25.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/25_hires.png',
     },
 
     'Hoothoot': {
@@ -810,8 +810,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
             text: 'When you play this Pokémon from your hand onto your Bench during your turn, you may choose 2 of your opponent\'s Benched Pokémon and put 1 damage counter on each of them.',
         }],
         attacks: [{ name: 'Cross Chop', damage: 60, energyCost: ['fighting', 'colorless'] }],
-        imageUrl: 'https://images.pokemontcg.io/sv5/118.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv5/118_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/107.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/107_hires.png',
     },
 
     'Bloodmoon Ursaluna ex': {
@@ -829,8 +829,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         attacks: [
             { name: 'Crescent Moon', damage: 190, energyCost: ['colorless', 'colorless', 'colorless'] },
         ],
-        imageUrl: 'https://images.pokemontcg.io/sv6pt5/141.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6pt5/141_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/141.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/141_hires.png',
     },
 
     'Bloodmoon Ursaluna': {
@@ -858,8 +858,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Search your deck for an Evolution Pokémon, reveal it, and put it into your hand. Then shuffle your deck.',
-        imageUrl: 'https://images.pokemontcg.io/sv7/135.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv7/135_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv1/175.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/175_hires.png',
     },
 
     'Counter Catcher': {
@@ -867,8 +867,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Play this only if any of your Pokémon were Knocked Out during your opponent\'s last turn. Switch in 1 of your opponent\'s Benched Pokémon to the Active Spot.',
-        imageUrl: 'https://images.pokemontcg.io/sv6/264.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6/264_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv4/160.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv4/160_hires.png',
     },
 
     'Unfair Stamp': {
@@ -876,8 +876,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Play this only if your opponent has 1, 2, or 3 Prize cards remaining. Your opponent shuffles their hand into their deck and draws 3 cards.',
-        imageUrl: 'https://images.pokemontcg.io/sv8/230.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv8/230_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv6/165.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv6/165_hires.png',
     },
 
     "Brock's Scouting": {
@@ -885,8 +885,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Search your deck for up to 2 Evolution Pokémon that evolve from a Pokémon you have in play, reveal them, and put them into your hand. Then shuffle your deck.',
-        imageUrl: 'https://images.pokemontcg.io/me1/93.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me1/93_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/me1/190.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/me1/190_hires.png',
     },
 
     'Exp. Share': {
@@ -894,8 +894,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Pokémon Tool'],
         flavorText: 'When the Pokémon this card is attached to is Knocked Out by damage from an attack, move 1 basic Energy card attached to that Pokémon to 1 of your Benched Pokémon.',
-        imageUrl: 'https://images.pokemontcg.io/sv5/174.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv5/174_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv1/174.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/174_hires.png',
     },
 
     // ─── Mega Zygarde ex line (me3 — Perfect Order) ───────────────────────────
@@ -1020,48 +1020,48 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Discard your hand and draw 7 cards.',
-        imageUrl: 'https://images.pokemontcg.io/sv5/190.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv5/190_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv1/190.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/190_hires.png',
     },
     'Nest Ball': {
         name: 'Nest Ball',
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Search your deck for a Basic Pokémon, reveal it, and put it into your hand. Then, shuffle your deck.',
-        imageUrl: 'https://images.pokemontcg.io/sv5/181.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv5/181_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv1/181.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/181_hires.png',
     },
     'Iono': {
         name: 'Iono',
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Each player shuffles their hand and puts it on the bottom of their deck. Then, each player draws a card for each of their remaining Prize cards.',
-        imageUrl: 'https://images.pokemontcg.io/sv6/185.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv6/185_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv2/185.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv2/185_hires.png',
     },
     'Ultra Ball': {
         name: 'Ultra Ball',
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Discard 2 cards from your hand. Then, search your deck for a Pokémon, reveal it, and put it into your hand. Then, shuffle your deck.',
-        imageUrl: 'https://images.pokemontcg.io/sv5/196.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv5/196_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv1/196.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/196_hires.png',
     },
     "Boss's Orders": {
         name: "Boss's Orders",
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: "Switch 1 of your opponent's Benched Pokémon with their Active Pokémon.",
-        imageUrl: 'https://images.pokemontcg.io/sv7/154.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv7/154_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv2/172.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv2/172_hires.png',
     },
     'Energy Retrieval': {
         name: 'Energy Retrieval',
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Put 2 basic Energy from your discard pile into your hand.',
-        imageUrl: 'https://images.pokemontcg.io/sv5/171.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv5/171_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv1/171.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/171_hires.png',
     },
 
     'Judge': {
@@ -1069,8 +1069,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Each player shuffles their hand into their deck and draws 4 cards.',
-        imageUrl: 'https://images.pokemontcg.io/sv5/176.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv5/176_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv1/176.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/176_hires.png',
     },
 
     'Rare Candy': {
@@ -1078,8 +1078,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Choose 1 of your Basic Pokémon in play. If you have a Stage 2 card in your hand that evolves from that Pokémon, put that card onto the Basic Pokémon to evolve it. You can\'t use this card during your first turn or the turn you put that Pokémon into play.',
-        imageUrl: 'https://images.pokemontcg.io/sv5/183.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv5/183_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv1/191.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/191_hires.png',
     },
 
     'Super Rod': {
@@ -1087,8 +1087,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Shuffle up to 3 Pokémon and/or basic Energy cards from your discard pile into your deck.',
-        imageUrl: 'https://images.pokemontcg.io/sv5/188.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv5/188_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv2/188.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv2/188_hires.png',
     },
 
     // ─── Basic Energy cards ───────────────────────────────────────────────────
