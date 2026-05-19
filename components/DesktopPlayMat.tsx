@@ -216,18 +216,46 @@ const DeckPileBlock: React.FC<{ count: number; label: string }> = ({ count, labe
     </View>
 );
 
-/** Prize card stack */
-const PrizeBlock: React.FC<{ count: number }> = ({ count }) => (
-    <View style={sideStyles.block}>
-        <View style={sideStyles.prizeStack}>
-            {[...Array(Math.min(count, 3))].map((_, i) => (
-                <View key={i} style={[sideStyles.prizeFace, { bottom: i * 3, right: i * 2, opacity: 1 - i * 0.2 }]} />
-            ))}
+/** Prize cards shown as a 2×3 grid (face-down if remaining, empty slot if taken) */
+const PrizeBlock: React.FC<{ count: number; total?: number }> = ({ count, total = 6 }) => {
+    const COLS = 2;
+    const ROWS = 3;
+    const cardW = 26;
+    const cardH = 36;
+    return (
+        <View style={sideStyles.block}>
+            <Text style={sideStyles.label}>PRIZES</Text>
+            <View style={{ flexDirection: 'column', gap: 3, marginTop: 2 }}>
+                {[...Array(ROWS)].map((_, row) => (
+                    <View key={row} style={{ flexDirection: 'row', gap: 3 }}>
+                        {[...Array(COLS)].map((_, col) => {
+                            const idx = row * COLS + col;
+                            const filled = idx < count;
+                            return (
+                                <View
+                                    key={col}
+                                    style={[
+                                        sideStyles.prizeCard,
+                                        { width: cardW, height: cardH },
+                                        filled ? sideStyles.prizeCardFilled : sideStyles.prizeCardEmpty,
+                                    ]}
+                                >
+                                    {filled && (
+                                        <>
+                                            <View style={sideStyles.prizeCardInner} />
+                                            <Text style={sideStyles.prizeStar}>★</Text>
+                                        </>
+                                    )}
+                                </View>
+                            );
+                        })}
+                    </View>
+                ))}
+            </View>
+            <Text style={[sideStyles.count, { marginTop: 3 }]}>{count} left</Text>
         </View>
-        <Text style={sideStyles.count}>{count}</Text>
-        <Text style={sideStyles.label}>Prizes</Text>
-    </View>
-);
+    );
+};
 const sideStyles = StyleSheet.create({
     block: { alignItems: 'center', gap: 2 },
     deckVisual: { width: 36, height: 50, position: 'relative', marginBottom: 2 },
@@ -241,10 +269,34 @@ const sideStyles = StyleSheet.create({
         borderColor: '#4A7DCC', justifyContent: 'center', alignItems: 'center',
     },
     deckIcon: { fontSize: 16 },
-    prizeStack: { width: 36, height: 50, position: 'relative', marginBottom: 2 },
-    prizeFace: {
-        position: 'absolute', width: 28, height: 40, borderRadius: 4,
-        backgroundColor: '#2A1A4A', borderWidth: 1, borderColor: '#6B4A9B',
+    prizeCard: {
+        borderRadius: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    prizeCardFilled: {
+        backgroundColor: '#2A1A4A',
+        borderWidth: 1,
+        borderColor: '#8B5CF6',
+    },
+    prizeCardEmpty: {
+        backgroundColor: 'rgba(255,255,255,0.04)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.12)',
+        borderStyle: 'dashed',
+    },
+    prizeCardInner: {
+        position: 'absolute',
+        top: 3, left: 3, right: 3, bottom: 3,
+        borderRadius: 2,
+        borderWidth: 1,
+        borderColor: 'rgba(139,92,246,0.4)',
+    },
+    prizeStar: {
+        fontSize: 11,
+        color: 'rgba(167,139,250,0.8)',
+        fontWeight: 'bold',
     },
     count: { fontSize: 14, fontWeight: 'bold', color: '#fff' },
     label: { fontSize: 9, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 },
