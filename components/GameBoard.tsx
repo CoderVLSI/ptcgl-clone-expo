@@ -223,14 +223,16 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             setTimeout(() => playSound('prize_card'), 800);
         }
 
-        // Evolution
+        // Evolution — only animate Mega evolutions
         if (msg.includes('evolved')) {
             const isMega = msg.includes('mega');
             const evoMatch = gameState.message.match(/evolved into (.+?)!/);
-            setIsMegaEvolution(isMega);
-            setEvolutionName(evoMatch ? evoMatch[1] : '');
-            setTimeout(() => setShowEvolution(true), 200);
             playSound(isMega ? 'evolve_mega' : 'evolve');
+            if (isMega) {
+                setIsMegaEvolution(true);
+                setEvolutionName(evoMatch ? evoMatch[1] : '');
+                setTimeout(() => setShowEvolution(true), 200);
+            }
         }
 
         // Game over

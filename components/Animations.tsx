@@ -415,42 +415,38 @@ export const EvolutionAnimation: React.FC<EvolutionAnimationProps> = ({ visible,
         textScale.setValue(0); textOpacity.setValue(0);
         rings.forEach(r => { r.scale.setValue(0); r.opacity.setValue(0); });
 
-        const duration = isMega ? 2800 : 2000;
-
         Animated.sequence([
-            // Initial bright flash
+            // Flash + rings + pillar in parallel (~300ms)
             Animated.parallel([
                 Animated.sequence([
-                    Animated.timing(flash, { toValue: 0.9, duration: 150, useNativeDriver: true }),
-                    Animated.timing(flash, { toValue: 0.3, duration: 300, useNativeDriver: true }),
+                    Animated.timing(flash, { toValue: 0.85, duration: 80, useNativeDriver: true }),
+                    Animated.timing(flash, { toValue: 0.2, duration: 180, useNativeDriver: true }),
                 ]),
-                // Light pillar rises
                 Animated.parallel([
-                    Animated.timing(pillarOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-                    Animated.timing(pillarScale, { toValue: 1, duration: 400, easing: Easing.out(Easing.back(1.5)), useNativeDriver: true }),
+                    Animated.timing(pillarOpacity, { toValue: 1, duration: 120, useNativeDriver: true }),
+                    Animated.timing(pillarScale, { toValue: 1, duration: 220, easing: Easing.out(Easing.back(1.5)), useNativeDriver: true }),
                 ]),
-                // Expanding rings
                 ...rings.map((r, i) =>
                     Animated.sequence([
-                        Animated.delay(i * 120),
+                        Animated.delay(i * 50),
                         Animated.parallel([
-                            Animated.timing(r.scale, { toValue: 4 + i, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-                            Animated.timing(r.opacity, { toValue: 0, duration: 700, useNativeDriver: true }),
+                            Animated.timing(r.scale, { toValue: 4 + i, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+                            Animated.timing(r.opacity, { toValue: 0, duration: 300, useNativeDriver: true }),
                         ]),
                     ])
                 ),
             ]),
             // Name reveal
             Animated.parallel([
-                Animated.spring(textScale, { toValue: 1, friction: 4, tension: 300, useNativeDriver: true }),
-                Animated.timing(textOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+                Animated.spring(textScale, { toValue: 1, friction: 5, tension: 400, useNativeDriver: true }),
+                Animated.timing(textOpacity, { toValue: 1, duration: 100, useNativeDriver: true }),
             ]),
-            Animated.delay(isMega ? 1200 : 800),
-            // Fade everything
+            Animated.delay(350),
+            // Fade out
             Animated.parallel([
-                Animated.timing(flash, { toValue: 0, duration: 400, useNativeDriver: true }),
-                Animated.timing(pillarOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
-                Animated.timing(textOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+                Animated.timing(flash, { toValue: 0, duration: 150, useNativeDriver: true }),
+                Animated.timing(pillarOpacity, { toValue: 0, duration: 150, useNativeDriver: true }),
+                Animated.timing(textOpacity, { toValue: 0, duration: 150, useNativeDriver: true }),
             ]),
         ]).start(() => {
             flash.setValue(0); pillarOpacity.setValue(0); textOpacity.setValue(0);
