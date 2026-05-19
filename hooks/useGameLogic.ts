@@ -3274,17 +3274,18 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         // If the attack KO'd the opponent's active, always end the turn (no energy selection).
         const skipAutoEndTurn = !willKnockout && (selectedAttack.name === 'Ora Jab' || auraJabActivated);
         if (auraJabActivated && !willKnockout) {
-            const fightingInDiscard = gameState.player.discardPile.filter(
-                c => c.type === 'energy' && c.energyType === 'fighting'
-            );
-            if (fightingInDiscard.length > 0) {
-                setLogicState(prev => ({
-                    ...prev,
-                    actionMode: 'attach_energy_from_discard',
-                    message: 'Aura Jab: Select up to 3 Fighting Energy from your discard to attach to your Pokémon.',
-                    discardCount: Math.min(3, fightingInDiscard.length),
-                }));
-            }
+            // Use setTimeout so setGameState has flushed the attack's energy discard first
+            setTimeout(() => {
+                setLogicState(prev => {
+                    // Re-read fighting energy from the current (updated) game state via functional update
+                    return {
+                        ...prev,
+                        actionMode: 'attach_energy_from_discard',
+                        message: 'Aura Jab: Select up to 3 Fighting Energy from your discard to attach to your Pokémon.',
+                        discardCount: 3,
+                    };
+                });
+            }, 50);
         }
         // Zepto Turn (Mega Zeraora ex): switch attacker with a benched Pokémon after attacking
         if (zeptoTurnActivated && gameState.player.bench.length > 0) {
