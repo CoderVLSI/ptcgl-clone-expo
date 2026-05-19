@@ -127,6 +127,7 @@ const ActiveSlot: React.FC<{
                 <View style={activeStyles.cardWrapper}>
                     <Card
                         card={card}
+                        size={cardWidth}
                         isHighlighted={selectedCardId === card.id || (!!(isPlayer && highlightTargets))}
                         onPress={() => onPress?.(card.id)}
                     />
@@ -182,6 +183,7 @@ const BenchSlot: React.FC<{
                 <Card
                     card={card}
                     isSmall
+                    size={slotSize}
                     isHighlighted={selectedCardId === card.id || !!(isPlayer && highlightTargets)}
                     onPress={() => onPress?.(card.id)}
                 />
@@ -327,10 +329,12 @@ export const DesktopPlayMat: React.FC<DesktopPlayMatProps> = ({
 }) => {
     const { width: GAME_WIDTH } = useGameDimensions();
 
-    // Card sizes — active card slightly larger than bench
+    // Card sizes tuned to fit within each half zone (~220px tall each)
+    // active: ~75px wide → 105px tall, bench: ~50px wide → 70px tall
     const cardBase = Math.min(GAME_WIDTH, 520);
-    const activeCardWidth = Math.floor(cardBase * 0.185);
-    const benchSlotSize = Math.floor(cardBase * 0.115);
+    const activeCardWidth = Math.floor(cardBase * 0.145);   // ~75px
+    const benchSlotSize = Math.floor(cardBase * 0.096);     // ~50px
+    const handCardWidth = Math.floor(cardBase * 0.13);      // ~68px
 
     const handlePlayerBench = (id: string) =>
         onBenchCardPress ? onBenchCardPress(id) : onCardPress?.(id);
@@ -474,6 +478,7 @@ export const DesktopPlayMat: React.FC<DesktopPlayMatProps> = ({
                                 <Card
                                     card={card}
                                     isSmall
+                                    size={handCardWidth}
                                     isHighlighted={selectedHandCardId === card.id}
                                 />
                             </TouchableOpacity>
@@ -616,7 +621,7 @@ const styles = StyleSheet.create({
 
     // ── player hand strip ──
     handStrip: {
-        height: 110,
+        height: 120,
         backgroundColor: '#0D1A2E',
         borderTopWidth: 2,
         borderTopColor: 'rgba(255,255,255,0.12)',
@@ -625,7 +630,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingVertical: 10,
         minWidth: '100%',
     },
     handCard: {
@@ -637,7 +642,7 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     handCardSelected: {
-        transform: [{ translateY: -10 }],
+        transform: [{ translateY: -12 }],
         zIndex: 10,
     },
     emptyHandPlaceholder: {

@@ -16,6 +16,8 @@ interface CardProps {
     isFlipped?: boolean;
     isHighlighted?: boolean;
     isSmall?: boolean;
+    /** Override computed card width in pixels */
+    size?: number;
     onPress?: () => void;
     onLongPress?: () => void;
     showEnergy?: boolean;
@@ -29,6 +31,7 @@ export const Card: React.FC<CardProps> = ({
     isFlipped = false,
     isHighlighted = false,
     isSmall = false,
+    size,
     onPress,
     onLongPress,
     showEnergy = true,
@@ -39,7 +42,7 @@ export const Card: React.FC<CardProps> = ({
 
     // On desktop, cap the base size so cards don't render too large in the 3-column layout
     const cardBase = isDesktop ? Math.min(GAME_WIDTH, 520) : GAME_WIDTH;
-    const cardWidth = isSmall ? cardBase * 0.12 : cardBase * 0.18;
+    const cardWidth = size ?? (isSmall ? cardBase * 0.12 : cardBase * 0.18);
     const cardHeight = cardWidth * CARD_ASPECT_RATIO;
 
     const renderCardBack = () => (
