@@ -209,11 +209,14 @@ export default function App() {
     if (currentScreen === 'edit_deck') {
       return (
         <EditDeckScreen
-          deck={playerDeck}
-          deckName={activeDeckName}
+          deck={editingDeck.length > 0 ? editingDeck : playerDeck}
+          deckName={editingDeckName || activeDeckName}
           onBack={() => setCurrentScreen('lobby')}
           onHome={() => setCurrentScreen('lobby')}
-          onUpdateDeck={setPlayerDeck}
+          onUpdateDeck={(updated) => {
+            setPlayerDeck(updated);
+            setEditingDeck(updated);
+          }}
         />
       );
     }
