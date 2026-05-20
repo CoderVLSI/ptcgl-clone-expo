@@ -212,7 +212,7 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
         abilities: [{
             name: 'Flip the Script',
             type: 'Ability',
-            text: 'Once during your turn, if any of your Pokémon were Knocked Out during your opponent\'s last turn, you may draw 3 cards. You can\'t use more than 1 Flip the Script Ability each turn.',
+            text: 'Once during your turn, if any of your Pokémon were Knocked Out during your opponent\'s last turn, you may use this Ability. Each player shuffles their hand into their deck. You draw 7 cards, and your opponent draws 4 cards.',
         }],
         attacks: [
             { name: 'Cruel Arrow', damage: 100, energyCost: ['colorless', 'colorless', 'colorless'], description: 'This attack does 100 damage to 1 of your opponent\'s Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)' },
@@ -446,7 +446,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
     'Raging Bolt ex': {
         name: 'Raging Bolt ex',
         type: 'pokemon',
-        hp: 240,
+        hp: 230,
         energyType: 'lightning',
         subtypes: ['Basic', 'ex', 'Ancient'],
         retreatCost: 3,
@@ -787,7 +787,7 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
     'Budew': {
         name: 'Budew',
         type: 'pokemon',
-        hp: 30,
+        hp: 40,
         energyType: 'grass',
         subtypes: ['Basic'],
         retreatCost: 0,
