@@ -2871,7 +2871,7 @@ export async function createMegaZygardeExDeck(): Promise<Card[]> {
 
 // ============================================
 // MEGA PYROAR EX DECK — CRI (Chaos Rising)
-// Fire spread — 60 cards: 14 Pokémon / 34 Trainers / 12 Energy
+// Fire spread — 60 cards: 14 Pokémon / 34 Trainers / 12 Energy (rotated: Iono/Briar/Poffin→Judge/ProfResearch/NestBall)
 // ============================================
 export async function createMegaPyroarExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
@@ -2884,21 +2884,19 @@ export async function createMegaPyroarExDeck(): Promise<Card[]> {
     addCard('Kakuna', 1);               // CRI — stage 1 bridge
     addCard('Munkidori', 2);            // sv6 — Adrena-Brain chip damage
 
-    // Trainers — Supporters (10)
-    addCard("Professor's Research", 3);
-    addCard('Iono', 2);
+    // Trainers — Supporters (9)
+    addCard("Professor's Research", 4);
+    addCard('Judge', 2);               // sv8 — both players draw 4
     addCard("Boss's Orders", 2);
     addCard('Crispin', 1);              // sv7 — energy from discard
-    addCard('Briar', 1);                // sv6pt5 — draw after KO
 
-    // Trainers — Items (22)
+    // Trainers — Items (23)
     addCard('Ultra Ball', 4);
     addCard('Rare Candy', 4);           // Weedle/Kakuna → Beedrill ex skip
-    addCard('Nest Ball', 3);
+    addCard('Nest Ball', 5);           // sv7/sv8 — search Basic Pokémon
     addCard('Night Stretcher', 3);
     addCard('Super Rod', 1);
     addCard('Special Red Card', 2);           // cri — opponent draws 3 when they have ≤3 prizes
-    addCard('Buddy-Buddy Poffin', 2);
     addCard('Switch', 2);
     addCard('Prism Tower', 2);          // CRI — discard 2 to draw 1
 
@@ -2914,7 +2912,7 @@ export async function createMegaPyroarExDeck(): Promise<Card[]> {
 
 // ============================================
 // MEGA GALLADE EX DECK — CRI (Chaos Rising)
-// Fighting sweep — 60 cards: 16 Pokémon / 32 Trainers / 12 Energy
+// Fighting sweep — 60 cards: 16 Pokémon / 32 Trainers / 12 Energy (rotated: Iono→Judge)
 // ============================================
 export async function createMegaGalladeExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
@@ -2927,9 +2925,9 @@ export async function createMegaGalladeExDeck(): Promise<Card[]> {
     addCard('Cinccino ex', 2);          // CRI 073 — Do the Wave + Fluffy
     addCard('Minccino', 2);             // CRI — base for Cinccino ex
 
-    // Trainers — Supporters (10)
+    // Trainers — Supporters (9)
     addCard("Professor's Research", 3);
-    addCard('Iono', 2);
+    addCard('Judge', 2);               // sv8 — both players draw 4
     addCard("Boss's Orders", 2);
     addCard('Jacq', 1);                 // sv7 — evolution search
     addCard('Tarragon', 1);             // me3 — retrieve Fighting Energy
@@ -2957,7 +2955,7 @@ export async function createMegaGalladeExDeck(): Promise<Card[]> {
 
 // ============================================
 // MEGA DARKRAI EX DECK — Pitch Black (ME5)
-// Darkness control — 60 cards: 14 Pokémon / 34 Trainers / 12 Energy
+// Darkness control — 60 cards: 14 Pokémon / 34 Trainers / 12 Energy (rotated: Iono/Poffin/CCounter→Judge/NestBall/Switch)
 // ============================================
 export async function createMegaDarkraiExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
@@ -2969,22 +2967,20 @@ export async function createMegaDarkraiExDeck(): Promise<Card[]> {
     addCard('Spiritomb', 2);             // me5 032 — Spooky Binding: opponent can't retreat
     addCard('Thievul', 2);               // me5 055 — Stakeout: peek top 4 opponent deck
 
-    // Trainers — Supporters (10)
+    // Trainers — Supporters (9)
     addCard("Professor's Research", 3);
-    addCard('Iono', 2);
+    addCard('Judge', 2);               // sv8 — both players draw 4
     addCard("Boss's Orders", 2);
     addCard('Gwynn', 2);                 // me5 — discard Pokémon, draw 3×
 
-    // Trainers — Items (22)
+    // Trainers — Items (23)
     addCard('Dark Bell', 4);             // me5 — Confuse both Active (non-Darkness)
     addCard('Ultra Ball', 4);
-    addCard('Nest Ball', 3);
+    addCard('Nest Ball', 5);
     addCard('Night Stretcher', 3);
     addCard('Super Rod', 1);
     addCard('Special Red Card', 2);           // cri — opponent draws 3 when they have ≤3 prizes
-    addCard('Switch', 2);
-    addCard('Counter Catcher', 2);
-    addCard('Buddy-Buddy Poffin', 2);
+    addCard('Switch', 4);
 
     // Trainers — Stadiums (2)
     addCard('Pokémon League Headquarters', 2);
@@ -2998,7 +2994,7 @@ export async function createMegaDarkraiExDeck(): Promise<Card[]> {
 
 // ============================================
 // MEGA CHANDELURE EX DECK — Pitch Black (ME5)
-// Psychic lock + spread — 60 cards: 16 Pokémon / 32 Trainers / 12 Energy
+// Psychic lock + spread — 60 cards: 16 Pokémon / 32 Trainers / 12 Energy (rotated: Iono/Poffin/Briar→Judge/NestBall/NightStretcher)
 // ============================================
 export async function createMegaChandelureExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
@@ -3011,22 +3007,20 @@ export async function createMegaChandelureExDeck(): Promise<Card[]> {
     addCard('Banette', 2);              // me5 031 — Ghost Veil + Doll Catch
     addCard('Spiritomb', 1);            // me5 032 — Spooky Binding
 
-    // Trainers — Supporters (10)
+    // Trainers — Supporters (8)
     addCard("Professor's Research", 3);
-    addCard('Iono', 2);
+    addCard('Judge', 2);               // sv8 — both players draw 4
     addCard("Boss's Orders", 2);
     addCard('Jacq', 1);
-    addCard('Briar', 1);
 
-    // Trainers — Items (20)
+    // Trainers — Items (22)
     addCard('Rare Candy', 4);           // Litwick → Mega Chandelure ex skip
     addCard('Ultra Ball', 4);
-    addCard('Nest Ball', 3);
-    addCard('Night Stretcher', 3);
+    addCard('Nest Ball', 5);
+    addCard('Night Stretcher', 4);      // sv8 — recovery
     addCard('Super Rod', 1);
     addCard('Special Red Card', 2);           // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Switch', 2);
-    addCard('Buddy-Buddy Poffin', 2);
 
     // Trainers — Stadiums (2)
     addCard('Pokémon League Headquarters', 2);
@@ -3040,7 +3034,7 @@ export async function createMegaChandelureExDeck(): Promise<Card[]> {
 
 // ============================================
 // MEGA EXCADRILL EX DECK — Pitch Black (ME5)
-// Metal drill — 60 cards: 14 Pokémon / 34 Trainers / 12 Energy
+// Metal drill — 60 cards: 14 Pokémon / 34 Trainers / 12 Energy (rotated: Iono/Poffin→Judge/NightStretcher/Crispin)
 // ============================================
 export async function createMegaExcadrillExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
@@ -3054,18 +3048,18 @@ export async function createMegaExcadrillExDeck(): Promise<Card[]> {
 
     // Trainers — Supporters (10)
     addCard("Professor's Research", 3);
-    addCard('Iono', 2);
+    addCard('Judge', 2);               // sv8 — both players draw 4
     addCard("Boss's Orders", 2);
     addCard('Philippe', 2);             // cri — attach 2 Metal Energy from discard
+    addCard('Crispin', 1);             // sv7 — Metal energy from discard
 
     // Trainers — Items (22)
     addCard('Ultra Ball', 4);
     addCard('Nest Ball', 4);
-    addCard('Night Stretcher', 3);
+    addCard('Night Stretcher', 4);      // sv8
     addCard('Super Rod', 1);
     addCard('Special Red Card', 2);           // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Switch', 2);
-    addCard('Buddy-Buddy Poffin', 2);
     addCard('Adversity Policy', 2);     // cri — draw 3 when hit by weakness (Fire)
     addCard('Tool Scrapper', 1);        // cri — discard up to 2 opponent Tools
     addCard('Magnetic M Energy', 2);    // cri — Metal + retreat 0
