@@ -367,7 +367,7 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
     // Trainers (33) — all standard-legal
     // Supporters (9)
     addCard("Professor's Research", 4); // sv5/sv8
-    addCard('Iono', 2);                 // sv6/sv8
+    addCard('Judge', 2);                // sv8 — both players draw 4
     addCard("Boss's Orders", 2);        // sv7/sv8
     // Items (22)
     addCard('Fighting Gong', 4);        // me1 — search Fighting Energy or Fighting Pokémon
@@ -391,7 +391,7 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
 // ============================================
 // DRAGAPULT EX / DUSKNOIR DECK — 2026 Standard (H-On)
 // Real competitive list: Phantom Dive + Sinister Hand combo
-// 60 cards: 17 Pokémon / 37 Trainers / 6 Energy
+// 60 cards: 17 Pokémon / 37 Trainers / 6 Energy (Iono/Poffin/CCounter/ExpShare→Judge/NestBall/Switch/NightStretcher)
 // ============================================
 export async function createDragapultExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
@@ -408,7 +408,7 @@ export async function createDragapultExDeck(): Promise<Card[]> {
     addCard('Bloodmoon Ursaluna ex', 1);  // sv6pt5 — Crescent Moon 190dmg, ignores Abilities
 
     // Trainers — Supporters (12)
-    addCard('Iono', 3);                          // sv6/sv8 — hand disruption + draw
+    addCard('Judge', 3);                         // sv8 — both players draw 4
     addCard("Lillie's Determination", 3);        // me1 — full-grip draw
     addCard("Boss's Orders", 3);                 // sv7/sv8 — force active switch
     addCard('Jacq', 1);                          // sv7 — search for Evolution Pokémon
@@ -417,14 +417,12 @@ export async function createDragapultExDeck(): Promise<Card[]> {
     // Trainers — Items (23)
     addCard('Rare Candy', 4);                    // sv5/sv8 — Basic→Stage 2 skip
     addCard('Ultra Ball', 4);                    // sv5/sv8
-    addCard('Buddy-Buddy Poffin', 4);            // sv5 — grab Budew + Hawlucha (both ≤70HP)
-    addCard('Night Stretcher', 3);               // sv8 — recovery
-    addCard('Counter Catcher', 3);               // sv6 — switch after KO
+    addCard('Nest Ball', 4);                     // sv7/sv8 — search Basic Pokémon
+    addCard('Night Stretcher', 4);               // sv8 — recovery
     addCard('Super Rod', 1);                     // sv5/sv8
     addCard('Special Red Card', 2);          // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Unfair Stamp', 1);                  // sv8 — opponent draws 3 when they have 1-3 prizes
-    addCard('Exp. Share', 1);                    // sv5 — keep energy when KO'd
-    addCard('Switch', 1);                        // sv5
+    addCard('Switch', 4);                        // sv8
 
     // Trainers — Stadium (2)
     addCard('Pokémon League Headquarters', 2);   // sv8
@@ -1072,8 +1070,8 @@ const EXTRA_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Each player shuffles their hand into their deck and draws 4 cards.',
-        imageUrl: 'https://images.pokemontcg.io/sv1/176.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/sv1/176_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sv8/176.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv8/176_hires.png',
     },
 
     'Rare Candy': {
@@ -2749,7 +2747,7 @@ async function buildDeckHelper() {
 // ============================================
 // RAGING BOLT EX DECK — 2026 Standard (H-On)
 // Real competitive list: Noctowl consistency + Raging Thunder 280 damage
-// 60 cards: 14 Pokémon / 34 Trainers / 12 Energy
+// 60 cards: 14 Pokémon / 34 Trainers / 12 Energy (rotated: Iono/Carmine/Poffin/CCounter→Judge/Crispin/NestBall/Switch/ERetrieval)
 // ============================================
 export async function createRagingBoltExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
@@ -2762,22 +2760,18 @@ export async function createRagingBoltExDeck(): Promise<Card[]> {
     addCard('Fan Rotom', 2);              // sv8pt5 — Fan Spinning: look top 5, grab a Pokémon
 
     // Trainers — Supporters (10)
-    addCard('Iono', 3);
+    addCard('Judge', 4);                  // sv8 — both players draw 4
     addCard("Boss's Orders", 3);
-    addCard('Crispin', 1);                // sv7 — energy from discard
-    addCard('Carmine', 1);                // sv6pt5 — draw up to 5
-    addCard('Judge', 1);                  // sv5 — both players draw 4
+    addCard('Crispin', 3);                // sv7 — energy from discard
 
     // Trainers — Items (22)
     addCard('Ultra Ball', 4);
-    addCard('Nest Ball', 3);
-    addCard('Buddy-Buddy Poffin', 3);     // grab Hoothoot + Fan Rotom (both ≤70HP)
-    addCard('Switch', 3);
+    addCard('Nest Ball', 4);
+    addCard('Switch', 4);
     addCard('Night Stretcher', 3);
-    addCard('Energy Retrieval', 3);       // retrieve Lightning Energy
+    addCard('Energy Retrieval', 4);       // retrieve Lightning Energy
     addCard('Super Rod', 1);
     addCard('Special Red Card', 2);       // cri — opponent draws 3 when they have ≤3 prizes
-    addCard('Counter Catcher', 1);
 
     // Trainers — Stadiums (2)
     addCard('Pokémon League Headquarters', 2);
@@ -2794,7 +2788,7 @@ export async function createRagingBoltExDeck(): Promise<Card[]> {
 // ============================================
 // MEGA GRENINJA EX DECK — 2026 Standard (H-On)
 // Water/Spread control — 60 cards
-// 13 Pokémon / 35 Trainers / 12 Energy
+// 13 Pokémon / 35 Trainers / 12 Energy (rotated: Iono/Poffin/Briar→Judge/Crispin/NestBall×6)
 // ============================================
 export async function createMegaGreninjaExDeck(): Promise<Card[]> {
     const { deck, addCard } = await buildDeckHelper();
@@ -2810,20 +2804,18 @@ export async function createMegaGreninjaExDeck(): Promise<Card[]> {
 
     // Trainers — Supporters (10)
     addCard("Professor's Research", 3);
-    addCard('Iono', 2);
+    addCard('Judge', 3);                  // sv8 — both players draw 4
     addCard("Boss's Orders", 2);
-    addCard('Briar', 1);
-    addCard('Judge', 1);
+    addCard('Crispin', 2);              // sv7 — energy from discard
 
     // Trainers — Items (23)
     addCard('Rare Candy', 4);           // skip Frogadier into Mega Greninja ex
     addCard('Ultra Ball', 4);
-    addCard('Nest Ball', 4);
+    addCard('Nest Ball', 6);
     addCard('Switch', 3);
     addCard('Super Rod', 1);
     addCard('Special Red Card', 2);           // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Night Stretcher', 3);
-    addCard('Buddy-Buddy Poffin', 3);
 
     // Trainers — Stadiums (2)
     addCard('Pokémon League Headquarters', 2);
@@ -2851,7 +2843,9 @@ export async function createMegaZygardeExDeck(): Promise<Card[]> {
     addCard('Lunatone', 2);              // me1/74 — Lunar Cycle: discard Fighting to draw 3
 
     // Trainers — Supporters (16)
-    addCard('Carmine', 4);               // sv6/145 — shuffle hand, draw up to 5
+    addCard('Crispin', 2);              // sv7 — Fighting energy from discard
+    addCard('Judge', 1);               // sv8 — both players draw 4
+    addCard("Professor's Research", 1); // sv8pt5 — discard hand, draw 7
     addCard("Lillie's Determination", 4); // me1/119 — search Fighting Pokémon/Energy
     addCard('Tarragon', 4);              // me3/85 — retrieve 4 Fighting Energy from discard
     addCard("Wally's Compassion", 2);    // me1/132 — heal Mega Evo ex, return Energy to hand
