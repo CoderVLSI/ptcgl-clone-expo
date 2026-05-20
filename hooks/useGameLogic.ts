@@ -1066,6 +1066,39 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
+        // Special Red Card — opponent shuffles hand + draws 3; only if opponent has ≤3 Prize Cards
+        if (cardNameLower.includes('special red card')) {
+            const oppPrizesLeft = gameState.opponent.prizeCards.length;
+            if (oppPrizesLeft > 3) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'Special Red Card: Can only play when opponent has 3 or fewer Prize Cards remaining!',
+                }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                const oppDeck = [...prev.opponent.deck, ...prev.opponent.hand];
+                for (let i = oppDeck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [oppDeck[i], oppDeck[j]] = [oppDeck[j], oppDeck[i]];
+                }
+                const oppDrawn = oppDeck.splice(0, 3);
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                    opponent: { ...prev.opponent, hand: oppDrawn, deck: oppDeck },
+                    message: 'Special Red Card: Opponent shuffled hand and drew 3 cards!',
+                };
+            });
+            setLogicState(prev => ({ ...prev, message: 'Special Red Card played!' }));
+            return true;
+        }
+
         // Poké Pad — search deck for a Pokémon Tool or basic Energy, put into hand
         if (cardNameLower.includes('poké pad') || cardNameLower.includes('poke pad')) {
             const toolOrEnergy = gameState.player.deck.filter(

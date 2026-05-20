@@ -367,14 +367,15 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
     // Trainers (33) — all standard-legal
     // Supporters (9)
     addCard("Professor's Research", 4); // sv5/sv8
-    addCard('Iono', 3);                 // sv6/sv8
+    addCard('Iono', 2);                 // sv6/sv8
     addCard("Boss's Orders", 2);        // sv7/sv8
     // Items (22)
     addCard('Fighting Gong', 4);        // me1 — search Fighting Energy or Fighting Pokémon
     addCard('Ultra Ball', 4);           // sv5/sv8
     addCard('Nest Ball', 4);            // sv5/sv8 — Riolu/Makuhita 80HP don't qualify for Poffin
     addCard('Premium Power Pro', 3);    // me1 — Fighting attacks +30 this turn
-    addCard('Super Rod', 2);            // sv5/sv8
+    addCard('Super Rod', 1);            // sv5/sv8
+    addCard('Special Red Card', 2);     // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Switch', 3);               // sv5/sv8
     addCard('Energy Retrieval', 2);     // sv5 — get Fighting Energy back
     // Supporters — special
@@ -407,7 +408,7 @@ export async function createDragapultExDeck(): Promise<Card[]> {
     addCard('Bloodmoon Ursaluna ex', 1);  // sv6pt5 — Crescent Moon 190dmg, ignores Abilities
 
     // Trainers — Supporters (12)
-    addCard('Iono', 4);                          // sv6/sv8 — hand disruption + draw
+    addCard('Iono', 3);                          // sv6/sv8 — hand disruption + draw
     addCard("Lillie's Determination", 3);        // me1 — full-grip draw
     addCard("Boss's Orders", 3);                 // sv7/sv8 — force active switch
     addCard('Jacq', 1);                          // sv7 — search for Evolution Pokémon
@@ -419,7 +420,8 @@ export async function createDragapultExDeck(): Promise<Card[]> {
     addCard('Buddy-Buddy Poffin', 4);            // sv5 — grab Budew + Hawlucha (both ≤70HP)
     addCard('Night Stretcher', 3);               // sv8 — recovery
     addCard('Counter Catcher', 3);               // sv6 — switch after KO
-    addCard('Super Rod', 2);                     // sv5/sv8
+    addCard('Super Rod', 1);                     // sv5/sv8
+    addCard('Special Red Card', 2);          // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Unfair Stamp', 1);                  // sv8 — opponent draws 3 when they have 1-3 prizes
     addCard('Exp. Share', 1);                    // sv5 — keep energy when KO'd
     addCard('Switch', 1);                        // sv5
@@ -2760,7 +2762,7 @@ export async function createRagingBoltExDeck(): Promise<Card[]> {
     addCard('Fan Rotom', 2);              // sv8pt5 — Fan Spinning: look top 5, grab a Pokémon
 
     // Trainers — Supporters (10)
-    addCard('Iono', 4);
+    addCard('Iono', 3);
     addCard("Boss's Orders", 3);
     addCard('Crispin', 1);                // sv7 — energy from discard
     addCard('Carmine', 1);                // sv6pt5 — draw up to 5
@@ -2773,7 +2775,8 @@ export async function createRagingBoltExDeck(): Promise<Card[]> {
     addCard('Switch', 3);
     addCard('Night Stretcher', 3);
     addCard('Energy Retrieval', 3);       // retrieve Lightning Energy
-    addCard('Super Rod', 2);
+    addCard('Super Rod', 1);
+    addCard('Special Red Card', 2);       // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Counter Catcher', 1);
 
     // Trainers — Stadiums (2)
@@ -2807,7 +2810,7 @@ export async function createMegaGreninjaExDeck(): Promise<Card[]> {
 
     // Trainers — Supporters (10)
     addCard("Professor's Research", 3);
-    addCard('Iono', 3);
+    addCard('Iono', 2);
     addCard("Boss's Orders", 2);
     addCard('Briar', 1);
     addCard('Judge', 1);
@@ -2817,7 +2820,8 @@ export async function createMegaGreninjaExDeck(): Promise<Card[]> {
     addCard('Ultra Ball', 4);
     addCard('Nest Ball', 4);
     addCard('Switch', 3);
-    addCard('Super Rod', 2);
+    addCard('Super Rod', 1);
+    addCard('Special Red Card', 2);           // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Night Stretcher', 3);
     addCard('Buddy-Buddy Poffin', 3);
 
@@ -2856,9 +2860,10 @@ export async function createMegaZygardeExDeck(): Promise<Card[]> {
     // Trainers — Items (17)
     addCard('Poké Pad', 4);              // me3/81 — search for Tool or Energy
     addCard('Fighting Gong', 4);         // me1/116 — search Fighting Energy or Fighting Pokémon
-    addCard('Night Stretcher', 3);       // sv6pt5/61 — recover Pokémon (+ Energy if Rule Box)
+    addCard('Night Stretcher', 2);       // sv6pt5/61 — recover Pokémon (+ Energy if Rule Box)
     addCard('Ultra Ball', 2);            // me1/131 — search any Pokémon
-    addCard('Switch', 2);               // me1/130 — free retreat
+    addCard('Switch', 1);               // me1/130 — free retreat
+    addCard('Special Red Card', 2);             // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Precious Trolley', 1);      // sv8pt5/185 — search up to 2 Items
     addCard('Air Balloon', 1);           // me2/79 — Tool: -2 Retreat Cost
 
@@ -2887,7 +2892,7 @@ export async function createMegaPyroarExDeck(): Promise<Card[]> {
 
     // Trainers — Supporters (10)
     addCard("Professor's Research", 3);
-    addCard('Iono', 3);
+    addCard('Iono', 2);
     addCard("Boss's Orders", 2);
     addCard('Crispin', 1);              // sv7 — energy from discard
     addCard('Briar', 1);                // sv6pt5 — draw after KO
@@ -2897,7 +2902,8 @@ export async function createMegaPyroarExDeck(): Promise<Card[]> {
     addCard('Rare Candy', 4);           // Weedle/Kakuna → Beedrill ex skip
     addCard('Nest Ball', 3);
     addCard('Night Stretcher', 3);
-    addCard('Super Rod', 2);
+    addCard('Super Rod', 1);
+    addCard('Special Red Card', 2);           // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Buddy-Buddy Poffin', 2);
     addCard('Switch', 2);
     addCard('Prism Tower', 2);          // CRI — discard 2 to draw 1
@@ -2929,7 +2935,7 @@ export async function createMegaGalladeExDeck(): Promise<Card[]> {
 
     // Trainers — Supporters (10)
     addCard("Professor's Research", 3);
-    addCard('Iono', 3);
+    addCard('Iono', 2);
     addCard("Boss's Orders", 2);
     addCard('Jacq', 1);                 // sv7 — evolution search
     addCard('Tarragon', 1);             // me3 — retrieve Fighting Energy
@@ -2939,7 +2945,8 @@ export async function createMegaGalladeExDeck(): Promise<Card[]> {
     addCard('Ultra Ball', 4);
     addCard('Nest Ball', 3);
     addCard('Night Stretcher', 2);
-    addCard('Super Rod', 2);
+    addCard('Super Rod', 1);
+    addCard('Special Red Card', 2);           // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Switch', 2);
     addCard('Adversity Policy', 2);     // CRI — draw 3 when hit by weakness
     addCard('Buddy-Buddy Poffin', 1);
@@ -2970,7 +2977,7 @@ export async function createMegaDarkraiExDeck(): Promise<Card[]> {
 
     // Trainers — Supporters (10)
     addCard("Professor's Research", 3);
-    addCard('Iono', 3);
+    addCard('Iono', 2);
     addCard("Boss's Orders", 2);
     addCard('Gwynn', 2);                 // me5 — discard Pokémon, draw 3×
 
@@ -2979,7 +2986,8 @@ export async function createMegaDarkraiExDeck(): Promise<Card[]> {
     addCard('Ultra Ball', 4);
     addCard('Nest Ball', 3);
     addCard('Night Stretcher', 3);
-    addCard('Super Rod', 2);
+    addCard('Super Rod', 1);
+    addCard('Special Red Card', 2);           // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Switch', 2);
     addCard('Counter Catcher', 2);
     addCard('Buddy-Buddy Poffin', 2);
@@ -3011,7 +3019,7 @@ export async function createMegaChandelureExDeck(): Promise<Card[]> {
 
     // Trainers — Supporters (10)
     addCard("Professor's Research", 3);
-    addCard('Iono', 3);
+    addCard('Iono', 2);
     addCard("Boss's Orders", 2);
     addCard('Jacq', 1);
     addCard('Briar', 1);
@@ -3021,7 +3029,8 @@ export async function createMegaChandelureExDeck(): Promise<Card[]> {
     addCard('Ultra Ball', 4);
     addCard('Nest Ball', 3);
     addCard('Night Stretcher', 3);
-    addCard('Super Rod', 2);
+    addCard('Super Rod', 1);
+    addCard('Special Red Card', 2);           // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Switch', 2);
     addCard('Buddy-Buddy Poffin', 2);
 
@@ -3051,7 +3060,7 @@ export async function createMegaExcadrillExDeck(): Promise<Card[]> {
 
     // Trainers — Supporters (10)
     addCard("Professor's Research", 3);
-    addCard('Iono', 3);
+    addCard('Iono', 2);
     addCard("Boss's Orders", 2);
     addCard('Philippe', 2);             // cri — attach 2 Metal Energy from discard
 
@@ -3059,7 +3068,8 @@ export async function createMegaExcadrillExDeck(): Promise<Card[]> {
     addCard('Ultra Ball', 4);
     addCard('Nest Ball', 4);
     addCard('Night Stretcher', 3);
-    addCard('Super Rod', 2);
+    addCard('Super Rod', 1);
+    addCard('Special Red Card', 2);           // cri — opponent draws 3 when they have ≤3 prizes
     addCard('Switch', 2);
     addCard('Buddy-Buddy Poffin', 2);
     addCard('Adversity Policy', 2);     // cri — draw 3 when hit by weakness (Fire)
