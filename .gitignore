@@ -39,3 +39,16 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# AI agent / editor config (not part of the project)
+.agent/
+.claude/
+.gemini/
+
+# Large local data cache files
+me1.json
+*.cache.json
+
+# Planning / scratch files
+plan.md
+scratch/
