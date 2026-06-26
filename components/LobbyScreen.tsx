@@ -1,0 +1,598 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar, useWindowDimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Colors from '../constants/colors';
+import { Card } from '../types/game';
+import DeckManager from './DeckManager';
+
+interface LobbyScreenProps {
+    onPlayPress: () => void;
+    activeDeck?: Card[];
+    activeDeckName?: string;
+    onEditDeck: () => void;
+    onDecksPress: () => void;
+    onUpdateDeck: (deck: Card[]) => void;
+}
+
+export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onPlayPress, activeDeck = [], activeDeckName = "Deck", onEditDeck, onDecksPress, onUpdateDeck }) => {
+    const [mode, setMode] = useState<'Ranked' | 'Casual'>('Ranked');
+    const [showDeckManager, setShowDeckManager] = useState(false);
+    const { width, height } = useWindowDimensions();
+
+    // Derive main card image and type color from active deck
+    const mainPokemon = activeDeck.find(c =>
+        c.type === 'pokemon' && (c.name.includes(' ex') || c.name.includes('Mega ') || c.name.includes(' VMAX'))
+    ) || activeDeck.find(c => c.type === 'pokemon');
+
+    const mainCardImage = mainPokemon?.imageUrlLarge || mainPokemon?.imageUrl;
+
+    const TYPE_COLOR: Record<string, string> = {
+        fighting: '#C03028',
+        psychic: '#A040A0',
+        lightning: '#C8A000',
+        water: '#2060C0',
+        grass: '#3A8A30',
+        fire: '#C04808',
+        darkness: '#403830',
+        metal: '#6870A0',
+        colorless: '#888888',
+    };
+    const deckTypeColor = TYPE_COLOR[mainPokemon?.energyType || 'colorless'] || '#888888';
+
+    // Background: use main card image blurred, or gradient fallback
+    const bgImage = mainCardImage || 'https://images.pokemontcg.io/sv5/123_hires.png';
+
+    return (
+        <View style={styles.container}>
+            <DeckManager
+                visible={showDeckManager}
+                onClose={() => setShowDeckManager(false)}
+                deck={activeDeck}
+                deckName={activeDeckName}
+                onEditDeck={() => {
+                    setShowDeckManager(false);
+                    onEditDeck();
+                }}
+            />
+            <StatusBar barStyle="light-content" />
+
+            {/* Background — use active deck's main card blurred */}
+            <Image
+                source={{ uri: bgImage }}
+                style={[styles.backgroundImage, { width, height }]}
+                resizeMode="cover"
+                blurRadius={8}
+            />
+            <LinearGradient
+                colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0.75)', '#1A1A2E']}
+                style={[styles.gradientOverlay, { width, height }]}
+            />
+
+            <SafeAreaView style={styles.safeArea}>
+                {/* Top Bar - Currency */}
+                <View style={styles.topBar}>
+                    <View style={styles.currencyContainer}>
+                        <View style={styles.currencyItem}>
+                            <View style={[styles.currencyIcon, { backgroundColor: '#A020F0' }]} />
+                            <Text style={styles.currencyText}>873</Text>
+                        </View>
+                        <View style={styles.currencyItem}>
+                            <View style={[styles.currencyIcon, { backgroundColor: '#00FFFF' }]} />
+                            <Text style={styles.currencyText}>8,670</Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Mode Selector */}
+                <View style={styles.modeSelector}>
+                    <TouchableOpacity onPress={() => setMode('Ranked')} style={styles.modeButton}>
+                        <Text style={[styles.modeText, mode === 'Ranked' && styles.modeTextActive]}>RANKED</Text>
+                        {mode === 'Ranked' && <View style={styles.activeIndicator} />}
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setMode('Casual')} style={styles.modeButton}>
+                        <Text style={[styles.modeText, mode === 'Casual' && styles.modeTextActive]}>CASUAL</Text>
+                        {mode === 'Casual' && <View style={styles.activeIndicator} />}
+                    </TouchableOpacity>
+                </View>
+
+                {/* Main Content - Featured Card & Play */}
+                <View style={styles.centerContent}>
+                    {/* Featured Card — shows active deck's main Pokémon */}
+                    <View style={styles.featuredContainer}>
+                        <View style={[styles.hexagonBorder, { borderColor: deckTypeColor }]}>
+                            {mainCardImage ? (
+                                <Image
+                                    source={{ uri: mainCardImage }}
+                                    style={styles.featuredCard}
+                                    resizeMode="contain"
+                                />
+                            ) : (
+                                <View style={[styles.featuredCard, { backgroundColor: deckTypeColor, opacity: 0.5, borderRadius: 8 }]} />
+                            )}
+                        </View>
+                    </View>
+
+                    {/* Rank Score */}
+                    <View style={[styles.rankContainer, { borderColor: deckTypeColor }]}>
+                        <Text style={styles.rankScore}>1708</Text>
+                    </View>
+
+                    {/* Play Button */}
+                    <TouchableOpacity style={styles.playButton} onPress={onPlayPress}>
+                        <LinearGradient
+                            colors={['#FFD700', '#FFA500']}
+                            style={styles.playButtonGradient}
+                        >
+                            <Text style={styles.playButtonText}>PLAY</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+
+                    {/* Active Deck Display */}
+                    {/* Active Deck Display - Visual Box */}
+                    <TouchableOpacity
+                        style={styles.activeDeckContainer}
+                        onPress={() => setShowDeckManager(true)}
+                        activeOpacity={0.8}
+                    >
+                        <View style={styles.deckBoxVisual}>
+                            {/* Back Layer (Box depth) */}
+                            <View style={[styles.deckBoxDepth, { backgroundColor: deckTypeColor }]} />
+                            {/* Front Layer (Card/Cover) */}
+                            {mainCardImage ? (
+                                <Image
+                                    source={{ uri: mainCardImage }}
+                                    style={styles.deckBoxCover}
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <View style={[styles.deckBoxCover, { backgroundColor: deckTypeColor }]} />
+                            )}
+                            {/* Type Badge */}
+                            <View style={styles.deckTypeBadge}>
+                                <View style={[styles.typeIcon, { backgroundColor: deckTypeColor }]} />
+                            </View>
+                        </View>
+
+                        <View style={styles.deckInfo}>
+                            <Text style={styles.activeDeckLabel}>ACTIVE DECK</Text>
+                            <Text style={styles.activeDeckName}>{activeDeckName}</Text>
+                            <View style={styles.deckStats}>
+                                <Text style={styles.deckStatText}>Standard</Text>
+                                <View style={styles.separator} />
+                                <Text style={styles.deckStatText}>{activeDeck.length} Cards</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.changeDeckButton}>
+                            <Text style={styles.changeDeckText}>✎</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Bottom Navigation */}
+                <View style={styles.bottomNav}>
+                    {/* Profile */}
+                    <TouchableOpacity style={styles.navItem}>
+                        <View style={styles.avatarContainer}>
+                            <Image
+                                source={{ uri: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png' }} // Placeholder Avatar
+                                style={styles.avatar}
+                            />
+                            <View style={styles.levelBadge}>
+                                <Text style={styles.levelText}>46</Text>
+                            </View>
+                        </View>
+                        <Text style={styles.navLabel}>PROFILE</Text>
+                    </TouchableOpacity>
+
+                    {/* Decks - Festival Box Style */}
+                    <TouchableOpacity style={styles.navItem} onPress={onDecksPress}>
+                        <View style={styles.deckBoxContainer}>
+                            <View style={styles.deckBoxFront} />
+                            <Text style={styles.deckLabel}>DECKS</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    {/* Center Grid/Menu */}
+                    <TouchableOpacity style={styles.menuButton}>
+                        <View style={styles.gridIcon}>
+                            <View style={styles.gridRow}>
+                                <View style={styles.gridDot} /><View style={styles.gridDot} /><View style={styles.gridDot} />
+                            </View>
+                            <View style={styles.gridRow}>
+                                <View style={styles.gridDot} /><View style={styles.gridDot} /><View style={styles.gridDot} />
+                            </View>
+                            <View style={styles.gridRow}>
+                                <View style={styles.gridDot} /><View style={styles.gridDot} /><View style={styles.gridDot} />
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+
+                    {/* Battle Pass */}
+                    <TouchableOpacity style={styles.navItem}>
+                        <View style={styles.battlePassContainer}>
+                            <Text style={styles.bpLevel}>74</Text>
+                            <Text style={styles.bpLabel}>BATTLE PASS</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    {/* Shop */}
+                    <TouchableOpacity style={styles.navItem}>
+                        <View style={styles.shopContainer}>
+                            <View style={styles.shopIconBox}>
+                                <Text style={styles.shopIconText}>🛍️</Text>
+                            </View>
+                            <Text style={styles.navLabel}>SHOP</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#1A1A2E',
+    },
+    backgroundImage: {
+        position: 'absolute',
+        opacity: 0.6,
+    },
+    gradientOverlay: {
+        position: 'absolute',
+    },
+    safeArea: {
+        flex: 1,
+        justifyContent: 'space-between',
+    },
+    topBar: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end', // Items aligned to right
+        padding: 16,
+        paddingTop: 40,
+    },
+    currencyContainer: {
+        flexDirection: 'row',
+        gap: 16,
+    },
+    currencyItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 4,
+    },
+    currencyIcon: {
+        width: 20,
+        height: 20,
+        transform: [{ rotate: '45deg' }],
+        marginRight: 8,
+    },
+    currencyText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    modeSelector: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 40,
+        marginTop: 20,
+    },
+    modeButton: {
+        alignItems: 'center',
+    },
+    modeText: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 18,
+        fontWeight: 'bold',
+        letterSpacing: 1,
+    },
+    modeTextActive: {
+        color: '#FFD700',
+        textShadowColor: 'rgba(255, 215, 0, 0.5)',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 10,
+    },
+    activeIndicator: {
+        width: 40,
+        height: 3,
+        backgroundColor: '#FFD700',
+        marginTop: 4,
+        borderRadius: 2,
+    },
+    centerContent: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+    },
+    featuredContainer: {
+        marginBottom: 20,
+        alignItems: 'center',
+    },
+    hexagonBorder: {
+        width: 180,
+        height: 180,
+        justifyContent: 'center',
+        alignItems: 'center',
+        // Creating a simple shape pending SVG
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: '#A020F0',
+        transform: [{ rotate: '45deg' }],
+        overflow: 'hidden',
+    },
+    featuredCard: {
+        width: 140,
+        height: 140,
+        transform: [{ rotate: '-45deg' }], // Counter rotate image
+    },
+    rankContainer: {
+        backgroundColor: '#333',
+        paddingHorizontal: 30,
+        paddingVertical: 6,
+        borderRadius: 20,
+        marginBottom: -20, // Overlap with Play button
+        zIndex: 10,
+        borderWidth: 2,
+        borderColor: '#A020F0',
+    },
+    rankScore: {
+        color: '#FFF',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    playButton: {
+        marginTop: 30,
+        shadowColor: '#FFD700',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 10,
+        elevation: 8,
+    },
+    playButtonGradient: {
+        paddingHorizontal: 60,
+        paddingVertical: 12,
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: '#FFF',
+    },
+    playButtonText: {
+        color: '#8B0000',
+        fontSize: 28,
+        fontWeight: '900', // Black
+        letterSpacing: 2,
+    },
+    bottomNav: {
+        flexDirection: 'row',
+        marginBottom: 20,
+        alignItems: 'flex-end',
+        justifyContent: 'space-around',
+        paddingHorizontal: 10,
+    },
+    navItem: {
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        height: 80,
+    },
+    navLabel: {
+        color: '#FFF',
+        fontSize: 10,
+        fontWeight: 'bold',
+        marginTop: 4,
+    },
+    avatarContainer: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        borderWidth: 2,
+        borderColor: '#FFF',
+        backgroundColor: '#444',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatar: {
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+    },
+    levelBadge: {
+        position: 'absolute',
+        bottom: -5,
+        backgroundColor: '#FFD700',
+        paddingHorizontal: 4,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: '#000',
+    },
+    levelText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#000',
+    },
+    deckBoxContainer: {
+        alignItems: 'center',
+    },
+    deckBoxFront: {
+        width: 40,
+        height: 50,
+        backgroundColor: '#E74C3C',
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: '#FFF',
+    },
+    deckLabel: {
+        color: '#FFF',
+        fontSize: 10,
+        fontWeight: 'bold',
+        marginTop: 4,
+    },
+    menuButton: {
+        width: 40,
+        height: 40,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    gridIcon: {
+        padding: 4,
+    },
+    gridRow: {
+        flexDirection: 'row',
+        gap: 2,
+        marginBottom: 2,
+    },
+    gridDot: {
+        width: 4,
+        height: 4,
+        backgroundColor: '#FFF',
+        borderRadius: 2,
+    },
+    battlePassContainer: {
+        alignItems: 'center',
+    },
+    bpLevel: {
+        fontSize: 24,
+        color: '#FFD700',
+        fontWeight: '900',
+        textShadowColor: 'rgba(0,0,0,0.5)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
+    },
+    bpLabel: {
+
+        fontSize: 8,
+        fontWeight: 'bold',
+        backgroundColor: '#FFF',
+        color: '#000',
+        paddingHorizontal: 4,
+        paddingVertical: 1,
+        borderRadius: 2,
+        marginTop: 0,
+    },
+    shopContainer: {
+        alignItems: 'center',
+    },
+    shopIconBox: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    shopIconText: {
+        fontSize: 28,
+    },
+    activeDeckContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        padding: 12,
+        borderRadius: 16,
+        marginTop: 24,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        gap: 16,
+        minWidth: 260,
+        height: 100,
+    },
+    deckBoxVisual: {
+        width: 60,
+        height: 84,
+        position: 'relative',
+        transform: [{ rotate: '-5deg' }],
+        shadowColor: '#000',
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    deckBoxDepth: {
+        position: 'absolute',
+        top: 4,
+        left: 4,
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#8B0000', // Deep red for box side
+        borderRadius: 6,
+    },
+    deckBoxCover: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#FFF',
+    },
+    deckTypeBadge: {
+        position: 'absolute',
+        bottom: -6,
+        right: -6,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#1A1A2E',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#FFF',
+    },
+    typeIcon: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+    },
+    deckInfo: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    activeDeckLabel: {
+        color: '#888',
+        fontSize: 10,
+        fontWeight: 'bold',
+        letterSpacing: 1,
+        marginBottom: 4,
+    },
+    activeDeckName: {
+        color: '#FFF',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    deckStats: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    deckStatText: {
+        color: '#AAA',
+        fontSize: 12,
+    },
+    separator: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: '#555',
+        marginHorizontal: 6,
+    },
+    changeDeckButton: {
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    changeDeckText: {
+        color: '#FFF',
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+});
+
+export default LobbyScreen;
