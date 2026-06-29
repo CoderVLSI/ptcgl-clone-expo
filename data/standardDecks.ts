@@ -1073,8 +1073,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         attacks: [
             { name: 'Hypnoblast', damage: 20, energyCost: ['darkness'], description: 'Your opponent\'s Active Pokémon is now Asleep.' },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/1.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/1_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/svp/110.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/svp/110_hires.png',
     },
 
     'Mega Darkrai ex': {
@@ -1099,8 +1099,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'If your opponent\'s Active Pokémon is affected by a Special Condition, it is Knocked Out.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/77.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/77_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_46_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_46_R_JP.png',
     },
 
     // ─── Mega Zeraora ex ─────────────────────────────────────────────────────
@@ -1115,8 +1115,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         attacks: [
             { name: 'Plasma Fist', damage: 40, energyCost: ['lightning'], description: 'This Pokémon can\'t attack during your next turn.' },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/50.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/50_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/swsh12/56.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/swsh12/56_hires.png',
     },
 
     'Mega Zeraora ex': {
@@ -1141,8 +1141,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'Switch this Pokémon with 1 of your Benched Pokémon.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/78.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/78_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_26_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_26_R_JP.png',
     },
 
     // ─── Mega Chandelure ex ───────────────────────────────────────────────────
@@ -1157,8 +1157,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         attacks: [
             { name: 'Ember', damage: 20, energyCost: ['psychic'], description: 'Discard an Energy from this Pokémon.' },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/30.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/30_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_34_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_34_R_JP.png',
     },
 
     'Lampent': {
@@ -1173,8 +1173,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         attacks: [
             { name: 'Will-O-Wisp', damage: 30, energyCost: ['psychic'], description: 'Your opponent\'s Active Pokémon is now Burned.' },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/31.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/31_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_35_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_35_R_JP.png',
     },
 
     'Mega Chandelure ex': {
@@ -1200,8 +1200,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'This attack does 50 more damage for each [C] in your opponent\'s Active Pokémon\'s Retreat Cost.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/79.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/79_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_36_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_36_R_JP.png',
     },
 
     // ─── Mega Excadrill ex ───────────────────────────────────────────────────
@@ -1217,8 +1217,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         attacks: [
             { name: 'Scratch', damage: 20, energyCost: ['colorless'] },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/60.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/60_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_44_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_44_R_JP.png',
     },
 
     'Mega Excadrill ex': {
@@ -1245,8 +1245,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'If this Pokémon has at least 2 extra Energy attached (beyond this attack\'s cost), this attack does 130 more damage.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/80.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/80_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_63_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_63_R_JP.png',
     },
 
     // ─── Hide 'n' Sneak Pokémon (Night March archetype) ───────────────────────
@@ -1266,8 +1266,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         attacks: [
             { name: 'Furtive Drop', damage: 10, energyCost: ['colorless'], description: 'Put 1 damage counter on the Defending Pokémon.' },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/10.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/10_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_5_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_5_R_JP.png',
     },
 
     'Sinistcha': {
@@ -1292,8 +1292,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'If you have 6 or more Pokémon that have the Hide \'n\' Sneak Ability in your discard pile, place 4 damage counters on each of your opponent\'s Pokémon.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/11.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/11_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_6_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_6_R_JP.png',
     },
 
     'Shuppet': {
@@ -1313,8 +1313,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         attacks: [
             { name: 'Astonish', damage: 10, energyCost: ['psychic'] },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/20.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/20_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_31_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_31_R_JP.png',
     },
 
     'Banette': {
@@ -1340,8 +1340,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'Search your deck for any 1 card and put it into your hand. Then shuffle your deck.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/21.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/21_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_32_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_32_R_JP.png',
     },
 
     // ─── Dhelmise (main attacker in Night March variant) ─────────────────────
@@ -1362,8 +1362,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
                 description: 'If you have 4 or more Pokémon that have the Hide \'n\' Sneak Ability in your discard pile, this attack does 140 more damage.',
             },
         ],
-        imageUrl: 'https://images.pokemontcg.io/me5/25.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/25_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_37_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_37_R_JP.png',
     },
 
     // ─── me5 Trainers ─────────────────────────────────────────────────────────
@@ -1372,8 +1372,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Discard up to 5 cards from your hand. Draw 5 cards.',
-        imageUrl: 'https://images.pokemontcg.io/me5/90.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/90_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/sm8/189.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sm8/189_hires.png',
     },
 
     'Caitlin': {
@@ -1381,8 +1381,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Supporter'],
         flavorText: 'Put 1 card from your hand on top of your deck. If you do, draw 3 cards.',
-        imageUrl: 'https://images.pokemontcg.io/me5/91.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/91_hires.png',
+        imageUrl: 'https://images.pokemontcg.io/swsh6/132.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/swsh6/132_hires.png',
     },
 
     'Dark Order': {
@@ -1390,8 +1390,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Search your deck for a Darkness Pokémon or a Basic Darkness Energy card, reveal it, and put it into your hand. Then shuffle your deck.',
-        imageUrl: 'https://images.pokemontcg.io/me5/95.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/95_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_70_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_70_R_JP.png',
     },
 
     'Abyss Scope': {
@@ -1399,8 +1399,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Item'],
         flavorText: 'Look at your opponent\'s hand. You may switch their Active Pokémon with 1 of their Benched Pokémon.',
-        imageUrl: 'https://images.pokemontcg.io/me5/96.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/96_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_73_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_73_R_JP.png',
     },
 
     'Shadowy Cloak': {
@@ -1408,8 +1408,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Pokémon Tool'],
         flavorText: 'The Pokémon this card is attached to has no Weakness.',
-        imageUrl: 'https://images.pokemontcg.io/me5/100.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/100_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_74_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_74_R_JP.png',
     },
 
     'Altar of Darkness': {
@@ -1417,8 +1417,8 @@ const ME5_PROXY_CARDS: Record<string, Partial<Card>> = {
         type: 'trainer',
         subtypes: ['Stadium'],
         flavorText: 'Once during each player\'s turn, that player may discard a card from their hand to attach a Basic Darkness Energy from their discard pile to 1 of their Darkness Pokémon.',
-        imageUrl: 'https://images.pokemontcg.io/me5/105.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/me5/105_hires.png',
+        imageUrl: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_79_R_JP_SM.png',
+        imageUrlLarge: 'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/M5/M5_79_R_JP.png',
     },
 };
 
