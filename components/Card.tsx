@@ -39,6 +39,11 @@ export const Card: React.FC<CardProps> = ({
     const [imageError, setImageError] = useState(false);
     const { width: GAME_WIDTH } = useGameDimensions();
 
+    React.useEffect(() => {
+        setImageLoading(true);
+        setImageError(false);
+    }, [card?.imageUrl]);
+
     const cardWidth = isSmall ? GAME_WIDTH * 0.12 : GAME_WIDTH * 0.18;
     const cardHeight = cardWidth * CARD_ASPECT_RATIO;
 
@@ -79,7 +84,6 @@ export const Card: React.FC<CardProps> = ({
                     <Image
                         source={{ uri: card.imageUrl }}
                         style={styles.fullCardImage}
-                        onLoadStart={() => setImageLoading(true)}
                         onLoadEnd={() => setImageLoading(false)}
                         onError={() => {
                             setImageError(true);
