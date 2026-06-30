@@ -639,9 +639,9 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             });
             setLogicState(prev => ({
                 ...prev,
-                actionMode: 'evolve',
+                actionMode: 'rare_candy_select_hand',
                 activeCardId: cardId,
-                message: 'Select a Stage 2 Pokémon in hand, then select the Basic to evolve (Rare Candy skips Stage 1).',
+                message: 'Select a Stage 2 Pokémon in hand to evolve (Rare Candy).',
             }));
             return true;
         }

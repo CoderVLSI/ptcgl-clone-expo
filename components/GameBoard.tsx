@@ -28,6 +28,19 @@ import {
 } from './Animations';
 import { TouchableOpacity, Text } from 'react-native';
 
+function isValidRareCandyEvolution(stage2Name: string, basicName: string): boolean {
+    const s2 = stage2Name.toLowerCase();
+    const b = basicName.toLowerCase();
+
+    if (s2.includes('dragapult') && b.includes('dreepy')) return true;
+    if (s2.includes('greninja') && b.includes('froakie')) return true;
+    if (s2.includes('zygarde') && b.includes('zygarde')) return true;
+    if (s2.includes('chandelure') && b.includes('litwick')) return true;
+    if (s2.includes('dusknoir') && b.includes('duskull')) return true;
+
+    return false;
+}
+
 interface GameBoardProps {
     gameState?: GameState;
 }
@@ -296,12 +309,53 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
 
         // If we have a pending evolution, evolve this card
         if (pendingEvolveCard) {
+            const targetCard = gameState.player.activePokemon?.id === cardId
+                ? gameState.player.activePokemon
+                : gameState.player.bench.find(c => c.id === cardId);
+
+            if (!targetCard) return;
+
+            if (logicState.actionMode === 'rare_candy_select_field') {
+                if (!targetCard.subtypes?.includes('Basic')) {
+                    setLogicState(prev => ({
+                        ...prev,
+                        message: 'Rare Candy can only be played on a Basic Pokémon!',
+                    }));
+                    return;
+                }
+
+                if (!isValidRareCandyEvolution(pendingEvolveCard.name, targetCard.name)) {
+                    setLogicState(prev => ({
+                        ...prev,
+                        message: `Cannot evolve ${targetCard.name} into ${pendingEvolveCard.name} with Rare Candy!`,
+                    }));
+                    return;
+                }
+            } else {
+                // Normal evolution rule check
+                const evolvesFrom = pendingEvolveCard.evolvesFrom?.toLowerCase();
+                const targetName = targetCard.name.toLowerCase();
+
+                if (!evolvesFrom || evolvesFrom !== targetName) {
+                    setLogicState(prev => ({
+                        ...prev,
+                        message: `Must evolve ${targetCard.name} into a Pokémon that evolves from it! (Expected: ${pendingEvolveCard.name} evolves from ${pendingEvolveCard.evolvesFrom || 'something else'})`,
+                    }));
+                    return;
+                }
+            }
+
             const success = evolvePokemon(pendingEvolveCard.id, cardId);
             if (success) {
                 setPendingEvolveCard(null);
                 setShowDialog(true);
                 setShowActionMenu(false); // Close action menu
                 setSelectedHandCard(null);
+                setLogicState(prev => ({
+                    ...prev,
+                    actionMode: 'none',
+                    message: `${targetCard.name} successfully evolved into ${pendingEvolveCard.name}!`,
+                }));
             }
             return;
         }
@@ -364,9 +418,38 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const handleHandCardPress = useCallback((card: CardType) => {
         if (!gameState || gameState.currentPlayer !== 'player') return;
 
+        if (logicState.actionMode === 'rare_candy_select_hand') {
+            if (card.subtypes?.includes('Stage 2') || card.subtypes?.includes('MEGA')) {
+                setPendingEvolveCard(card);
+                setLogicState(prev => ({
+                    ...prev,
+                    actionMode: 'rare_candy_select_field',
+                    message: `Select the Basic Pokémon on the field to evolve into ${card.name} (Rare Candy).`,
+                }));
+            } else {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: 'Invalid selection: Must select a Stage 2 Pokémon from hand!',
+                }));
+            }
+            return;
+        }
+
         setSelectedHandCard(card);
         setShowActionMenu(true);
-    }, [gameState]);
+    }, [gameState, logicState.actionMode]);
+
+    const handleCancelAction = useCallback(() => {
+        setPendingEnergyCard(null);
+        setPendingEvolveCard(null);
+        setLogicState(prev => ({
+            ...prev,
+            actionMode: 'none',
+            message: 'Action cancelled.',
+        }));
+        setSelectedHandCard(null);
+        setShowActionMenu(false);
+    }, [setLogicState]);
 
     const handleBenchCardPress = useCallback((cardId: string) => {
         if (!gameState) return;
@@ -571,6 +654,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                                         : (logicState.message || gameState.message || '')
                             }
                         />
+                        {logicState.actionMode !== 'none' && (
+                            <TouchableOpacity
+                                style={styles.cancelActionButton}
+                                onPress={handleCancelAction}
+                            >
+                                <Text style={styles.cancelActionButtonText}>✕ Cancel Action</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
 
@@ -1044,6 +1135,26 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 18,
         letterSpacing: 1,
+    },
+    cancelActionButton: {
+        backgroundColor: '#D32F2F',
+        alignSelf: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+        borderRadius: 20,
+        marginTop: 6,
+        borderWidth: 1.5,
+        borderColor: '#FFFFFF',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 5,
+    },
+    cancelActionButtonText: {
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+        fontSize: 13,
     },
 });
 
