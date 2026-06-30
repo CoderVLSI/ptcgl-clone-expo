@@ -354,6 +354,14 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
         imageUrl: 'https://images.pokemontcg.io/sv1/191.png',
         imageUrlLarge: 'https://images.pokemontcg.io/sv1/191_hires.png',
     },
+    'Special Red Card': {
+        name: 'Special Red Card',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'You can play this card only if your opponent has 3 or fewer Prize cards remaining. Your opponent shuffles their hand and puts it on the bottom of their deck, then draws 3 cards.',
+        imageUrl: 'https://images.pokemontcg.io/xy1/124.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/xy1/124_hires.png',
+    },
 };
 
 // Smart helper to generate correct fallback card properties based on the name
@@ -526,7 +534,7 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
     // Trainers (33) — all standard-legal
     // Supporters (9)
     addCard("Professor's Research", 4); // sv5/sv8
-    addCard('Iono', 3);                 // sv6/sv8
+    addCard('Special Red Card', 2);
     addCard("Boss's Orders", 2);        // sv7/sv8
     // Items (22)
     addCard('Fighting Gong', 4);        // me1 — search Fighting Energy or Fighting Pokémon
@@ -537,7 +545,7 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
     addCard('Switch', 3);               // sv5/sv8
     addCard('Energy Retrieval', 2);     // sv5 — get Fighting Energy back
     // Supporters — special
-    addCard("Lillie's Determination", 2); // me1
+    addCard("Lillie's Determination", 3); // me1
 
     // Energy (12)
     addCard('Fighting Energy', 12);
@@ -556,7 +564,7 @@ export async function createDragapultExDeck(): Promise<Card[]> {
 
     // Pokémon (17)
     addCard('Dreepy', 4);                  // sv5 — Dragapult base
-    addCard('Drakloak', 2);                // sv5 — Stage 1 bridge
+    addCard('Drakloak', 3);                // sv5 — Stage 1 bridge
     addCard('Dragapult ex', 3);            // sv5 — Phantom Dive: place 6 damage counters on bench
     addCard('Duskull', 2);                 // sv6 — Dusknoir base
     addCard('Dusclops', 1);               // sv6 — Stage 1 bridge
@@ -566,7 +574,7 @@ export async function createDragapultExDeck(): Promise<Card[]> {
     addCard('Bloodmoon Ursaluna ex', 1);  // sv6pt5 — Crescent Moon 190dmg, ignores Abilities
 
     // Trainers — Supporters (12)
-    addCard('Iono', 4);                          // sv6/sv8 — hand disruption + draw
+    addCard('Special Red Card', 2);              // replaced Iono 4
     addCard("Lillie's Determination", 3);        // me1 — full-grip draw
     addCard("Boss's Orders", 3);                 // sv7/sv8 — force active switch
     addCard('Jacq', 1);                          // sv7 — search for Evolution Pokémon
@@ -578,7 +586,7 @@ export async function createDragapultExDeck(): Promise<Card[]> {
     addCard('Buddy-Buddy Poffin', 4);            // sv5 — grab Budew + Hawlucha (both ≤70HP)
     addCard('Night Stretcher', 3);               // sv8 — recovery
     addCard('Counter Catcher', 3);               // sv6 — switch after KO
-    addCard('Super Rod', 2);                     // sv5/sv8
+    addCard('Super Rod', 3);                     // sv5/sv8
     addCard('Unfair Stamp', 1);                  // sv8 — opponent draws 3 when they have 1-3 prizes
     addCard('Exp. Share', 1);                    // sv5 — keep energy when KO'd
     addCard('Switch', 1);                        // sv5
@@ -1683,7 +1691,7 @@ export async function createRagingBoltExDeck(): Promise<Card[]> {
     addCard('Fan Rotom', 2);              // sv8pt5 — Fan Spinning: look top 5, grab a Pokémon
 
     // Trainers — Supporters (10)
-    addCard('Iono', 4);
+    addCard('Special Red Card', 2);
     addCard("Boss's Orders", 3);
     addCard('Crispin', 1);                // sv7 — energy from discard
     addCard('Carmine', 1);                // sv6pt5 — draw up to 5
@@ -1691,8 +1699,8 @@ export async function createRagingBoltExDeck(): Promise<Card[]> {
 
     // Trainers — Items (22)
     addCard('Ultra Ball', 4);
-    addCard('Nest Ball', 3);
-    addCard('Buddy-Buddy Poffin', 3);     // grab Hoothoot + Fan Rotom (both ≤70HP)
+    addCard('Nest Ball', 4);
+    addCard('Buddy-Buddy Poffin', 4);     // grab Hoothoot + Fan Rotom (both ≤70HP)
     addCard('Switch', 3);
     addCard('Night Stretcher', 3);
     addCard('Energy Retrieval', 3);       // retrieve Lightning Energy
@@ -1729,8 +1737,8 @@ export async function createMegaGreninjaExDeck(): Promise<Card[]> {
     addCard('Munkidori', 1);            // sv6 — poison chip
 
     // Trainers — Supporters (10)
-    addCard("Professor's Research", 3);
-    addCard('Iono', 3);
+    addCard("Professor's Research", 4);
+    addCard('Special Red Card', 2);
     addCard("Boss's Orders", 2);
     addCard('Briar', 1);
     addCard('Judge', 1);
@@ -1773,7 +1781,7 @@ export async function createMegaZygardeExDeck(): Promise<Card[]> {
     // Trainers — Supporters (11)
     addCard('Tarragon', 4);              // me3 — retrieve 4 Fighting Energy from discard
     addCard("Professor's Research", 3);
-    addCard('Iono', 2);
+    addCard('Special Red Card', 2);
     addCard("Boss's Orders", 2);
 
     // Trainers — Items (18)
@@ -1813,8 +1821,8 @@ export async function createMegaDarkraiExDeck(): Promise<Card[]> {
 
     // Trainers — Supporters (10)
     addCard("Professor's Research", 4);
-    addCard('Iono', 3);
-    addCard("Boss's Orders", 2);
+    addCard('Special Red Card', 2);
+    addCard("Boss's Orders", 3);
     addCard('Sightseer', 1);                // me5 — discard to draw 5, fills discard for synergy
 
     // Trainers — Items (22)
@@ -1831,8 +1839,8 @@ export async function createMegaDarkraiExDeck(): Promise<Card[]> {
     addCard('Altar of Darkness', 2);        // me5 — attach Darkness Energy from discard each turn
     addCard('Pokémon League Headquarters', 2);
 
-    // Energy (12)
-    addCard('Darkness Energy', 12);
+    // Energy (11)
+    addCard('Darkness Energy', 11);
 
     console.log(`[2026 Standard] Mega Darkrai ex deck: ${deck.length} cards`);
     return shuffle(deck);
@@ -1861,7 +1869,7 @@ export async function createHideNSneakDeck(): Promise<Card[]> {
 
     // Trainers — Supporters (10)
     addCard("Professor's Research", 4);     // draw + discard hand (dumps Hide 'n' Sneak Pokémon)
-    addCard('Iono', 2);
+    addCard('Special Red Card', 2);
     addCard("Boss's Orders", 2);
     addCard('Sightseer', 2);                // me5 — discard up to 5 cards + draw 5 (engine for dumping HnS)
 

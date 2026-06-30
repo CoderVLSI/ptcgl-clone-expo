@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
 import { GameState, Card as CardType, EnergyType } from '../types/game';
 import Colors from '../constants/colors';
+import Card from './Card';
 import useGameLogic from '../hooks/useGameLogic';
 import { getNextAIAction, applyAIAction, AIAction } from '../utils/aiOpponent';
 import useGameDimensions from '../hooks/useGameDimensions';
