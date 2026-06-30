@@ -290,6 +290,70 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
         imageUrl: 'https://images.pokemontcg.io/sv5/162.png',
         imageUrlLarge: 'https://images.pokemontcg.io/sv5/162_hires.png',
     },
+    'Iono': {
+        name: 'Iono',
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Each player shuffles their hand and puts it on the bottom of their deck. Each player draws a card for each of their remaining Prize cards.',
+        imageUrl: 'https://images.pokemontcg.io/sv2/185.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv2/185_hires.png',
+    },
+    "Professor's Research": {
+        name: "Professor's Research",
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Discard your hand and draw 7 cards.',
+        imageUrl: 'https://images.pokemontcg.io/sv1/189.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/189_hires.png',
+    },
+    "Boss's Orders": {
+        name: "Boss's Orders",
+        type: 'trainer',
+        subtypes: ['Supporter'],
+        flavorText: 'Switch 1 of your opponent\'s Benched Pokémon with their Active Pokémon.',
+        imageUrl: 'https://images.pokemontcg.io/sv2/172.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv2/172_hires.png',
+    },
+    'Ultra Ball': {
+        name: 'Ultra Ball',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Discard 2 cards from your hand to search your deck for a Pokémon.',
+        imageUrl: 'https://images.pokemontcg.io/sv1/196.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/196_hires.png',
+    },
+    'Nest Ball': {
+        name: 'Nest Ball',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Search your deck for a Basic Pokémon and put it onto your Bench.',
+        imageUrl: 'https://images.pokemontcg.io/sv1/181.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/181_hires.png',
+    },
+    'Switch': {
+        name: 'Switch',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Switch your Active Pokémon with 1 of your Benched Pokémon.',
+        imageUrl: 'https://images.pokemontcg.io/sv1/194.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/194_hires.png',
+    },
+    'Super Rod': {
+        name: 'Super Rod',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Shuffle up to 3 Pokémon and/or Basic Energy cards from your discard pile back into your deck.',
+        imageUrl: 'https://images.pokemontcg.io/sv2/188.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv2/188_hires.png',
+    },
+    'Rare Candy': {
+        name: 'Rare Candy',
+        type: 'trainer',
+        subtypes: ['Item'],
+        flavorText: 'Evolve 1 of your Basic Pokémon in play into a Stage 2 Pokémon from your hand, skipping Stage 1.',
+        imageUrl: 'https://images.pokemontcg.io/sv1/191.png',
+        imageUrlLarge: 'https://images.pokemontcg.io/sv1/191_hires.png',
+    },
 };
 
 // Smart helper to generate correct fallback card properties based on the name
@@ -402,15 +466,18 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
     ].filter(isStandardLegal);
 
     const addCard = (name: string, count: number) => {
-        const apiCard = findCardByName(allCards, name);
+        // 1. Check exact name match in API cards
+        let apiCard = allCards.find(c => c.name.toLowerCase() === name.toLowerCase());
         if (apiCard) {
             for (let i = 0; i < count; i++) {
                 deck.push(convertApiCard(apiCard, cardIndex++));
             }
             return;
         }
-        if (STANDARD_PROXY_CARDS[name]) {
-            const proxy = STANDARD_PROXY_CARDS[name];
+
+        // 2. Check exact name match in Proxies (using ALL_PROXY_CARDS for full deck coverage)
+        if (ALL_PROXY_CARDS[name]) {
+            const proxy = ALL_PROXY_CARDS[name];
             for (let i = 0; i < count; i++) {
                 deck.push({
                     id: `proxy-${name.replace(/\s+/g, '-').toLowerCase()}-${cardIndex++}`,
@@ -421,12 +488,27 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
                     subtypes: proxy.subtypes,
                     attacks: proxy.attacks,
                     abilities: proxy.abilities,
+                    weaknesses: proxy.weaknesses,
+                    retreatCost: proxy.retreatCost,
+                    evolvesFrom: proxy.evolvesFrom,
                     imageUrl: proxy.imageUrl,
                     imageUrlLarge: proxy.imageUrlLarge,
+                    flavorText: proxy.flavorText,
                 });
             }
             return;
         }
+
+        // 3. Fall back to substring match in API cards
+        apiCard = findCardByName(allCards, name);
+        if (apiCard) {
+            for (let i = 0; i < count; i++) {
+                deck.push(convertApiCard(apiCard, cardIndex++));
+            }
+            return;
+        }
+
+        // 4. Smart fallback
         console.warn(`[2026 Standard] Card not found: ${name} (using smart fallback)`);
         for (let i = 0; i < count; i++) {
             deck.push(getFallbackCard(name, cardIndex++));
@@ -1537,11 +1619,14 @@ async function buildDeckHelper() {
     let cardIndex = 0;
 
     const addCard = (name: string, count: number) => {
-        const apiCard = findCardByName(allCards, name);
+        // 1. Check exact name match in API cards
+        let apiCard = allCards.find(c => c.name.toLowerCase() === name.toLowerCase());
         if (apiCard) {
             for (let i = 0; i < count; i++) deck.push(convertApiCard(apiCard, cardIndex++));
             return;
         }
+
+        // 2. Check exact name match in Proxies
         if (ALL_PROXY_CARDS[name]) {
             const proxy = ALL_PROXY_CARDS[name];
             for (let i = 0; i < count; i++) {
@@ -1564,6 +1649,15 @@ async function buildDeckHelper() {
             }
             return;
         }
+
+        // 3. Fall back to substring match in API cards
+        apiCard = findCardByName(allCards, name);
+        if (apiCard) {
+            for (let i = 0; i < count; i++) deck.push(convertApiCard(apiCard, cardIndex++));
+            return;
+        }
+
+        // 4. Smart fallback
         console.warn(`[2026 Standard] Card not found: ${name} (using smart fallback)`);
         for (let i = 0; i < count; i++) {
             deck.push(getFallbackCard(name, cardIndex++));

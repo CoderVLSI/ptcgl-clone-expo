@@ -47,6 +47,54 @@ export const DeckManager: React.FC<DeckManagerProps> = ({ visible, onClose, deck
         }
     };
 
+    // Find a featured card in the deck
+    const getFeaturedCardImage = (): string => {
+        if (!deck || deck.length === 0) return 'https://images.pokemontcg.io/xy3/55.png';
+        
+        // Find by name match (prioritize the card matching the deck name)
+        const matchingCard = deck.find(c => {
+            if (c.type !== 'pokemon') return false;
+            const cleanDeckName = deckName.toLowerCase().replace(/ex|mega|deck|battle/g, '').trim();
+            return c.name.toLowerCase().includes(cleanDeckName);
+        });
+        if (matchingCard && (matchingCard.imageUrlLarge || matchingCard.imageUrl)) {
+            return (matchingCard.imageUrlLarge || matchingCard.imageUrl) as string;
+        }
+
+        // Find by ex/MEGA
+        const exCard = deck.find(c => c.type === 'pokemon' && (c.subtypes?.includes('ex') || c.subtypes?.includes('MEGA') || c.subtypes?.includes('Mega')));
+        if (exCard && (exCard.imageUrlLarge || exCard.imageUrl)) {
+            return (exCard.imageUrlLarge || exCard.imageUrl) as string;
+        }
+
+        // Find by max HP
+        const pokemonCards = deck.filter(c => c.type === 'pokemon');
+        if (pokemonCards.length > 0) {
+            const sortedByHp = [...pokemonCards].sort((a, b) => (b.hp || 0) - (a.hp || 0));
+            const highestHpCard = sortedByHp[0];
+            if (highestHpCard && (highestHpCard.imageUrlLarge || highestHpCard.imageUrl)) {
+                return (highestHpCard.imageUrlLarge || highestHpCard.imageUrl) as string;
+            }
+        }
+
+        return 'https://images.pokemontcg.io/xy3/55.png';
+    };
+
+    const getFeaturedCardTypeColor = (): string => {
+        if (!deck || deck.length === 0) return '#C03028';
+        
+        const featuredCard = deck.find(c => {
+            if (c.type !== 'pokemon') return false;
+            const cleanDeckName = deckName.toLowerCase().replace(/ex|mega|deck|battle/g, '').trim();
+            return c.name.toLowerCase().includes(cleanDeckName);
+        }) || deck.find(c => c.type === 'pokemon');
+
+        if (featuredCard && featuredCard.energyType) {
+            return Colors.energy[featuredCard.energyType] || '#C03028';
+        }
+        return '#C03028';
+    };
+
     return (
         <Modal
             transparent={true}
@@ -79,12 +127,12 @@ export const DeckManager: React.FC<DeckManagerProps> = ({ visible, onClose, deck
                         {/* Deck Box Image */}
                         <View style={styles.deckBoxContainer}>
                             <Image
-                                source={{ uri: 'https://images.pokemontcg.io/xy3/55.png' }} // Mega Lucario
+                                source={{ uri: getFeaturedCardImage() }}
                                 style={styles.deckBoxImage}
                                 resizeMode="contain"
                             />
                             <View style={styles.typeIconContainer}>
-                                <View style={[styles.typeIcon, { backgroundColor: '#C03028' }]} />
+                                <View style={[styles.typeIcon, { backgroundColor: getFeaturedCardTypeColor() }]} />
                             </View>
                         </View>
 
