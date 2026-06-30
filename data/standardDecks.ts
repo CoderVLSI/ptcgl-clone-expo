@@ -292,6 +292,86 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
     },
 };
 
+// Smart helper to generate correct fallback card properties based on the name
+function getFallbackCard(name: string, index: number): Card {
+    const nameLower = name.toLowerCase();
+    let type: Card['type'] = 'pokemon';
+    let hp: number | undefined = 100;
+    let subtypes: string[] | undefined = ['Basic'];
+    let energyType: any = undefined;
+
+    if (nameLower.includes('energy')) {
+        type = 'energy';
+        hp = undefined;
+        subtypes = undefined;
+        if (nameLower.includes('grass')) energyType = 'grass';
+        else if (nameLower.includes('fire')) energyType = 'fire';
+        else if (nameLower.includes('water')) energyType = 'water';
+        else if (nameLower.includes('lightning')) energyType = 'lightning';
+        else if (nameLower.includes('psychic')) energyType = 'psychic';
+        else if (nameLower.includes('fighting')) energyType = 'fighting';
+        else if (nameLower.includes('darkness')) energyType = 'darkness';
+        else if (nameLower.includes('metal')) energyType = 'metal';
+        else if (nameLower.includes('dragon')) energyType = 'dragon';
+        else energyType = 'colorless';
+    } else if (
+        nameLower.includes('ball') ||
+        nameLower.includes('switch') ||
+        nameLower.includes('rod') ||
+        nameLower.includes('candy') ||
+        nameLower.includes('poffin') ||
+        nameLower.includes('stretcher') ||
+        nameLower.includes('catcher') ||
+        nameLower.includes('stamp') ||
+        nameLower.includes('orders') ||
+        nameLower.includes('research') ||
+        nameLower.includes('iono') ||
+        nameLower.includes('carmine') ||
+        nameLower.includes('crispin') ||
+        nameLower.includes('briar') ||
+        nameLower.includes('judge') ||
+        nameLower.includes('scouting') ||
+        nameLower.includes('determination') ||
+        nameLower.includes('pro') ||
+        nameLower.includes('gong') ||
+        nameLower.includes('cloak') ||
+        nameLower.includes('scope') ||
+        nameLower.includes('headquarters') ||
+        nameLower.includes('altar') ||
+        nameLower.includes('pad') ||
+        nameLower.includes('jacq')
+    ) {
+        type = 'trainer';
+        hp = undefined;
+        subtypes = ['Item'];
+        if (
+            nameLower.includes('orders') ||
+            nameLower.includes('research') ||
+            nameLower.includes('iono') ||
+            nameLower.includes('carmine') ||
+            nameLower.includes('crispin') ||
+            nameLower.includes('briar') ||
+            nameLower.includes('judge') ||
+            nameLower.includes('scouting') ||
+            nameLower.includes('determination') ||
+            nameLower.includes('jacq')
+        ) {
+            subtypes = ['Supporter'];
+        } else if (nameLower.includes('headquarters') || nameLower.includes('altar')) {
+            subtypes = ['Stadium'];
+        }
+    }
+
+    return {
+        id: `placeholder-${name.replace(/\s+/g, '-').toLowerCase()}-${index}`,
+        name,
+        type,
+        hp,
+        subtypes,
+        energyType,
+    };
+}
+
 // ============================================
 // MEGA LUCARIO EX DECK — 2026 Standard (H-On)
 // 60 cards: 15 Pokémon / 33 Trainers / 12 Energy
@@ -347,9 +427,9 @@ export async function createMegaLucarioExDeck(): Promise<Card[]> {
             }
             return;
         }
-        console.warn(`[2026 Standard] Card not found: ${name}`);
+        console.warn(`[2026 Standard] Card not found: ${name} (using smart fallback)`);
         for (let i = 0; i < count; i++) {
-            deck.push({ id: `placeholder-${cardIndex++}`, name, type: 'pokemon', hp: 100, subtypes: ['Basic'] });
+            deck.push(getFallbackCard(name, cardIndex++));
         }
     };
 
@@ -1484,9 +1564,9 @@ async function buildDeckHelper() {
             }
             return;
         }
-        console.warn(`[2026 Standard] Card not found: ${name}`);
+        console.warn(`[2026 Standard] Card not found: ${name} (using smart fallback)`);
         for (let i = 0; i < count; i++) {
-            deck.push({ id: `placeholder-${cardIndex++}`, name, type: 'pokemon', hp: 100, subtypes: ['Basic'] });
+            deck.push(getFallbackCard(name, cardIndex++));
         }
     };
 
