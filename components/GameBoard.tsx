@@ -216,7 +216,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             let currentState = gameState;
             if (!currentState) return;
 
+            let actionCount = 0;
+            const maxActions = 12; // Safety limit to prevent infinite loops
+
             while (true) {
+                actionCount++;
+                if (actionCount > maxActions) {
+                    console.warn("AI Opponent reached maximum action limit. Ending turn defensively.");
+                    const finalState = applyAIAction(currentState, { type: 'END_TURN', description: 'AI Ending turn' });
+                    updateGameState(finalState);
+                    break;
+                }
+
                 // Fetch next action
                 const action = getNextAIAction(currentState, hasPlayedSupporter, hasAttachedEnergy);
                 if (!action || action.type === 'END_TURN') {
@@ -233,6 +244,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
 
                 // Apply action
                 const nextState = applyAIAction(currentState, action);
+                
+                // If state did not change, break to avoid infinite loop
+                if (nextState === currentState) {
+                    console.warn("AI action did not change the game state. Ending turn defensively.");
+                    const finalState = applyAIAction(currentState, { type: 'END_TURN', description: 'AI Ending turn' });
+                    updateGameState(finalState);
+                    break;
+                }
+
                 currentState = nextState;
                 updateGameState(nextState);
 
