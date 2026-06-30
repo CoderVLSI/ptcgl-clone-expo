@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Text } from 'react-native';
+import React, { useRef } from 'react';
+import { View, StyleSheet, ScrollView, Text, PanResponder } from 'react-native';
 import { Player, Card as CardType } from '../types/game';
 import Colors from '../constants/colors';
 import Card from './Card';
@@ -13,6 +13,9 @@ interface PlayerAreaProps {
     onCardPress?: (card: CardType) => void;
     onCardLongPress?: (card: CardType) => void;
     selectedCardId?: string;
+    onDragStart?: (card: CardType) => void;
+    onDragMove?: (x: number, y: number) => void;
+    onDragEnd?: (x: number, y: number) => void;
 }
 
 export const PlayerArea: React.FC<PlayerAreaProps> = ({
@@ -20,6 +23,9 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
     onCardPress,
     onCardLongPress,
     selectedCardId,
+    onDragStart,
+    onDragMove,
+    onDragEnd,
 }) => {
     const { width: GAME_WIDTH } = useGameDimensions();
     return (
@@ -59,23 +65,47 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
                             <Text style={styles.emptyHandText}>No cards in hand</Text>
                         </View>
                     ) : (
-                        player.hand.map((card, index) => (
-                            <View
-                                key={card.id}
-                                style={[
-                                    styles.handCard,
-                                    { zIndex: player.hand.length - index },
-                                    index > 0 && { marginLeft: -24 },
-                                ]}
-                            >
-                                <Card
-                                    card={card}
-                                    isHighlighted={selectedCardId === card.id}
-                                    onPress={() => onCardPress?.(card)}
-                                    onLongPress={() => onCardLongPress?.(card)}
-                                />
-                            </View>
-                        ))
+                        player.hand.map((card, index) => {
+                            // Create a PanResponder for each card to handle dragging
+                            const panResponder = PanResponder.create({
+                                onStartShouldSetPanResponder: () => true,
+                                onMoveShouldSetPanResponder: (evt, gestureState) => {
+                                    // Start dragging if moved more than 5 pixels
+                                    return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
+                                },
+                                onPanResponderGrant: () => {
+                                    onDragStart?.(card);
+                                },
+                                onPanResponderMove: (evt, gestureState) => {
+                                    onDragMove?.(gestureState.moveX, gestureState.moveY);
+                                },
+                                onPanResponderRelease: (evt, gestureState) => {
+                                    onDragEnd?.(gestureState.moveX, gestureState.moveY);
+                                },
+                                onPanResponderTerminate: () => {
+                                    onDragEnd?.(0, 0);
+                                },
+                            });
+
+                            return (
+                                <View
+                                    key={card.id}
+                                    style={[
+                                        styles.handCard,
+                                        { zIndex: player.hand.length - index },
+                                        index > 0 && { marginLeft: -24 },
+                                    ]}
+                                    {...panResponder.panHandlers}
+                                >
+                                    <Card
+                                        card={card}
+                                        isHighlighted={selectedCardId === card.id}
+                                        onPress={() => onCardPress?.(card)}
+                                        onLongPress={() => onCardLongPress?.(card)}
+                                    />
+                                </View>
+                            );
+                        })
                     )}
                 </ScrollView>
             </View>

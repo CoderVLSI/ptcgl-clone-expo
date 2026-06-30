@@ -79,6 +79,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
     const [aiActing, setAiActing] = useState(false);
     const aiTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Drag-and-drop state
+    const [draggedCard, setDraggedCard] = useState<CardType | null>(null);
+    const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+
     // Animation states
     const [showShuffle, setShowShuffle] = useState(false);
     const [showDraw, setShowDraw] = useState(false);
@@ -312,6 +316,49 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
             setShowAttackMenu(true);
         }
     }, [gameState, logicState.actionMode, pendingEnergyCard, pendingEvolveCard, selectedCardId, attachEnergy, evolvePokemon, distributeEnergyToTarget]);
+
+    const handleDragStart = useCallback((card: CardType) => {
+        if (!gameState || gameState.currentPlayer !== 'player') return;
+        setDraggedCard(card);
+    }, [gameState]);
+
+    const handleDragMove = useCallback((x: number, y: number) => {
+        setDragPosition({ x, y });
+    }, []);
+
+    const handleDragRelease = useCallback((x: number, y: number) => {
+        if (!draggedCard || !gameState) return;
+
+        const yPct = y / SCREEN_HEIGHT;
+        const xPct = x / SCREEN_WIDTH;
+
+        // Clean drop zone actions
+        if (draggedCard.type === 'pokemon' && draggedCard.subtypes?.includes('Basic')) {
+            // Drag Basic Pokémon to Bench (Middle area of PlayMat)
+            if (yPct > 0.35 && yPct < 0.75) {
+                if (gameState.player.bench.length < 5) {
+                    playPokemonToBench(draggedCard.id);
+                }
+            }
+        } else if (draggedCard.type === 'energy') {
+            // Drag Energy to attach to Pokémon
+            if (yPct > 0.35 && yPct < 0.58) {
+                // Drop on Active Pokémon
+                if (gameState.player.activePokemon) {
+                    attachEnergy(draggedCard.id, gameState.player.activePokemon.id);
+                }
+            } else if (yPct >= 0.58 && yPct < 0.75) {
+                // Drop on Bench (calculate which slot based on X coordinate)
+                const slotIndex = Math.floor(xPct * 5);
+                const benchCard = gameState.player.bench[slotIndex];
+                if (benchCard) {
+                    attachEnergy(draggedCard.id, benchCard.id);
+                }
+            }
+        }
+
+        setDraggedCard(null);
+    }, [draggedCard, gameState, playPokemonToBench, attachEnergy, SCREEN_HEIGHT, SCREEN_WIDTH]);
 
     const handleHandCardPress = useCallback((card: CardType) => {
         if (!gameState || gameState.currentPlayer !== 'player') return;
@@ -549,6 +596,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 onCardPress={handleHandCardPress}
                 onCardLongPress={(card) => setPreviewCard(card)}
                 selectedCardId={selectedCardId}
+                onDragStart={handleDragStart}
+                onDragMove={handleDragMove}
+                onDragEnd={handleDragRelease}
             />
 
             {/* Game Controls */}
@@ -920,6 +970,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 x={SCREEN_WIDTH * 0.5}
                 y={SCREEN_HEIGHT * 0.5}
             />
+
+            {/* Floating dragged card overlay */}
+            {draggedCard && (
+                <View
+                    style={{
+                        position: 'absolute',
+                        left: dragPosition.x - 40,
+                        top: dragPosition.y - 60,
+                        zIndex: 9999,
+                        pointerEvents: 'none',
+                    }}
+                >
+                    <Card card={draggedCard} isSmall />
+                </View>
+            )}
         </SafeAreaView>
     );
 };
