@@ -365,27 +365,28 @@ const STANDARD_PROXY_CARDS: Record<string, Partial<Card>> = {
     'Meowth ex': {
         name: 'Meowth ex',
         type: 'pokemon',
-        hp: 160,
+        hp: 170,
         energyType: 'colorless',
         subtypes: ['Basic', 'ex'],
+        abilities: [
+            {
+                name: 'Last-Ditch Catch',
+                type: 'Ability',
+                text: 'Once during your turn, when you play this Pokémon from your hand onto your Bench, you may use this Ability. Search your deck for a Supporter card, reveal it, and put it into your hand. Then, shuffle your deck.',
+            },
+        ],
         attacks: [
             {
-                name: 'Fake Out',
-                energyCost: ['colorless'],
-                damage: 30,
-                text: 'Flip a coin. If heads, your opponent\'s Active Pokémon is now Paralyzed.',
-            },
-            {
-                name: 'Gold Rush',
+                name: 'Tuck Tail',
                 energyCost: ['colorless', 'colorless', 'colorless'],
-                damage: 120,
-                text: 'Draw 3 cards.',
+                damage: 60,
+                text: 'Put this Pokémon and all attached cards into your hand.',
             },
         ],
         retreatCost: 1,
         weaknesses: [{ type: 'fighting', value: 'x2' }],
-        imageUrl: 'https://images.pokemontcg.io/xyp/XY110.png',
-        imageUrlLarge: 'https://images.pokemontcg.io/xyp/XY110_hires.png',
+        imageUrl: 'meowth_ex',
+        imageUrlLarge: 'meowth_ex',
     },
 };
 

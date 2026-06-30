@@ -11,6 +11,13 @@ import { Card as CardType, EnergyType } from '../types/game';
 import Colors from '../constants/colors';
 import EnergyIcon from './EnergyIcon';
 import useGameDimensions from '../hooks/useGameDimensions';
+const getCardImageSource = (imageUrl?: string) => {
+    if (!imageUrl) return { uri: 'https://images.pokemontcg.io/xy3/55.png' };
+    if (imageUrl === 'meowth_ex') {
+        return require('../assets/meowth_ex.png');
+    }
+    return { uri: imageUrl };
+};
 
 interface CardProps {
     card?: CardType;
@@ -82,7 +89,7 @@ export const Card: React.FC<CardProps> = ({
             return (
                 <View style={[styles.fullCardContainer, { width: cardWidth, height: cardHeight }]}>
                     <Image
-                        source={{ uri: card.imageUrl }}
+                        source={getCardImageSource(card.imageUrl)}
                         style={styles.fullCardImage}
                         onLoadEnd={() => setImageLoading(false)}
                         onError={() => {

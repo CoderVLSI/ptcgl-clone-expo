@@ -203,10 +203,28 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             };
         });
 
-        setLogicState(prev => ({
-            ...prev,
-            message: `${card.name} was placed on the bench!`,
-        }));
+        if (card.name === 'Meowth ex') {
+            const supportersInDeck = gameState.player.deck.filter(c => c.type === 'trainer' && c.subtypes?.includes('Supporter'));
+            if (supportersInDeck.length > 0) {
+                setLogicState(prev => ({
+                    ...prev,
+                    actionMode: 'search_deck_multiple',
+                    activeCardId: 'meowth_ex_search',
+                    discardCount: 1, // select up to 1 Supporter
+                    message: 'Last-Ditch Catch: Search your deck for a Supporter card.',
+                }));
+            } else {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: `${card.name} was placed on the bench! Last-Ditch Catch: No Supporter cards in deck.`,
+                }));
+            }
+        } else {
+            setLogicState(prev => ({
+                ...prev,
+                message: `${card.name} was placed on the bench!`,
+            }));
+        }
 
         return true;
     }, [gameState]);
@@ -2129,12 +2147,43 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             }
 
             // Update attacker on player side
-            const newPlayerActive = prev.player.activePokemon?.id === attacker.id
+            let newPlayerActive = prev.player.activePokemon?.id === attacker.id
                 ? effectResults.attacker
                 : prev.player.activePokemon;
-            const newPlayerBench = prev.player.bench.map(b =>
+            let newPlayerBench = prev.player.bench.map(b =>
                 b.id === attacker.id ? effectResults.attacker : b
             );
+            let newPlayerHand = [...prev.player.hand, ...drawnPrizes];
+
+            if (selectedAttack.name === 'Tuck Tail') {
+                if (prev.player.activePokemon) {
+                    const baseMeowth: Card = {
+                        ...prev.player.activePokemon,
+                        attachedEnergy: [],
+                        damageCounters: 0,
+                    };
+                    
+                    const energyCards: Card[] = (prev.player.activePokemon.attachedEnergy || []).map((e, idx) => ({
+                        id: `returned-energy-${idx}-${Math.random()}`,
+                        name: `${e.charAt(0).toUpperCase() + e.slice(1)} Energy`,
+                        type: 'energy',
+                        energyType: e,
+                        imageUrl: e === 'grass' ? 'https://images.pokemontcg.io/sv1/194.png' :
+                                  e === 'fire' ? 'https://images.pokemontcg.io/sv1/194.png' : 
+                                  'https://images.pokemontcg.io/sv1/194.png',
+                    }));
+
+                    newPlayerHand = [...newPlayerHand, baseMeowth, ...energyCards];
+
+                    if (prev.player.bench.length > 0) {
+                        newPlayerActive = prev.player.bench[0];
+                        newPlayerBench = prev.player.bench.slice(1);
+                    } else {
+                        newPlayerActive = undefined;
+                        newPlayerBench = [];
+                    }
+                }
+            }
 
             const effectMessages = effectResults.messages.join(' ');
             return {
@@ -2143,7 +2192,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                     ...prev.player,
                     activePokemon: newPlayerActive,
                     bench: newPlayerBench,
-                    hand: [...prev.player.hand, ...drawnPrizes],
+                    hand: newPlayerHand,
                     prizeCards: remainingPrizes,
                 },
                 opponent: {
