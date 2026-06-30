@@ -646,6 +646,52 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             return true;
         }
 
+        // Special Red Card — play only if opponent has 3 or fewer prizes remaining.
+        // Opponent shuffles hand, puts on bottom of deck, draws 3.
+        if (cardNameLower.includes('special red card')) {
+            const oppPrizes = gameState.opponent.prizeCards.length;
+            if (oppPrizes > 3) {
+                setLogicState(prev => ({
+                    ...prev,
+                    message: `Can only play ${card.name} if opponent has 3 or fewer Prize cards remaining! (Opponent has ${oppPrizes})`,
+                }));
+                return false;
+            }
+
+            setGameState(prev => {
+                if (!prev) return prev;
+                // Opponent shuffles hand and puts on bottom of deck
+                const oppHand = [...prev.opponent.hand];
+                for (let i = oppHand.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [oppHand[i], oppHand[j]] = [oppHand[j], oppHand[i]];
+                }
+                const newOppDeck = [...prev.opponent.deck, ...oppHand];
+                const oppDrawn = newOppDeck.splice(0, 3);
+
+                return {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: [...prev.player.discardPile, card],
+                    },
+                    opponent: {
+                        ...prev.opponent,
+                        hand: oppDrawn,
+                        deck: newOppDeck,
+                    },
+                    message: `Special Red Card played! Opponent shuffled hand and drew 3 cards.`,
+                };
+            });
+
+            setLogicState(prev => ({
+                ...prev,
+                message: `Played Special Red Card!`,
+            }));
+            return true;
+        }
+
         // Judge — both players shuffle hand into deck, draw 4
         if (cardNameLower === 'judge') {
             setGameState(prev => {
