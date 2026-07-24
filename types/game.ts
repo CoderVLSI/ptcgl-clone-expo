@@ -61,6 +61,27 @@ export interface Card {
     statusCondition?: StatusCondition;
     cannotAttackNextTurn?: boolean; // Set by paralysis; cleared at end of opponent's turn
     poisonCounters?: number; // 1 = poisoned, 2 = badly poisoned
+
+    // --- Timed effects (Delta Reign and later sets) ---
+    // Each holds the turn number the effect stops applying *after*; compare
+    // against GameState.turn. Cleared lazily rather than on a schedule.
+    /** Flat damage reduction applied after Weakness/Resistance (Guard Press, Rock Head). */
+    damageReduction?: number;
+    damageReductionUntilTurn?: number;
+    /** Prevent all damage from attacks (Quick Flight, Chaos Crawler). */
+    preventAllDamageUntilTurn?: number;
+    /** Prevent damage from attacks by Basic Pokémon only (Secret Needle). */
+    preventBasicDamageUntilTurn?: number;
+    /** Cannot retreat (Quatro Hold, Clutch). */
+    cannotRetreatUntilTurn?: number;
+    /** Cannot attack at all (Scary Pattern). */
+    cannotAttackUntilTurn?: number;
+    /** Per-attack lockout: attack name → turn through which it is unusable. */
+    disabledAttacks?: Record<string, number>;
+    /** Turn this Pokémon evolved, for "evolved during this turn" checks (Raid). */
+    evolvedTurn?: number;
+    /** Damage counters placed on the attacker when it damages this one (Counterattack). */
+    counterattackCounters?: number;
 }
 
 export interface Ability {
@@ -95,6 +116,12 @@ export interface GameState {
     player: Player;
     opponent: Player;
     stadium?: Card; // Active stadium card in play
+    /**
+     * Second half of a two-part Stadium (Delta Reign "Legendary" Stadiums).
+     * Both halves enter play together and count as one Stadium; the pair's
+     * effect is only active while both are present.
+     */
+    stadiumPartner?: Card;
     stadiumOwner?: 'player' | 'opponent'; // Who played the stadium
     timeRemaining: number;
     message?: string;

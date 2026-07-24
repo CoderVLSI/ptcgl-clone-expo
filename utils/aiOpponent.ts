@@ -1,4 +1,14 @@
 import { GameState, Card, Player, EnergyType, Attack } from '../types/game';
+import {
+    resolveDeltaReignAttack,
+    applyDamageModifiers,
+    counterattackDamage,
+    prizeCountFor,
+    pickBenchTarget,
+    effectiveAttackCost,
+    attackLocked,
+    attackBlockedByAbility,
+} from './deltaReignEffects';
 
 export interface AIAction {
     type: 'PLAY_BASIC' | 'PLAY_EVOLUTION' | 'ATTACH_ENERGY' | 'PLAY_TRAINER' | 'END_TURN' | 'ATTACK';
@@ -133,12 +143,25 @@ export function getNextAIAction(gameState: GameState, usedSupporter: boolean = f
         let bestAttackIndex = -1;
         let maxDamage = -1;
 
+        // Power Limiter and similar can stop this Pokémon attacking entirely.
+        const blocked = attackBlockedByAbility(gameState, 'opponent', active);
+
         active.attacks.forEach((attack, index) => {
-            if (checkEnergy(active, attack)) {
+            if (blocked) return;
+            // "Can't use X next turn" locks written by an earlier attack.
+            if (attackLocked(gameState, active, attack.name)) return;
+
+            // Incarnate Union can remove Colorless from the printed cost.
+            const cost = effectiveAttackCost(gameState, 'opponent', active, attack);
+            if (checkEnergy(active, { ...attack, energyCost: cost })) {
                 // Calculate real damage considering W/R for AI's choice
-                let damage = attack.damage;
                 const defender = player.activePokemon;
-                if (defender) {
+                const dr = resolveDeltaReignAttack(
+                    { state: gameState, side: 'opponent', attacker: active, defender, flipCoin: () => true },
+                    attack.name,
+                );
+                let damage = dr ? dr.damage : attack.damage;
+                if (defender && !dr?.ignoreWeaknessResistance) {
                     const attackerType = active.energyType;
                     const weakness = defender.weaknesses?.find(w => w.type === attackerType);
                     if (weakness) {
@@ -146,7 +169,7 @@ export function getNextAIAction(gameState: GameState, usedSupporter: boolean = f
                         else if (weakness.value.startsWith('+')) damage += parseInt(weakness.value.slice(1)) || 0;
                     }
                     const resistance = defender.resistances?.find(r => r.type === attackerType);
-                    if (resistance) {
+                    if (resistance && !dr?.ignoreResistance) {
                         damage = Math.max(0, damage - 30);
                     }
                 }
@@ -315,17 +338,42 @@ export function applyAIAction(
             const defender = gameState.player.activePokemon;
             if (!defender) return gameState;
 
+            // Delta Reign attacks compute their own damage from game state and
+            // return a state patch — the same resolver the player's attack()
+            // uses, so both sides play these cards identically.
+            const drResult = resolveDeltaReignAttack(
+                {
+                    state: gameState,
+                    side: 'opponent',
+                    attacker: opponent.activePokemon,
+                    defender,
+                    flipCoin: () => Math.random() < 0.5,
+                },
+                attack.name,
+            );
+            if (drResult) damage = drResult.damage;
+
             // Engine logic mirror (W/R)
             const attackerType = opponent.activePokemon.energyType;
-            if (attackerType) {
+            if (attackerType && !drResult?.ignoreWeaknessResistance) {
                 const weakness = defender.weaknesses?.find(w => w.type === attackerType);
                 if (weakness) {
                     if (weakness.value.includes('x2') || weakness.value.includes('×2')) damage *= 2;
                     else if (weakness.value.startsWith('+')) damage += parseInt(weakness.value.slice(1)) || 0;
                 }
                 const resistance = defender.resistances?.find(r => r.type === attackerType);
-                if (resistance) damage = Math.max(0, damage - 30);
+                if (resistance && !drResult?.ignoreResistance) damage = Math.max(0, damage - 30);
             }
+
+            // Damage prevention / reduction on the player's side.
+            const defenceMods = applyDamageModifiers(
+                gameState,
+                'player',
+                defender,
+                opponent.activePokemon,
+                damage,
+            );
+            damage = defenceMods.damage;
 
             let newDefender = { ...defender };
             const currentDamage = (newDefender.damageCounters || 0) + damage;
@@ -333,16 +381,39 @@ export function applyAIAction(
 
             const knockout = currentDamage >= (newDefender.hp || 0);
 
-            // ex Pokémon give 2 prize cards when KO'd
-            const isEx = defender.subtypes?.some(s => s.toLowerCase() === 'ex') || defender.name.toLowerCase().includes(' ex');
-            const prizesToTake = knockout ? (isEx ? 2 : 1) : 0;
+            // Prizes for the Knocked Out Pokémon (2 for a Pokémon ex, less under
+            // Legendary Summit).
+            const prizesToTake = knockout ? prizeCountFor(gameState, newDefender) : 0;
             const newOpponentPrizes = knockout ? opponent.prizeCards.slice(prizesToTake) : opponent.prizeCards;
 
+            // Sandslash's Counterattack hits back at the attacker.
+            const recoil = knockout ? 0 : counterattackDamage(gameState, newDefender, true);
+            const attackerAfter = recoil > 0
+                ? { ...opponent.activePokemon, damageCounters: (opponent.activePokemon.damageCounters || 0) + recoil }
+                : opponent.activePokemon;
+
+            let playerBench = gameState.player.bench;
+
+            // Bench damage from Delta Reign attacks.
+            if (drResult?.benchDamageEach) {
+                playerBench = playerBench.map(b => ({
+                    ...b,
+                    damageCounters: (b.damageCounters || 0) + drResult.benchDamageEach!,
+                }));
+            }
+            if (drResult?.benchSnipe && playerBench.length > 0) {
+                const idx = pickBenchTarget(playerBench, drResult.benchSnipe);
+                playerBench = playerBench.map((b, i) =>
+                    i === idx ? { ...b, damageCounters: (b.damageCounters || 0) + drResult.benchSnipe! } : b,
+                );
+            }
+            const koedBench = playerBench.filter(b => (b.damageCounters || 0) >= (b.hp || 1));
+            playerBench = playerBench.filter(b => (b.damageCounters || 0) < (b.hp || 1));
+
             // If player's active is KO'd and they have bench Pokémon, require them to promote
-            const playerBench = gameState.player.bench;
             const needsPromotion = knockout && playerBench.length > 0;
 
-            return {
+            let next: GameState = {
                 ...gameState,
                 turn: gameState.turn + 1,
                 currentPlayer: 'player',
@@ -350,18 +421,27 @@ export function applyAIAction(
                 pendingPlayerPromotion: needsPromotion,
                 player: {
                     ...gameState.player,
-                    activePokemon: knockout ? (needsPromotion ? undefined : undefined) : newDefender,
+                    activePokemon: knockout ? undefined : newDefender,
                     bench: playerBench,
-                    discardPile: knockout ? [...gameState.player.discardPile, defender] : gameState.player.discardPile,
+                    discardPile: [
+                        ...gameState.player.discardPile,
+                        ...(knockout ? [defender] : []),
+                        ...koedBench,
+                    ],
                 },
                 opponent: {
                     ...opponent,
+                    activePokemon: attackerAfter,
                     prizeCards: newOpponentPrizes,
                 },
                 message: knockout
                     ? `Opponent used ${attack.name}! ${defender.name} was Knocked Out! Choose a Pokémon to promote!`
-                    : `Opponent used ${attack.name}! Dealt ${damage} damage. Your turn!`,
+                    : `Opponent used ${attack.name}! Dealt ${damage} damage. ${[...defenceMods.messages, ...(drResult?.messages || [])].join(' ')} Your turn!`.trim(),
             };
+
+            if (drResult?.mutate) next = drResult.mutate(next);
+
+            return next;
         }
 
         case 'END_TURN': {

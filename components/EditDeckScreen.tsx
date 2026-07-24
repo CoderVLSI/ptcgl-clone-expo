@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, ScrollView,
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/colors';
 import { Card } from '../types/game';
+import { getCardImageSource } from '../utils/cardImages';
 import { fetchStandardCards, LibraryCard } from '../utils/cardLibrary';
 
 interface EditDeckScreenProps {
@@ -192,7 +193,7 @@ const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck: initialDeck, deck
                         const card = deck.find(c => c.name === name);
                         return (
                             <View key={index} style={styles.deckCardItem}>
-                                <Image source={{ uri: card?.imageUrl }} style={styles.cardImageSmall} resizeMode="contain" />
+                                <Image source={getCardImageSource(card?.imageUrl)} style={styles.cardImageSmall} resizeMode="contain" />
                                 <View style={styles.countBadge}><Text style={styles.countText}>{count}</Text></View>
                                 <View style={styles.cardControls}>
                                     <TouchableOpacity style={styles.controlButton} onPress={() => handleRemoveCard(name)}>
@@ -259,7 +260,7 @@ const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck: initialDeck, deck
                                 style={styles.libraryCardItem}
                                 onPress={() => handleAddCard(card)}
                             >
-                                <Image source={{ uri: card.imageUrl }} style={styles.cardImageLibrary} resizeMode="contain" />
+                                <Image source={getCardImageSource(card.imageUrl)} style={styles.cardImageLibrary} resizeMode="contain" />
                                 {/* Show count of this card currently in deck */}
                                 {deck.filter(c => c.name === card.name).length > 0 && (
                                     <View style={styles.libraryCountBadge}>
@@ -307,7 +308,7 @@ const EditDeckScreen: React.FC<EditDeckScreenProps> = ({ deck: initialDeck, deck
                             </View>
 
                             <Image
-                                source={{ uri: selectedCard.imageUrlLarge || selectedCard.imageUrl }}
+                                source={getCardImageSource(selectedCard.imageUrlLarge || selectedCard.imageUrl)}
                                 style={styles.largeCardImage}
                                 resizeMode="contain"
                             />

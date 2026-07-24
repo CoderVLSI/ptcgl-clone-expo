@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal } fr
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/colors';
 import { Card } from '../types/game';
+import { getCardImageSource } from '../utils/cardImages';
 
 interface DeckManagerProps {
     visible: boolean;
@@ -196,7 +197,7 @@ export const DeckManager: React.FC<DeckManagerProps> = ({ visible, onClose, deck
                         {groupedCards.map((item, index) => (
                             <View key={index} style={styles.cardItem}>
                                 <Image
-                                    source={{ uri: item.card.imageUrl }}
+                                    source={getCardImageSource(item.card.imageUrl)}
                                     style={styles.cardImage}
                                     resizeMode="contain"
                                 />

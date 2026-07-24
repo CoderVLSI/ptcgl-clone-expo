@@ -1,6 +1,23 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Player, GameState, EnergyType, GameLogicState, Attack, StatusCondition } from '../types/game';
 import { parseAttackEffects, applyAttackEffects, processStatusCondition } from '../utils/attackEffects';
+import {
+    resolveDeltaReignAttack,
+    resolveDeltaReignAbility,
+    resolveDeltaReignTrainer,
+    applyDamageModifiers,
+    effectiveAttackCost,
+    effectiveRetreatCost,
+    attackBlockedByAbility,
+    attackLocked,
+    canRetreat,
+    counterattackDamage,
+    prizeCountFor,
+    pickBenchTarget,
+    isPairedStadium,
+    findStadiumPartner,
+    pairedStadiumBaseName,
+} from '../utils/deltaReignEffects';
 
 export interface GameLogicReturn {
     gameState: GameState | null;
@@ -190,9 +207,13 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         if (!card || card.type !== 'pokemon') return false;
         if (gameState.player.bench.length >= 5) return false;
 
+        // "When you play this Pokémon from your hand onto your Bench" abilities
+        // (Mega Rayquaza ex — Champion's Roar) trigger as it lands.
+        const onBenchAbility = card.abilities?.find(a => a.name === "Champion's Roar");
+
         setGameState(prev => {
             if (!prev) return prev;
-            return {
+            const benched: GameState = {
                 ...prev,
                 player: {
                     ...prev.player,
@@ -201,6 +222,14 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 },
                 message: `${card.name} was placed on the bench!`,
             };
+            if (!onBenchAbility) return benched;
+
+            const triggered = resolveDeltaReignAbility(
+                { state: benched, side: 'player', card },
+                onBenchAbility.name,
+            );
+            if (!triggered?.ok || !triggered.mutate) return benched;
+            return { ...triggered.mutate(benched), message: `${card.name} was benched. ${triggered.message}` };
         });
 
         if (card.name === 'Meowth ex') {
@@ -320,6 +349,9 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             attachedEnergy: targetCard.attachedEnergy || [],
             previousEvolutions: [...(targetCard.previousEvolutions || []), targetCard], // Stack evolutions
             playedTurn: gameState.turn, // Evolving counts as entering play for the new stage
+            evolvedTurn: gameState.turn, // For "if this evolved during this turn" (Kilowattrel's Raid)
+            attachedTool: targetCard.attachedTool, // Tools stay attached through evolution
+            damageCounters: targetCard.damageCounters, // Damage stays on the Pokémon
         };
 
         setGameState(prev => {
@@ -379,32 +411,85 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
 
         // Stadium cards
         if (isStadium) {
+            // Delta Reign "Legendary" Stadiums are printed as two halves that
+            // must be played together and count as a single Stadium.
+            let partner: Card | undefined;
+            if (isPairedStadium(card)) {
+                partner = findStadiumPartner(card, gameState.player.hand);
+                if (!partner) {
+                    setLogicState(prev => ({
+                        ...prev,
+                        message: `You need both halves of ${pairedStadiumBaseName(card)} in hand to play it.`,
+                    }));
+                    return false;
+                }
+            }
+
+            const displayName = partner ? pairedStadiumBaseName(card) : card.name;
+
             setGameState(prev => {
                 if (!prev) return prev;
                 if (prev.stadium?.name === card.name) return prev;
 
-                const oldStadium = prev.stadium;
+                const removedIds = new Set([cardId, ...(partner ? [partner.id] : [])]);
+                const oldStadiums = [prev.stadium, prev.stadiumPartner].filter(Boolean) as Card[];
                 return {
                     ...prev,
                     player: {
                         ...prev.player,
-                        hand: prev.player.hand.filter(c => c.id !== cardId),
-                        discardPile: oldStadium
-                            ? [...prev.player.discardPile, oldStadium]
-                            : prev.player.discardPile,
+                        hand: prev.player.hand.filter(c => !removedIds.has(c.id)),
+                        discardPile: [...prev.player.discardPile, ...oldStadiums],
                     },
                     stadium: card,
+                    stadiumPartner: partner,
                     stadiumOwner: 'player',
-                    message: `Stadium: ${card.name} is now in play!`,
+                    message: `Stadium: ${displayName} is now in play!`,
                 };
             });
 
             setLogicState(prev => ({
                 ...prev,
                 hasPlayedStadium: true,
-                message: `Stadium: ${card.name} is now in play!`,
+                message: `Stadium: ${displayName} is now in play!`,
             }));
 
+            return true;
+        }
+
+        // Delta Reign Items and Supporters
+        const drTrainer = resolveDeltaReignTrainer({ state: gameState, side: 'player', card }, card.name);
+        if (drTrainer) {
+            if (!drTrainer.ok) {
+                setLogicState(prev => ({ ...prev, message: drTrainer.message }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                // Remove from hand first so effects that count the discard pile
+                // (Yummy Onigiri) don't see this copy.
+                const withoutCard: GameState = {
+                    ...prev,
+                    player: {
+                        ...prev.player,
+                        hand: prev.player.hand.filter(c => c.id !== cardId),
+                        discardPile: drTrainer.returnToHand
+                            ? prev.player.discardPile
+                            : [...prev.player.discardPile, card],
+                    },
+                };
+                const next = drTrainer.mutate ? drTrainer.mutate(withoutCard) : withoutCard;
+                // Tate & Liza's Training goes back to hand under a Legendary Stadium.
+                const finalState = drTrainer.returnToHand
+                    ? { ...next, player: { ...next.player, hand: [...next.player.hand, card] } }
+                    : next;
+                return { ...finalState, message: drTrainer.message };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                hasPlayedSupporter: isSupporter ? true : prev.hasPlayedSupporter,
+                hasTakenAction: true,
+                message: drTrainer.message,
+            }));
             return true;
         }
 
@@ -1249,7 +1334,14 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         const benchCard = gameState.player.bench.find(c => c.id === benchCardId);
         if (!benchCard) return false;
 
-        const retreatCost = active.retreatCost || 0;
+        // Quatro Hold / Clutch lock the Active Pokémon in place.
+        if (!canRetreat(gameState, active)) {
+            setLogicState(prev => ({ ...prev, message: `${active.name} can't retreat this turn!` }));
+            return false;
+        }
+
+        // Punk Out and Cotton Carrier can reduce the printed cost to 0.
+        const retreatCost = effectiveRetreatCost(gameState, 'player', active);
         const attachedEnergy = active.attachedEnergy || [];
 
         if (attachedEnergy.length < retreatCost) {
@@ -1597,6 +1689,30 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         }
 
         // --- Ability Logic Implementations ---
+
+        // Delta Reign abilities. Passive ones report why they can't be
+        // activated; the rest return a state patch.
+        const drAbility = resolveDeltaReignAbility(
+            { state: gameState, side: 'player', card },
+            ability.name,
+        );
+        if (drAbility) {
+            if (!drAbility.ok) {
+                setLogicState(prev => ({ ...prev, message: drAbility.message }));
+                return false;
+            }
+            setGameState(prev => {
+                if (!prev) return prev;
+                const next = drAbility.mutate ? drAbility.mutate(prev) : prev;
+                return { ...next, message: drAbility.message };
+            });
+            setLogicState(prev => ({
+                ...prev,
+                abilitiesUsed: [...prev.abilitiesUsed, cardId],
+                message: drAbility.message,
+            }));
+            return true;
+        }
 
         // 1. Instant Charge (Rotom V) - Draw 3, End Turn
         if (ability.name === 'Instant Charge') {
@@ -1969,7 +2085,22 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
 
         const selectedAttack = attacker.attacks[attackIndex];
         const attachedEnergy = attacker.attachedEnergy || [];
-        const cost = selectedAttack.energyCost;
+        // Incarnate Union can strip Colorless requirements from the printed cost.
+        const cost = effectiveAttackCost(gameState, 'player', attacker, selectedAttack);
+
+        // Attack lockouts written by earlier effects ("can't use X next turn").
+        const lockMessage = attackLocked(gameState, attacker, selectedAttack.name);
+        if (lockMessage) {
+            setLogicState(prev => ({ ...prev, message: lockMessage }));
+            return false;
+        }
+
+        // Mega Golurk ex — Power Limiter.
+        const abilityBlock = attackBlockedByAbility(gameState, 'player', attacker);
+        if (abilityBlock) {
+            setLogicState(prev => ({ ...prev, message: abilityBlock }));
+            return false;
+        }
 
         const remainingCost = [...cost];
         const availableEnergy = [...attachedEnergy];
@@ -2059,6 +2190,18 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
 
         let damage = selectedAttack.damage;
 
+        // --- Delta Reign attacks ---
+        // These need game state the generic parser can't see (deck, prizes,
+        // stadiums, what's in play), so they compute their own base damage and
+        // return a state patch that is applied alongside the damage below.
+        const drResult = resolveDeltaReignAttack(
+            { state: gameState, side: 'player', attacker, defender, flipCoin },
+            selectedAttack.name,
+        );
+        if (drResult) {
+            damage = drResult.damage;
+        }
+
         // Solrock: Cosmic Beam Logic
         if (selectedAttack.name === 'Cosmic Beam') {
             const hasLunatone = gameState.player.bench.some(c =>
@@ -2079,7 +2222,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
         }
 
         // Apply Weakness and Resistance (Skip for Cosmic Beam as per card text)
-        if (selectedAttack.name !== 'Cosmic Beam' && damage > 0) {
+        if (selectedAttack.name !== 'Cosmic Beam' && damage > 0 && !drResult?.ignoreWeaknessResistance) {
             const attackerType = attacker?.energyType;
             if (attackerType && defender?.weaknesses) {
                 const weakness = defender.weaknesses.find(w => w.type === attackerType);
@@ -2091,7 +2234,7 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                     }
                 }
             }
-            if (attackerType && defender?.resistances) {
+            if (attackerType && defender?.resistances && !drResult?.ignoreResistance) {
                 const resistance = defender.resistances.find(r => r.type === attackerType);
                 if (resistance) {
                     const resAmount = parseInt(resistance.value) || -30; // Default to -30 if parse fails
@@ -2100,15 +2243,30 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             }
         }
 
-        // Parse attack description for effects (status, bench damage, heal, etc.)
-        const attackEffects = parseAttackEffects(selectedAttack.description || '');
-        const effectResults = applyAttackEffects(
-            attackEffects,
-            attacker,
-            defender,
-            gameState.opponent.bench,
-            flipCoin,
-        );
+        // Defensive modifiers apply after Weakness/Resistance: damage prevention,
+        // High-Density Armor, Custom Vest, Guard Press / Rock Head.
+        const defenceMods = applyDamageModifiers(gameState, 'opponent', defender, attacker, damage);
+        damage = defenceMods.damage;
+
+        // Parse attack description for effects (status, bench damage, heal, etc.).
+        // A Delta Reign handler is authoritative for its own attack — running the
+        // generic parser as well would double-apply the shared effects (healing,
+        // recoil, bench damage) and ignore the handler's conditions.
+        const effectResults = drResult
+            ? {
+                attacker,
+                defender,
+                opponentBench: gameState.opponent.bench,
+                bonusDamage: 0,
+                messages: [] as string[],
+            }
+            : applyAttackEffects(
+                parseAttackEffects(selectedAttack.description || ''),
+                attacker,
+                defender,
+                gameState.opponent.bench,
+                flipCoin,
+            );
         damage += effectResults.bonusDamage;
 
         setGameState(prev => {
@@ -2124,15 +2282,27 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
             let remainingPrizes = [...prev.player.prizeCards];
 
             if (knockout) {
-                // ex Pokémon give 2 prize cards
-                const isEx = attacker.subtypes?.some(s => s.toLowerCase().includes('ex')) ||
-                    newDefender.name.toLowerCase().includes(' ex') ||
-                    newDefender.subtypes?.some(s => s.toLowerCase().includes('ex'));
-                const prizeCount = isEx ? 2 : 1;
-                drawnPrizes = remainingPrizes.splice(0, prizeCount);
+                // Prizes are determined by the Pokémon that was Knocked Out
+                // (2 for a Pokémon ex), and Legendary Summit can reduce it.
+                drawnPrizes = remainingPrizes.splice(0, prizeCountFor(prev, newDefender));
             }
 
             let opponentBench = effectResults.opponentBench;
+
+            // Delta Reign bench damage: flat to each, or a single auto-picked target.
+            if (drResult?.benchDamageEach) {
+                opponentBench = opponentBench.map(b => ({
+                    ...b,
+                    damageCounters: (b.damageCounters || 0) + drResult.benchDamageEach!,
+                }));
+            }
+            if (drResult?.benchSnipe && opponentBench.length > 0) {
+                const idx = pickBenchTarget(opponentBench, drResult.benchSnipe);
+                opponentBench = opponentBench.map((b, i) =>
+                    i === idx ? { ...b, damageCounters: (b.damageCounters || 0) + drResult.benchSnipe! } : b,
+                );
+            }
+
             // Remove KO'd bench Pokémon
             const koedBench = opponentBench.filter(b => (b.damageCounters || 0) >= (b.hp || 1));
             opponentBench = opponentBench.filter(b => (b.damageCounters || 0) < (b.hp || 1));
@@ -2185,8 +2355,24 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 }
             }
 
-            const effectMessages = effectResults.messages.join(' ');
-            return {
+            // Sandslash — Counterattack: the damaged Active puts counters back
+            // on whatever hit it. Only applies if it survived the hit.
+            const recoil = knockout ? 0 : counterattackDamage(prev, newDefender, true);
+            if (recoil > 0 && newPlayerActive?.id === attacker.id) {
+                newPlayerActive = {
+                    ...newPlayerActive,
+                    damageCounters: (newPlayerActive.damageCounters || 0) + recoil,
+                };
+            }
+
+            const effectMessages = [
+                ...effectResults.messages,
+                ...defenceMods.messages,
+                ...(drResult?.messages || []),
+                ...(recoil > 0 ? [`Counterattack put ${recoil} damage on ${attacker.name}.`] : []),
+            ].join(' ');
+
+            let next: GameState = {
                 ...prev,
                 player: {
                     ...prev.player,
@@ -2207,6 +2393,12 @@ const useGameLogic = (externalGameState: GameState | null): GameLogicReturn => {
                 },
                 message: `Used ${selectedAttack.name}! Dealt ${damage} damage.${knockout ? ' KNOCKOUT!' : ''} ${effectMessages}`.trim(),
             };
+
+            // Delta Reign state patch (deck search, energy movement, timed
+            // effects) runs last so it sees the post-damage board.
+            if (drResult?.mutate) next = drResult.mutate(next);
+
+            return next;
         });
 
         // ONLY end turn if we are NOT in a selection mode

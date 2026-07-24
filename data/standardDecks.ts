@@ -13,6 +13,7 @@
 
 import { Card, EnergyType, ENERGY_TYPE_MAP } from '../types/game';
 import { fetchSet, PokemonCardData, isStandardLegal } from '../services/pokemonApi';
+import { findDeltaReignCard, toCard as toDeltaReignCard, DELTA_REIGN_CARDS } from './deltaReignSet';
 
 // Fisher-Yates shuffle
 function shuffle<T>(deck: T[]): T[] {
@@ -1686,21 +1687,41 @@ async function buildDeckHelper() {
             return;
         }
 
-        // 3. Fall back to substring match in API cards
+        // 3. Delta Reign (M6). Not in the API — these come from the bundled
+        // proxy scans. Checked after the API so a shared name like "Growlithe"
+        // still resolves to the printed Standard card; use addDeltaReign() to
+        // ask for the Delta Reign version specifically.
+        const drCard = findDeltaReignCard(name);
+        if (drCard) {
+            for (let i = 0; i < count; i++) deck.push(toDeltaReignCard(drCard, cardIndex++));
+            return;
+        }
+
+        // 4. Fall back to substring match in API cards
         apiCard = findCardByName(allCards, name);
         if (apiCard) {
             for (let i = 0; i < count; i++) deck.push(convertApiCard(apiCard, cardIndex++));
             return;
         }
 
-        // 4. Smart fallback
+        // 5. Smart fallback
         console.warn(`[2026 Standard] Card not found: ${name} (using smart fallback)`);
         for (let i = 0; i < count; i++) {
             deck.push(getFallbackCard(name, cardIndex++));
         }
     };
 
-    return { deck, addCard };
+    /** Always resolves to the Delta Reign printing, even if the name is shared. */
+    const addDeltaReign = (name: string, count: number) => {
+        const drCard = findDeltaReignCard(name);
+        if (!drCard) {
+            console.warn(`[Delta Reign] Card not found: ${name}`);
+            return;
+        }
+        for (let i = 0; i < count; i++) deck.push(toDeltaReignCard(drCard, cardIndex++));
+    };
+
+    return { deck, addCard, addDeltaReign };
 }
 
 // ============================================
@@ -1925,8 +1946,78 @@ export async function createHideNSneakDeck(): Promise<Card[]> {
     return shuffle(deck);
 }
 
+// ============================================
+// MEGA RAYQUAZA EX DECK — Delta Reign (M6)
+// 60 cards: 16 Pokémon / 32 Trainers / 12 Energy
+// Storm Emeralda scales at 50 damage per Fire/Lightning Energy across your
+// whole board, so the deck is built to spread Energy wide rather than stack
+// it: Magmortar's Buddy Boost, Mega Rayquaza Cap's Delta Gift, and Azurill
+// all attach to other Pokémon. Talonflame ex benches itself for free while a
+// Colorless Mega ex is out.
+// ============================================
+export async function createMegaRayquazaExDeck(): Promise<Card[]> {
+    const { deck, addDeltaReign } = await buildDeckHelper();
+
+    // Pokémon (16)
+    addDeltaReign('Mega Rayquaza ex', 3);   // main attacker — Storm Emeralda 50×
+    addDeltaReign('Talonflame ex', 2);      // Excited Dive: free bench, Claw Hunt searches 2
+    addDeltaReign('Fletchinder', 2);        // Talonflame line
+    addDeltaReign('Fletchling', 3);         // Talonflame line
+    addDeltaReign('Magmar', 2);             // Gather Strength: 2 Basic Energy to hand
+    addDeltaReign('Magmortar', 2);          // Buddy Boost: spread Fire + Lightning
+    addDeltaReign('Azurill', 2);            // Bounce Bounce Charge: Energy onto the Bench
+
+    // Trainers — Supporters (10)
+    addDeltaReign('Aarune', 3);             // fetch Supporters/Stadiums (finds both Stadium halves)
+    addDeltaReign("Emcee's Hype", 3);       // draw 2, or 4 when the opponent is low on Prizes
+    addDeltaReign("Zinnia's Trust", 2);     // switch + carry an Energy across
+    addDeltaReign("Tate & Liza's Training", 2); // recurs itself under a Legendary Stadium
+
+    // Trainers — Items and Tools (16)
+    addDeltaReign('Adventuring Lantern', 4); // exactly the Fire + Lightning this deck wants
+    addDeltaReign('Mega Rayquaza Cap', 4);   // Delta Gift: an Energy per Cap in play
+    addDeltaReign('Yummy Onigiri', 4);       // healing, doubled under Legendary Trench
+    addDeltaReign('Custom Vest', 4);         // -60 from opposing Mega ex attacks
+
+    // Trainers — Stadiums (6) — three complete pairs; both halves must be
+    // played together, so these are always added in twos.
+    addDeltaReign('Legendary Trench L', 1);
+    addDeltaReign('Legendary Trench R', 1);
+    addDeltaReign('Legendary Summit L', 1);
+    addDeltaReign('Legendary Summit R', 1);
+    addDeltaReign('Legendary Lava Lake L', 1);
+    addDeltaReign('Legendary Lava Lake R', 1);
+
+    // Energy (12) — Storm Emeralda counts Fire and Lightning only
+    addCardEnergy(deck, 'fire', 6);
+    addCardEnergy(deck, 'lightning', 6);
+
+    console.log(`[Delta Reign] Mega Rayquaza ex deck: ${deck.length} cards`);
+    return shuffle(deck);
+}
+
+/** Basic Energy for proxy-only decks, which have no API card to copy. */
+function addCardEnergy(deck: Card[], type: EnergyType, count: number) {
+    const label = type.charAt(0).toUpperCase() + type.slice(1);
+    for (let i = 0; i < count; i++) {
+        deck.push({
+            id: `dr-energy-${type}-${i}`,
+            name: `${label} Energy`,
+            type: 'energy',
+            energyType: type,
+            subtypes: ['Basic'],
+            imageUrl: `https://images.pokemontcg.io/sve/${type === 'fire' ? 2 : 4}.png`,
+        });
+    }
+}
+
 export function shuffleDeck<T>(deck: T[]): T[] {
     return shuffle(deck);
+}
+
+/** Every Delta Reign card, for the deck-builder library. */
+export function deltaReignLibrary(): Card[] {
+    return DELTA_REIGN_CARDS.map((c, i) => toDeltaReignCard(c, i));
 }
 
 export const standardDecks = {
@@ -1937,4 +2028,5 @@ export const standardDecks = {
     megaZygardeEx: createMegaZygardeExDeck,
     megaDarkraiEx: createMegaDarkraiExDeck,
     hideNSneak: createHideNSneakDeck,
+    megaRayquazaEx: createMegaRayquazaExDeck,
 };

@@ -7,6 +7,12 @@
 import { Card } from '../types/game';
 import { createMegaLucarioExDeck, createDragapultExDeck } from '../data/standardDecks';
 import { fetchSet, isStandardLegal, STANDARD_2026_SETS } from '../services/pokemonApi';
+import {
+    DELTA_REIGN_CARDS,
+    DELTA_REIGN_SET_ID,
+    DELTA_REIGN_SET_NAME,
+    toCard as toDeltaReignCard,
+} from '../data/deltaReignSet';
 
 export interface LibraryCard extends Card {
     set: {
@@ -34,7 +40,26 @@ const SET_DISPLAY_NAMES: Record<string, string> = {
     me2pt5:   'Ascended Heroes',
     me3:      'Perfect Order',
     me4:      'Chaos Rising',
+    [DELTA_REIGN_SET_ID]: DELTA_REIGN_SET_NAME,
 };
+
+/**
+ * Delta Reign is a proxy set bundled with the app rather than served by the
+ * API, so its cards are built locally and merged into the library results.
+ */
+function deltaReignLibraryCards(): LibraryCard[] {
+    return DELTA_REIGN_CARDS.map((entry, i) => ({
+        ...toDeltaReignCard(entry, i),
+        set: {
+            id: DELTA_REIGN_SET_ID,
+            name: DELTA_REIGN_SET_NAME,
+            series: 'Mega Evolution',
+            images: { symbol: '', logo: '' },
+        },
+        number: entry.number,
+        rarity: entry.rarity,
+    }));
+}
 
 function apiCardToLibraryCard(apiCard: any, setId: string): LibraryCard {
     const supertype: string = apiCard.supertype || 'Pokémon';
@@ -94,7 +119,9 @@ export async function fetchStandardCards(page: number = 1, searchQuery: string =
             )
         );
 
-        let allCards: LibraryCard[] = setResults.flat();
+        // Delta Reign first so its printings win the de-duplication below for
+        // names it shares with older sets.
+        let allCards: LibraryCard[] = [...deltaReignLibraryCards(), ...setResults.flat()];
 
         // Apply search filter
         if (searchQuery.trim()) {

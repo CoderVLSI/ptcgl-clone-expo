@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, GameState, Player } from '../types/game';
-import { createMegaLucarioExDeck, createDragapultExDeck, createRagingBoltExDeck, createMegaGreninjaExDeck, createMegaZygardeExDeck, createMegaDarkraiExDeck, createHideNSneakDeck } from '../data/standardDecks';
+import { createMegaLucarioExDeck, createDragapultExDeck, createRagingBoltExDeck, createMegaGreninjaExDeck, createMegaZygardeExDeck, createMegaDarkraiExDeck, createHideNSneakDeck, createMegaRayquazaExDeck } from '../data/standardDecks';
 
 export interface GameSetupData {
     playerDeck: Card[];
@@ -50,8 +50,8 @@ export function useGameData() {
             setError(null);
             setSetupPhase('loading');
 
-            // Load all 7 competitive decks in parallel
-            const [megaLucarioDeck, dragapultDeck, ragingBoltDeck, megaGreninajaDeck, megaZygardeDeck, megaDarkraiDeck, hideNSneakDeck] = await Promise.all([
+            // Load all 8 competitive decks in parallel
+            const [megaLucarioDeck, dragapultDeck, ragingBoltDeck, megaGreninajaDeck, megaZygardeDeck, megaDarkraiDeck, hideNSneakDeck, megaRayquazaDeck] = await Promise.all([
                 createMegaLucarioExDeck(),
                 createDragapultExDeck(),
                 createRagingBoltExDeck(),
@@ -59,9 +59,10 @@ export function useGameData() {
                 createMegaZygardeExDeck(),
                 createMegaDarkraiExDeck(),
                 createHideNSneakDeck(),
+                createMegaRayquazaExDeck(),
             ]);
 
-            console.log(`Lucario: ${megaLucarioDeck.length} | Dragapult: ${dragapultDeck.length} | Raging Bolt: ${ragingBoltDeck.length} | Greninja: ${megaGreninajaDeck.length} | Zygarde: ${megaZygardeDeck.length} | Darkrai: ${megaDarkraiDeck.length} | HideNSneak: ${hideNSneakDeck.length}`);
+            console.log(`Lucario: ${megaLucarioDeck.length} | Dragapult: ${dragapultDeck.length} | Raging Bolt: ${ragingBoltDeck.length} | Greninja: ${megaGreninajaDeck.length} | Zygarde: ${megaZygardeDeck.length} | Darkrai: ${megaDarkraiDeck.length} | HideNSneak: ${hideNSneakDeck.length} | Rayquaza: ${megaRayquazaDeck.length}`);
 
             const decks = [
                 { id: 'deck-lucario',   name: 'Mega Lucario ex',   cards: megaLucarioDeck,    type: 'fighting',   mainCard: 'Mega Lucario ex'  },
@@ -71,6 +72,7 @@ export function useGameData() {
                 { id: 'deck-zygarde',   name: 'Mega Zygarde ex',    cards: megaZygardeDeck,    type: 'fighting',   mainCard: 'Mega Zygarde ex'  },
                 { id: 'deck-darkrai',   name: 'Mega Darkrai ex',    cards: megaDarkraiDeck,    type: 'darkness',   mainCard: 'Mega Darkrai ex'  },
                 { id: 'deck-hidesneak', name: "Hide 'n' Sneak",     cards: hideNSneakDeck,     type: 'psychic',    mainCard: 'Dhelmise'         },
+                { id: 'deck-rayquaza',  name: 'Mega Rayquaza ex',   cards: megaRayquazaDeck,   type: 'colorless',  mainCard: 'Mega Rayquaza ex' },
             ];
             setAvailableDecks(decks);
 
