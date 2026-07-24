@@ -913,7 +913,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState: externalGameSta
                 cards={
                     logicState.activeCardId === 'buddy_poffin'
                         ? gameState.player.deck.filter(c => c.type === 'pokemon' && c.subtypes?.includes('Basic') && (c.hp || 0) <= 70)
-                        : gameState.player.deck.filter(c => c.type === 'pokemon')
+                        : logicState.activeCardId === 'meowth_ex_search'
+                            ? gameState.player.deck.filter(c => c.type === 'trainer' && c.subtypes?.includes('Supporter'))
+                            : gameState.player.deck.filter(c => c.type === 'pokemon')
                 }
                 minSelection={0}
                 maxSelection={logicState.discardCount || 2}
